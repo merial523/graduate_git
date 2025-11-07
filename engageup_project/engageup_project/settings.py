@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'common.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'engageup_project.urls'
@@ -136,3 +137,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # 本番環境でcollectstatic実行時�
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = '/accounts/login/'      # 未ログイン時にリダイレクトするURL
+LOGIN_REDIRECT_URL = '/'            # ログイン成功後のリダイレクト先
+LOGOUT_REDIRECT_URL = '/accounts/login/'  # ログアウト後のリダイレクト先

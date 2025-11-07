@@ -26,4 +26,5 @@ urlpatterns = [
     path("question/", include("question.urls")),  # トップページは Question アプリに委譲
     path("profile/", include("prof.urls")),# トップページは Profile アプリに委譲
     path("mylist/", include("mylist.urls")),  # トップページは Mylist アプリに委譲
+    path('accounts/', include('accounts.urls', namespace='accounts')),  # トップページはaccountsに譲渡
 ]
