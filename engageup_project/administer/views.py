@@ -23,4 +23,4 @@ def select_rank(request):
     else:
         form = UserRankForm(instance=request.user)
 
-    return render(request, '1104.html', {'form': form})
+    return render(request, 'accounts/1104.html', {'form': form})

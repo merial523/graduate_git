@@ -34,3 +34,8 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
     username = models.CharField(max_length=20, blank=True, null=True)
+
+class Course():
+    subject = models.CharField(verbose_name="科目", max_length=50)
+    courseCount = models.IntegerField(verbose_name="講座数")
+    is_mylist = models.BooleanField(verbose_name="マイリストに入っているか",default=False)
