@@ -1,0 +1,7 @@
+<!-- visitor/templates/visitor/select_rank.html -->
+<h1>ランクを変更</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.rank }}  <!-- ラジオボタンとして rank が表示される -->
+    <button type="submit">保存</button>
+</form>

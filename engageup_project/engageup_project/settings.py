@@ -40,12 +40,14 @@ INSTALLED_APPS = [
     'accounts',
     'courses',
     'enrollments',
-    'question',
     'common',
-    'ai_question',
     'prof',
     'mylist',
     'main',
+    'administer',
+    'moderator',
+    'visitor',
+    'staff',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +143,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'      # 未ログイン時にリダイレクトするURL
 LOGIN_REDIRECT_URL = '/'            # ログイン成功後のリダイレクト先
 LOGOUT_REDIRECT_URL = '/accounts/login/'  # ログアウト後のリダイレクト先
+
+
+AUTH_USER_MODEL = 'main.User'

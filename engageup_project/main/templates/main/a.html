@@ -1,0 +1,5 @@
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- rank がラジオボタンで表示される -->
+    <button type="submit">送信</button>
+</form>

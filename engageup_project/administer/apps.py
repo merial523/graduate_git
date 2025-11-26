@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class AiQuestionConfig(AppConfig):
+class AdministerConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'ai_question'
+    name = 'administer'
