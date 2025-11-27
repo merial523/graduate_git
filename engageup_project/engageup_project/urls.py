@@ -21,7 +21,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("administer/",include("administer.urls")), #トップページはadministerアプリに委譲
     path("", include("main.urls")),  # トップページは common アプリに委譲
-    path("aiQuestion/",include("aiQuestion.urls")),
+    path("ai_question/",include("ai_question.urls")),
     path("enrollments/", include("enrollments.urls")),# トップページは Enrollments アプリに委譲
     path("courses/", include("courses.urls")),  # トップページは Courses アプリに委譲
     path("profile/", include("prof.urls")),# トップページは Profile アプリに委譲
