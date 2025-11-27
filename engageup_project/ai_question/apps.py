@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class AiquestionConfig(AppConfig):
+class AiQuestionConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'aiQuestion'
+    name = 'ai_question'
