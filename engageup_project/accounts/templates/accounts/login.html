@@ -14,8 +14,8 @@
   <form method="post">
     {% csrf_token %}
     <div>
-      <label>ユーザー名:</label><br>
-      {{ form.username }}
+      <label>email:</label><br>
+      {{ form.username }} <!--Djangoの入力がusernameなのでform.usernameを入れているが、emailを入れる -->
     </div>
     <div>
       <label>パスワード:</label><br>

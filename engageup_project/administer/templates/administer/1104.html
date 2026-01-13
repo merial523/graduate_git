@@ -1,19 +1,37 @@
 <!-- visitor/templates/visitor/select_rank.html -->
 <h1>ランクを変更</h1>
+
 <form method="post">
     {% csrf_token %}
 
-    <h1>User一覧</h1>
-  <ul>
-    {% for user in users %}
-      <li>
-        {{ user.username }} – {{ user.email }}
-        {# 必要なら編集リンクなどもここに #}
-      </li>
-    {% empty %}
-      <li>ユーザーがいません。</li>
-    {% endfor %}
-  </ul>
-    {{ form.rank }}  <!-- ラジオボタンとして rank が表示される -->
+    <table border="1">
+        <tr>
+            <th>選択</th>
+            <th>ランク</th>
+            <th>ユーザー名</th>
+            <th>メール</th>
+        </tr>
+
+        {% for user in users %}
+        <tr>
+            <td>
+                {% if user == request.user %}
+                    <!-- 自分自身は選択不可 -->
+                    <input type="checkbox" disabled>
+                {% else %}
+                    <input type="checkbox" name="selected_user" value="{{ user.pk }}">
+                {% endif %}
+            </td>
+            <td>{{ user.rank }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>変更するランク</h3>
+    {{ form.rank }}
+
+    <br>
     <button type="submit">保存</button>
 </form>

@@ -1,11 +1,15 @@
-# forms.py
 from django import forms
-from main.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class UserRankForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['rank']  # ラジオボタンにしたいフィールド
+        fields = ['rank']
         widgets = {
-            'rank': forms.RadioSelect()  # ここでラジオボタン指定
+            'rank': forms.RadioSelect
+        }
+        labels = {
+            'rank': '変更するランク'
         }
