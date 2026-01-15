@@ -49,24 +49,24 @@ class UserRankListView(ListView):
         context['form'] = UserRankForm()
         return context
 
-def post(self, request, *args, **kwargs):
-    selected_users = request.POST.getlist('selected_user')
-    form = UserRankForm(request.POST)
+    def post(self, request, *args, **kwargs):
+        selected_users = request.POST.getlist('selected_user')
+        form = UserRankForm(request.POST)
 
-    if selected_users and form.is_valid():
-        new_rank = form.cleaned_data['rank']
+        if selected_users and form.is_valid():
+            new_rank = form.cleaned_data['rank']
 
-        users = User.objects.filter(pk__in=selected_users)
+            users = User.objects.filter(pk__in=selected_users)
 
-        for user in users:
-            # ★ 自分自身はスキップ
-            if user == request.user:
-                continue
+            for user in users:
+                # ★ 自分自身はスキップ
+                if user == request.user:
+                    continue
 
-            user.rank = new_rank
-            user.save()
+                user.rank = new_rank
+                user.save()
 
-    return redirect('select_rank')
+        return redirect('administer:select_rank')
 
 
 class ConstantListView(ListView):
