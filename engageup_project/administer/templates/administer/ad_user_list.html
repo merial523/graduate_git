@@ -24,7 +24,8 @@
                     </thead>
                     <tbody>
                         {% for user in users %}
-                        <tr {% if user == request.user %}class="table-light text-muted"{% endif %}>
+                        {# ★修正ポイント：is_activeがFalse（削除済み）なら背景を暗くし、少し透けさせる #}
+                        <tr class="{% if not user.is_active %}table-secondary text-muted opacity-75{% endif %} {% if user == request.user %}table-light{% endif %}">
                             <td class="text-center">
                                 {% if user == request.user %}
                                     <input type="checkbox" class="form-check-input" disabled>
@@ -32,46 +33,95 @@
                                     <input type="checkbox" name="selected_user" value="{{ user.pk }}" class="form-check-input">
                                 {% endif %}
                             </td>
-                            <td><span class="badge bg-secondary">{{ user.rank }}</span></td>
-                            <td>{{ user.username }}{% if user == request.user %} <span class="small">(あなた)</span>{% endif %}</td>
+                            <td>
+                                {# ★削除済みならバッジの色も変える #}
+                                <span class="badge {% if user.is_active %}bg-secondary{% else %}bg-dark{% endif %}">
+                                    {{ user.rank }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ user.username }}
+                                {% if user == request.user %} <span class="small">(あなた)</span>{% endif %}
+                                {# ★削除済みラベルの追加 #}
+                                {% if not user.is_active %} <span class="badge rounded-pill bg-danger" style="font-size: 0.7em;">削除済み</span>{% endif %}
+                            </td>
                             <td>{{ user.email }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center">有効なユーザーはいません。</td>
+                            <td colspan="4" class="text-center text-muted py-4">該当するユーザーはいません。</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if show_all %}&show=all{% endif %}" aria-label="First">
+                                <span aria-hidden="true">&laquo; 最初</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if show_all %}&show=all{% endif %}">前へ</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if show_all %}&show=all{% endif %}">次へ</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ paginator.num_pages }}{% if show_all %}&show=all{% endif %}" aria-label="Last">
+                                <span aria-hidden="true">最後 &raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
             <div class="d-flex justify-content-between gap-2 mt-4 pt-3 border-top">
+                <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary flex-fill shadow-sm py-2">
+                    <i class="bi bi-person-plus"></i> <span class="d-none d-lg-inline">ユーザー</span>作成
+                </a>
 
-    <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary flex-fill shadow-sm py-2">
-        <i class="bi bi-person-plus"></i> <span class="d-none d-lg-inline">ユーザー</span>作成
-    </a>
+                <a href="{% url 'administer:select_rank' %}" class="btn btn-success flex-fill shadow-sm py-2">
+                    <i class="bi bi-pencil-square"></i> <span class="d-none d-lg-inline">ランク</span>変更
+                </a>
 
-    <a href="{% url 'administer:select_rank' %}" class="btn btn-success flex-fill shadow-sm py-2">
-        <i class="bi bi-pencil-square"></i> <span class="d-none d-lg-inline">ランク</span>変更
-    </a>
+                {# ★修正ポイント：削除済み表示中ならボタンを「復元」に変更するようにすると親切です #}
+                {% if show_all %}
+                <button type="submit" name="action" value="restore" class="btn btn-warning flex-fill shadow-sm py-2" 
+                        onclick="return confirm('選択したユーザーを復元（有効化）しますか？')">
+                    <i class="bi bi-arrow-counterclockwise"></i> <span class="d-none d-lg-inline">ユーザー</span>復元
+                </button>
+                {% else %}
+                <button type="submit" name="action" value="soft_delete" class="btn btn-danger flex-fill shadow-sm py-2" 
+                        onclick="return confirm('選択したユーザーを削除（非表示化）しますか？')">
+                    <i class="bi bi-trash"></i> <span class="d-none d-lg-inline">ユーザー</span>削除
+                </button>
+                {% endif %}
 
-    <button type="submit" name="action" value="soft_delete" class="btn btn-danger flex-fill shadow-sm py-2" 
-            onclick="return confirm('選択したユーザーを無効化（論理削除）しますか？')">
-        <i class="bi bi-trash"></i> <span class="d-none d-lg-inline">ユーザー</span>削除
-    </button>
-
-    {% if show_all %}
-    <a href="{% url 'administer:user_list' %}"
-        class="btn btn-outline-secondary flex-fill shadow-sm py-2">
-        有効のみ表示
-    </a>
-    {% else %}
-    <a href="{% url 'administer:user_list' %}?show=all"
-        class="btn btn-outline-dark flex-fill shadow-sm py-2">
-        削除済み表示
-    </a>
-{% endif %}
-</div>
+                {% if show_all %}
+                <a href="{% url 'administer:user_list' %}"
+                    class="btn btn-outline-secondary flex-fill shadow-sm py-2">
+                    有効のみ表示
+                </a>
+                {% else %}
+                <a href="{% url 'administer:user_list' %}?show=all"
+                    class="btn btn-outline-dark flex-fill shadow-sm py-2">
+                    削除済み表示
+                </a>
+                {% endif %}
+            </div>
         </form>
     </div>
 </div>
