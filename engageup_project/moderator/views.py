@@ -5,24 +5,31 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from main.models import User
 from .forms import SequentialUserCreateForm
+
 # Create your views here.
 
+
 def moderator_index(request):
-    return render(request,"moderator/moderator_index.html")
+    return render(request, "moderator/moderator_index.html")
 
-#アカウントを作成する
-#アカウント作成のクラスを作成する
 
-#仕様は会社のメールアドレスをテキスト　と　数字　の二つで構成されていると考え、数字を一つずつ増やしていき、それらにパスワードを振る
+def moderator_badge(request):
+    return render(request, "moderator/mo_badge.html")
 
+
+# アカウントを作成する
+# アカウント作成のクラスを作成する
+
+# 仕様は会社のメールアドレスをテキスト　と　数字　の二つで構成されていると考え、数字を一つずつ増やしていき、それらにパスワードを振る
 
 
 from django.views.generic import FormView
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.utils.crypto import get_random_string
-from main.models import User,Constant
+from main.models import User, Constant
 from .forms import SequentialUserCreateForm
+
 
 class SequentialUserCreateView(FormView):
     template_name = "moderator/mo_create_user.html"
@@ -30,12 +37,13 @@ class SequentialUserCreateView(FormView):
     success_url = reverse_lazy("moderator:moderator_index")
 
     PASSWORD_LENGTH = 12
-    PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+    PASSWORD_CHARS = (
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+    )
 
     def generate_password(self):
         return get_random_string(
-            length=self.PASSWORD_LENGTH,
-            allowed_chars=self.PASSWORD_CHARS
+            length=self.PASSWORD_LENGTH, allowed_chars=self.PASSWORD_CHARS
         )
 
     def form_valid(self, form):
@@ -58,17 +66,13 @@ class SequentialUserCreateView(FormView):
 
             raw_password = self.generate_password()
 
-            user = User(
-                username=username,
-                email=email,
-                rank=rank
-            )
+            user = User(username=username, email=email, rank=rank)
             user.set_password(raw_password)
 
             # 🔑 後で表示・保存したい場合に一時的に保持
             user._raw_password = raw_password
             users.append(user)
-            #ここにメールアドレスに初期パスワードを付けて送信する
+            # ここにメールアドレスに初期パスワードを付けて送信する
 
         with transaction.atomic():
             User.objects.bulk_create(users)
