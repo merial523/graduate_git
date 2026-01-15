@@ -14,20 +14,28 @@
             <table class="table table-hover border">
                 <thead class="table-light">
                     <tr>
+                        <th class="text-center">選択</th>
                         <th>ランク</th>
                         <th>ユーザー名</th>
                         <th>メール</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td><span class="badge bg-secondary">{{ user.rank }}</span></td>
-                        <td>{{ user.username }}{% if user == request.user %} <span class="small text-primary">(あなた)</span>{% endif %}</td>
-                        <td>{{ user.email }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+                        {% for user in users %}
+                        <tr {% if user == request.user %}class="table-light text-muted"{% endif %}>
+                            <td class="text-center">
+                                {% if user == request.user %}
+                                    <input type="checkbox" class="form-check-input" disabled>
+                                {% else %}
+                                    <input type="checkbox" name="selected_user" value="{{ user.pk }}" class="form-check-input">
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-secondary">{{ user.rank }}</span></td>
+                            <td>{{ user.username }}{% if user == request.user %} <span class="small">(あなた)</span>{% endif %}</td>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
             </table>
         </div>
 
