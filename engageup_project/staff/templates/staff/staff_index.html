@@ -6,10 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Google Fonts: 英語アクセント用 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@300;400;700&display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -18,9 +21,9 @@
     <style>
       /* --- ねこねこ薬局 スタイルガイドの反映 --- */
       :root {
-        --primary-color: #76b19d;    /* 薬局らしい清潔感のあるグリーン */
-        --accent-color: #e88d6a;     /* 猫のような温かみのあるオレンジ */
-        --bg-color: #F8F2F2;        /* 背景：温かみのある白 */
+        --primary-color: #76b19d; /* 薬局らしい清潔感のあるグリーン */
+        --accent-color: #e88d6a; /* 猫のような温かみのあるオレンジ */
+        --bg-color: #f8f2f2; /* 背景：温かみのある白 */
         --text-color: #444;
         --transition-base: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
       }
@@ -29,7 +32,8 @@
         background-color: var(--bg-color);
         color: var(--text-color);
         /* フォントを丸ゴシック系に設定 */
-        font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4", "M PLUS Rounded 1c", sans-serif;
+        font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
+          "M PLUS Rounded 1c", sans-serif;
         min-height: 100vh;
         margin: 0;
         -webkit-font-smoothing: antialiased;
@@ -37,7 +41,7 @@
 
       /* 英語タイトルなどに適用 */
       .font-serif {
-        font-family: 'Libre Baskerville', serif;
+        font-family: "Libre Baskerville", serif;
       }
 
       /* 中央コンテンツエリア */
@@ -59,11 +63,11 @@
       .navbar {
         background-color: var(--primary-color) !important;
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       }
 
       .navbar-brand {
-        font-family: 'Libre Baskerville', serif;
+        font-family: "Libre Baskerville", serif;
         font-weight: 700;
         letter-spacing: 0.5px;
         font-size: 1.4rem;
@@ -77,7 +81,7 @@
       }
 
       .offcanvas-header {
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         padding: 2rem 1.5rem;
       }
 
@@ -179,8 +183,18 @@
                     aria-controls="offcanvasMenu"
                   >
                     <!-- ハンバーガーアイコンを少し太めに -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-list" viewBox="0 0 16 16">
-                      <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="currentColor"
+                      class="bi bi-list"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"
+                      />
                     </svg>
                   </button>
 
@@ -212,27 +226,53 @@
               </div>
 
               <div class="offcanvas-body">
-                <ul class="navbar-nav px-2">
+                <ul class="navbar-nav">
                   <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'constant_list' %}">定数一覧</a>
+                    <a
+                      class="nav-link text-white"
+                      href=""
+                      >定数一覧</a
+                    >
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'user_list' %}">ユーザー一覧</a>
+                    <a class="nav-link text-white" href=""
+                      >ユーザー一覧</a
+                    >
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'enrollmentsHistory' %}">検定履歴</a>
+                    <a
+                      class="nav-link text-white"
+                      href=""
+                      >検定履歴</a
+                    >
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'enrollmentsCreate' %}">検定問題作成</a>
+                    <a
+                      class="nav-link text-white"
+                      href=""
+                      >検定問題作成</a
+                    >
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link text-white">動画・テキストアップ</a>
+                    <a
+                      class="nav-link text-white"
+                      href=""
+                      >動画・テキストアップロード</a
+                    >
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link text-white" href="#">お知らせ投稿</a>
+                    <a
+                      class="nav-link text-white"
+                      href="{% url 'moderator:moderatorNews'%}"
+                      >お知らせ投稿</a
+                    >
                   </li>
-                  <li class="nav-item mt-4 pt-4 border-top border-white border-opacity-25">
-                    <a class="nav-link text-white opacity-75" href="{% url 'accounts:logout' %}">ログアウト</a>
+                  <li class="nav-item">
+                    <a
+                      class="nav-link text-white"
+                      href="{% url 'accounts:logout'%}"
+                      >ログアウト</a
+                    >
                   </li>
                 </ul>
               </div>
@@ -242,10 +282,10 @@
             <main>
               <h1>Staff研修管理システムへようこそ</h1>
               <p>
-                EngageUpへログインいただきありがとうございます。<br>
+                EngageUpへログインいただきありがとうございます。<br />
                 左上のメニューより、ユーザーの管理や検定問題の作成、コンテンツのアップロードをスムーズに行うことができます。
               </p>
-              
+
               <div class="mt-4">
                 <button class="btn btn-primary">クイックスタート</button>
               </div>
