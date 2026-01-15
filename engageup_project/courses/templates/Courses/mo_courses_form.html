@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>コースフォーム</title>
+</head>
+<body>
+
+<h1>
+    {% if object %}
+        コース変更
+    {% else %}
+        コース作成
+    {% endif %}
+</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">
+        {% if object %}
+            変更を保存
+        {% else %}
+            作成
+        {% endif %}
+    </button>
+</form>
+
+<hr>
+
+<a href="{% url 'courses:courses_list' %}">
+    ← コース一覧へ戻る
+</a>
+
+</body>
+</html>
