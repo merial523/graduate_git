@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>コース一覧</title>
+</head>
+<body>
+
+<h1>コース一覧</h1>
+
+<!-- 操作ボタン -->
+<div>
+    <a href="{% url 'courses:courses_create' %}">＋ コース作成</a>
+    |
+    <a href="{% url 'courses:courses_list' %}">有効コース</a>
+    |
+    <a href="{% url 'courses:courses_list' %}?show=deleted">削除済みコース</a>
+</div>
+
+<hr>
+
+<form method="post">
+    {% csrf_token %}
+
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>選択</th>
+                <th>ID</th>
+                <th>科目</th>
+                <th>回数</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for course in courses %}
+            <tr>
+                <td>
+                    <input type="checkbox" name="course_ids" value="{{ course.id }}">
+                </td>
+                <td>{{ course.id }}</td>
+                <td>{{ course.subject }}</td>
+                <td>{{ course.courseCount }}</td>
+                <td>
+                    {% if course.is_active %}
+                        有効
+                    {% else %}
+                        削除済み
+                    {% endif %}
+                </td>
+                <td>
+                    {% if course.is_active %}
+                        <a href="{% url 'courses:courses_update' course.id %}">
+                            変更
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6">コースがありません</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+
+    <!-- 一括操作 -->
+    <button type="submit" name="action" value="delete">
+        選択したコースを削除
+    </button>
+
+    <button type="submit" name="action" value="restore">
+        選択したコースを復元
+    </button>
+</form>
+
+<hr>
+
+<!-- ページネーション -->
+<div>
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">前へ</a>
+    {% endif %}
+
+    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">次へ</a>
+    {% endif %}
+</div>
+
+</body>
+</html>

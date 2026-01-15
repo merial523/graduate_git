@@ -27,6 +27,8 @@ class Course(models.Model):  # 講座
         verbose_name="マイリストに入っているか", default=False
     )  # マイリストに入っているか
 
+    is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
+
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
