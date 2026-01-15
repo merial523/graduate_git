@@ -190,6 +190,27 @@
             <nav class="navbar navbar-dark">
               <div class="container-fluid">
                 <div class="d-flex align-items-center">
+                  <button
+                    class="btn text-white p-0 me-3"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasMenu"
+                    aria-controls="offcanvasMenu"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="currentColor"
+                      class="bi bi-list"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"
+                      />
+                    </svg>
+                  </button>
                   <a class="navbar-brand mb-0" href="{% url 'index' %}"
                     >EngageUp</a
                   >
@@ -197,6 +218,40 @@
               </div>
             </nav>
 
+            <!-- オフキャンバス -->
+            <div
+              class="offcanvas offcanvas-start"
+              tabindex="-1"
+              id="offcanvasMenu"
+              style="width: 80%; max-width: 320px"
+            >
+              <div class="offcanvas-header">
+                <h5
+                  class="offcanvas-title font-serif text-white"
+                  id="offcanvasMenuLabel"
+                >
+                  Menu
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close btn-close-white"
+                  data-bs-dismiss="offcanvas"
+                ></button>
+              </div>
+              <div class="offcanvas-body">
+                <ul class="navbar-nav px-2">
+                  <li
+                    class="nav-item mt-4 pt-4 border-top border-white border-opacity-25"
+                  >
+                    <a
+                      class="nav-link text-white opacity-75"
+                      href="{% url 'accounts:logout'%}"
+                      >ログアウト</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
 
             <!-- メイン表示領域（統合部分） -->
             <main>
