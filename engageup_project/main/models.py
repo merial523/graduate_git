@@ -20,20 +20,12 @@ class Constant(models.Model):  # 定数をまとめたテーブル
         return self.company_code
 
 
-<<<<<<< HEAD
 class Course(models.Model):  # 講座
     subject = models.CharField(verbose_name="科目", max_length=50)  # 科目
     courseCount = models.IntegerField(verbose_name="講座数")  # 講座数
     is_mylist = models.BooleanField(
         verbose_name="マイリストに入っているか", default=False
     )  # マイリストに入っているか
-=======
-class Course(models.Model): #講座
-    subject = models.CharField(verbose_name="科目", max_length=50)  #科目
-    course_count = models.IntegerField(verbose_name="講座数")    #講座数
-    is_mylist = models.BooleanField(verbose_name="マイリストに入っているか",default=False)  #マイリストに入っているか
-
->>>>>>> 4eed8eb3098ec53363171910c32bf1949f71b986
 
 
 from django.db import models
