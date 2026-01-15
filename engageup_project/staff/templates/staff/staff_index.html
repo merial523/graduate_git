@@ -5,7 +5,7 @@
     <title>EngageUp | 研修管理システム</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Google Fonts: 英語アクセント用 -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,19 +19,19 @@
     />
 
     <style>
-      /* --- ねこねこ薬局 スタイルガイドの反映 --- */
+      /* --- ねこねこ薬局 スタイルガイド --- */
       :root {
-        --primary-color: #76b19d; /* 薬局らしい清潔感のあるグリーン */
-        --accent-color: #e88d6a; /* 猫のような温かみのあるオレンジ */
-        --bg-color: #f8f2f2; /* 背景：温かみのある白 */
+        --primary-color: #76b19d; /* 清潔感のあるグリーン */
+        --accent-color: #e88d6a; /* 温かみのあるオレンジ */
+        --bg-color: #f8f2f2; /* 背景色 */
         --text-color: #444;
+        --card-bg: #ffffff;
         --transition-base: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
       }
 
       body {
         background-color: var(--bg-color);
         color: var(--text-color);
-        /* フォントを丸ゴシック系に設定 */
         font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
           "M PLUS Rounded 1c", sans-serif;
         min-height: 100vh;
@@ -39,20 +39,18 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      /* 英語タイトルなどに適用 */
       .font-serif {
         font-family: "Libre Baskerville", serif;
       }
 
-      /* 中央コンテンツエリア */
       .center {
         width: 100%;
         min-height: calc(100vh - 48px);
         background: #ffffff;
-        max-width: 560px; /* 少し広めに調整 */
+        max-width: 600px; /* ダッシュボード用に少し広めに調整 */
         margin: 24px auto;
-        border-radius: 32px; /* 角丸をさらに強調 */
-        box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.05); /* 柔らかい影 */
+        border-radius: 32px;
+        box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.05);
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -63,101 +61,119 @@
       .navbar {
         background-color: var(--primary-color) !important;
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       }
-
       .navbar-brand {
         font-family: "Libre Baskerville", serif;
         font-weight: 700;
-        letter-spacing: 0.5px;
         font-size: 1.4rem;
       }
 
-      /* オフキャンバス（メニュー） */
+      /* メニュー */
       .offcanvas {
-        border-radius: 0 32px 32px 0;
         background-color: var(--primary-color) !important;
-        color: white;
+        border-radius: 0 32px 32px 0;
       }
-
-      .offcanvas-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 2rem 1.5rem;
-      }
-
       .nav-link {
         transition: var(--transition-base);
         padding: 12px 1rem !important;
         border-radius: 12px;
         margin-bottom: 4px;
-        font-weight: 500;
       }
-
       .nav-link:hover {
         background: rgba(255, 255, 255, 0.15);
         transform: translateX(5px);
       }
 
-      /* メインコンテンツ */
+      /* --- メインコンテンツ（ダッシュボード） --- */
       main {
         flex: 1;
-        padding: 2.5rem 2rem !important;
+        padding: 2rem 1.5rem !important;
       }
 
-      h1 {
+      .page-title {
         font-size: 1.5rem;
         font-weight: 900;
         color: var(--primary-color);
         margin-bottom: 1.5rem;
         position: relative;
-        /* ねこねこ風の装飾を意識した見出し */
+        padding-left: 15px;
       }
 
-      h1::after {
+      .page-title::before {
         content: "";
-        display: block;
-        width: 40px;
-        height: 4px;
-        background: var(--accent-color);
-        margin-top: 8px;
-        border-radius: 2px;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 24px;
+        background-color: var(--accent-color);
+        border-radius: 3px;
       }
 
-      p {
-        line-height: 1.8;
-        color: #666;
+      .dashboard-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
       }
 
-      /* ボタンのカスタマイズ */
-      .btn-primary {
-        background-color: var(--primary-color);
-        border: none;
-        border-radius: 50px;
-        padding: 10px 24px;
+      /* カード共通スタイル */
+      a.content-box {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--card-bg);
+        border-radius: 24px; /* 丸みを強く */
+        padding: 20px;
+        border: 1px solid #f0efef;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         transition: var(--transition-base);
+        cursor: pointer;
       }
 
-      .btn-primary:hover {
-        background-color: #5da08a;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(118, 177, 157, 0.3);
+      a.content-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        border-color: var(--primary-color);
+      }
+
+      .content-box h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 2px dashed #f0f0f0; /* 点線で柔らかい印象に */
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .box-placeholder {
+        color: #aaa;
+        font-size: 0.9rem;
+        font-style: italic;
+        padding: 10px 0;
       }
 
       /* フッター */
       footer {
-        background-color: #fcfcfc !important;
-        color: #aaa !important;
+        background-color: #fafafa !important;
+        color: #bbb !important;
         font-size: 0.8rem;
         border-top: 1px solid #f0f0f0;
-        letter-spacing: 1px;
       }
 
-      /* レスポンシブ調整 */
+      /* レスポンシブ調整（PC時のみ2カラムにする場合） */
+      @media (min-width: 992px) {
+        /* 今回はcenter幅が560px〜600px固定のため、基本は1カラムが綺麗です */
+      }
+
       @media (max-width: 576px) {
         .center {
           margin: 0;
           border-radius: 0;
-          min-height: 100vh;
         }
       }
     </style>
@@ -166,7 +182,6 @@
   <body>
     <div class="container-fluid">
       <div class="row justify-content-center">
-        <!-- 中央 -->
         <div class="col-12 col-md-10 col-lg-6">
           <div class="center">
             {% load static %}
@@ -182,7 +197,6 @@
                     data-bs-target="#offcanvasMenu"
                     aria-controls="offcanvasMenu"
                   >
-                    <!-- ハンバーガーアイコンを少し太めに -->
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"
@@ -197,10 +211,9 @@
                       />
                     </svg>
                   </button>
-
-                  <a class="navbar-brand mb-0" href="{% url 'index' %}">
-                    EngageUp
-                  </a>
+                  <a class="navbar-brand mb-0" href="{% url 'index' %}"
+                    >EngageUp</a
+                  >
                 </div>
               </div>
             </nav>
@@ -210,53 +223,37 @@
               class="offcanvas offcanvas-start"
               tabindex="-1"
               id="offcanvasMenu"
-              aria-labelledby="offcanvasMenuLabel"
               style="width: 80%; max-width: 320px"
             >
               <div class="offcanvas-header">
-                <h5 class="offcanvas-title font-serif" id="offcanvasMenuLabel">
+                <h5
+                  class="offcanvas-title font-serif text-white"
+                  id="offcanvasMenuLabel"
+                >
                   Menu
                 </h5>
                 <button
                   type="button"
                   class="btn-close btn-close-white"
                   data-bs-dismiss="offcanvas"
-                  aria-label="Close"
                 ></button>
               </div>
-
               <div class="offcanvas-body">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav px-2">
                   <li class="nav-item">
-                    <a
-                      class="nav-link text-white"
-                      href=""
-                      >定数一覧</a
-                    >
+                    <a class="nav-link text-white" href="">定数一覧</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="">ユーザー一覧</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="">検定履歴</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="">検定問題作成</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link text-white" href=""
-                      >ユーザー一覧</a
-                    >
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link text-white"
-                      href=""
-                      >検定履歴</a
-                    >
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link text-white"
-                      href=""
-                      >検定問題作成</a
-                    >
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link text-white"
-                      href=""
                       >動画・テキストアップロード</a
                     >
                   </li>
@@ -267,9 +264,11 @@
                       >お知らせ投稿</a
                     >
                   </li>
-                  <li class="nav-item">
+                  <li
+                    class="nav-item mt-4 pt-4 border-top border-white border-opacity-25"
+                  >
                     <a
-                      class="nav-link text-white"
+                      class="nav-link text-white opacity-75"
                       href="{% url 'accounts:logout'%}"
                       >ログアウト</a
                     >
@@ -278,16 +277,37 @@
               </div>
             </div>
 
-            <!-- メイン表示領域 -->
+            <!-- メイン表示領域（統合部分） -->
             <main>
-              <h1>Staff研修管理システムへようこそ</h1>
-              <p>
-                EngageUpへログインいただきありがとうございます。<br />
-                左上のメニューより、ユーザーの管理や検定問題の作成、コンテンツのアップロードをスムーズに行うことができます。
-              </p>
+              <h1 class="page-title">ホーム</h1>
 
-              <div class="mt-4">
-                <button class="btn btn-primary">クイックスタート</button>
+              <div class="dashboard-wrapper">
+                <!-- バッジ取得ランキング -->
+                <a href="#" class="content-box">
+                  <h2>🏆 バッジ取得ランキング</h2>
+                  <div class="box-placeholder">
+                    <!-- ここにランキングの中身を追記 -->
+                    現在のランキングを表示中...
+                  </div>
+                </a>
+
+                <!-- 復習通知 -->
+                <a href="#" class="content-box">
+                  <h2>🔔 復習通知</h2>
+                  <div class="box-placeholder">
+                    <!-- ここに復習通知の中身を追記 -->
+                    新しい通知はありません
+                  </div>
+                </a>
+
+                <!-- マイリスト -->
+                <a href="#" class="content-box">
+                  <h2>📁 マイリスト</h2>
+                  <div class="box-placeholder">
+                    <!-- ここにマイリストの中身を追記 -->
+                    保存済みのコンテンツを表示...
+                  </div>
+                </a>
               </div>
             </main>
 

@@ -1,24 +1,165 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}EngageUp{% endblock %}</title>
 
+    <!-- Google Fonts: 英語アクセント用 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
 
-    {% include 'administer/administer_header.html' %}
+    <style>
+      /* --- ねこねこ風スタイル（色とフォントのみ） --- */
+      :root {
+        --primary-color: #76b19d; /* 清潔感のあるセージグリーン */
+        --bg-color: #f8f2f2;      /* 温かみのある背景色 */
+        --text-color: #444444;    /* 柔らかい黒 */
+        --transition-smooth: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+      }
 
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        /* 丸ゴシック系フォントを設定 */
+        font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
+          "M PLUS Rounded 1c", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* 英語ロゴ等 */
+      .navbar-brand {
+        font-family: "Libre Baskerville", serif;
+        font-weight: 700;
+      }
+
+      /* ナビゲーション・フッター・メニューの背景色を統一 */
+      .bg-custom-theme {
+        background-color: var(--primary-color) !important;
+      }
+
+      /* ホバー時の滑らかな動き */
+      .nav-link,
+      .btn {
+        transition: var(--transition-smooth);
+      }
+
+      .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+      }
+
+      /* オフキャンバスの閉じるボタンの色調整 */
+      .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ヘッダー部分 -->
+    <nav class="navbar navbar-dark bg-custom-theme">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center">
+          <!-- ハンバーガーメニュー（左端） -->
+          <button
+            class="btn text-white p-0 me-2"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#offcanvasMenu"
+            aria-controls="offcanvasMenu"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <!-- タイトル（ハンバーガーのすぐ右） -->
+          <a class="navbar-brand mb-0" href="{% url 'index'%}">EngageUp</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- オフキャンバスメニュー（画面左25%幅） -->
+    <div
+      class="offcanvas offcanvas-start w-25 bg-custom-theme"
+      tabindex="-1"
+      id="offcanvasMenu"
+      aria-labelledby="offcanvasMenuLabel"
+    >
+      <div
+        class="offcanvas-header text-white"
+        style="border-bottom: 1px solid rgba(255, 255, 255, 0.1)"
+      >
+        <h5 class="offcanvas-title" id="offcanvasMenuLabel">メニュー</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="offcanvas-body text-white">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'administer:constant_list'%}"
+              >定数一覧</a
+            >
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'administer:user_list'%}"
+              >ユーザー一覧</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{% url 'enrollmentsCreate'%}"
+              >検定問題作成</a
+            >
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'courses:coursesTextUpload'%}"
+              >動画・テキストアップロード</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" href="">お知らせ投稿</a>
+          </li>
+          <li
+            class="nav-item mt-4 pt-4 border-top border-white border-opacity-25"
+          >
+            <a
+              class="nav-link text-white opacity-75"
+              href="{% url 'accounts:logout'%}"
+              >ログアウト</a
+            >
+          </li>
+        </ul>
+      </div>
     </div>
 
-    {% include 'administer/administer_footer.html' %}
+    <!-- メインコンテンツ部分 -->
+    <div class="container mt-4" style="min-height: 80vh">
+      {% block content %}{% endblock %}
+    </div>
 
-    <!-- Bootstrap JS（ハンバーガーメニューを動かす） -->
+    <!-- フッター部分 -->
+    <footer class="text-center text-white py-3 bg-custom-theme">GroupG</footer>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+  </body>
 </html>
