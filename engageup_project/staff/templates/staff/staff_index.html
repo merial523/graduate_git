@@ -1,156 +1,264 @@
-{% extends 'staff/staff_base.html' %}
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EngageUp | 研修管理システム</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-{% block title %}ホーム！{% endblock %}
+    <!-- Google Fonts: 英語アクセント用 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
 
-{% block content %}
-<style>
-    /* --- デザイン設定 --- */
-    :root {
-        --primary-color: #4a90e2; /* アクセントカラー（青） */
-        --bg-color: #f4f7f6;      /* 背景色（薄いグレー） */
-        --text-color: #333333;    /* 文字色 */
-        --card-bg: #ffffff;       /* カード背景（白） */
-    }
+    <style>
+      /* --- ねこねこ薬局 スタイルガイドの反映 --- */
+      :root {
+        --primary-color: #76b19d;    /* 薬局らしい清潔感のあるグリーン */
+        --accent-color: #e88d6a;     /* 猫のような温かみのあるオレンジ */
+        --bg-color: #F8F2F2;        /* 背景：温かみのある白 */
+        --text-color: #444;
+        --transition-base: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+      }
 
-    /* ページ全体 */
-    .home-container {
+      body {
         background-color: var(--bg-color);
         color: var(--text-color);
-        padding: 40px;
-        min-height: 90vh;
-        font-family: "Helvetica Neue", Arial, sans-serif;
-    }
+        /* フォントを丸ゴシック系に設定 */
+        font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4", "M PLUS Rounded 1c", sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    /* タイトル */
-    .page-title {
-        font-size: 32px;
-        font-weight: 700;
-        margin-bottom: 30px;
-        color: #2c3e50;
-        position: relative;
-        padding-left: 15px;
-    }
+      /* 英語タイトルなどに適用 */
+      .font-serif {
+        font-family: 'Libre Baskerville', serif;
+      }
 
-    /* タイトルの左の棒 */
-    .page-title::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 6px;
-        height: 30px;
-        background-color: var(--primary-color);
-        border-radius: 3px;
-    }
-
-    /* レイアウト枠組み */
-    .dashboard-wrapper {
-        display: flex;
-        gap: 30px;
-        height: 600px;
-    }
-
-    /* 左カラム */
-    .left-column {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* 右カラム */
-    .right-column {
-        flex: 2;
-        display: flex;
-        flex-direction: column;
-        gap: 30px;
-    }
-
-    /* --- カード共通スタイル --- */
-    a.content-box {
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        flex-direction: column;
-        
-        background-color: var(--card-bg);
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border: none;
-        overflow: hidden; /* はみ出し防止 */
-        cursor: pointer;
-    }
-
-    a.content-box:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    /* 見出しのデザイン */
-    .content-box h2 {
-        font-size: 18px;
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 15px; /* 下に少し余白 */
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+      /* 中央コンテンツエリア */
+      .center {
         width: 100%;
-    }
+        min-height: calc(100vh - 48px);
+        background: #ffffff;
+        max-width: 560px; /* 少し広めに調整 */
+        margin: 24px auto;
+        border-radius: 32px; /* 角丸をさらに強調 */
+        box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.05); /* 柔らかい影 */
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: var(--transition-base);
+      }
 
-    /* 高さ設定 */
-    .ranking-box { height: 100%; }
-    .notification-box { flex: 1; }
-    .mylist-box { flex: 1; }
+      /* ナビゲーション */
+      .navbar {
+        background-color: var(--primary-color) !important;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+      }
 
-    /* スマホ対応 */
-    @media (max-width: 768px) {
-        .dashboard-wrapper { flex-direction: column; height: auto; }
-        .content-box { min-height: 200px; }
-        .home-container { padding: 20px; }
-    }
-</style>
+      .navbar-brand {
+        font-family: 'Libre Baskerville', serif;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        font-size: 1.4rem;
+      }
 
-<div class="home-container">
-    <h1 class="page-title">ホーム</h1>
+      /* オフキャンバス（メニュー） */
+      .offcanvas {
+        border-radius: 0 32px 32px 0;
+        background-color: var(--primary-color) !important;
+        color: white;
+      }
 
-    <div class="dashboard-wrapper">
-        
-        <!-- 左カラム -->
-        <div class="left-column">
-            <a href="#" class="content-box ranking-box">
-                <h2>🏆 バッジ取得ランキング</h2>
-                
-                <!-- ▼▼▼ ここにランキングの中身を追加する ▼▼▼ -->
-                
-            </a>
+      .offcanvas-header {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 2rem 1.5rem;
+      }
+
+      .nav-link {
+        transition: var(--transition-base);
+        padding: 12px 1rem !important;
+        border-radius: 12px;
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+
+      .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateX(5px);
+      }
+
+      /* メインコンテンツ */
+      main {
+        flex: 1;
+        padding: 2.5rem 2rem !important;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        position: relative;
+        /* ねこねこ風の装飾を意識した見出し */
+      }
+
+      h1::after {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--accent-color);
+        margin-top: 8px;
+        border-radius: 2px;
+      }
+
+      p {
+        line-height: 1.8;
+        color: #666;
+      }
+
+      /* ボタンのカスタマイズ */
+      .btn-primary {
+        background-color: var(--primary-color);
+        border: none;
+        border-radius: 50px;
+        padding: 10px 24px;
+        transition: var(--transition-base);
+      }
+
+      .btn-primary:hover {
+        background-color: #5da08a;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(118, 177, 157, 0.3);
+      }
+
+      /* フッター */
+      footer {
+        background-color: #fcfcfc !important;
+        color: #aaa !important;
+        font-size: 0.8rem;
+        border-top: 1px solid #f0f0f0;
+        letter-spacing: 1px;
+      }
+
+      /* レスポンシブ調整 */
+      @media (max-width: 576px) {
+        .center {
+          margin: 0;
+          border-radius: 0;
+          min-height: 100vh;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="row justify-content-center">
+        <!-- 中央 -->
+        <div class="col-12 col-md-10 col-lg-6">
+          <div class="center">
+            {% load static %}
+
+            <!-- ナビバー -->
+            <nav class="navbar navbar-dark">
+              <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                  <button
+                    class="btn text-white p-0 me-3"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasMenu"
+                    aria-controls="offcanvasMenu"
+                  >
+                    <!-- ハンバーガーアイコンを少し太めに -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-list" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                  </button>
+
+                  <a class="navbar-brand mb-0" href="{% url 'index' %}">
+                    EngageUp
+                  </a>
+                </div>
+              </div>
+            </nav>
+
+            <!-- オフキャンバス -->
+            <div
+              class="offcanvas offcanvas-start"
+              tabindex="-1"
+              id="offcanvasMenu"
+              aria-labelledby="offcanvasMenuLabel"
+              style="width: 80%; max-width: 320px"
+            >
+              <div class="offcanvas-header">
+                <h5 class="offcanvas-title font-serif" id="offcanvasMenuLabel">
+                  Menu
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close btn-close-white"
+                  data-bs-dismiss="offcanvas"
+                  aria-label="Close"
+                ></button>
+              </div>
+
+              <div class="offcanvas-body">
+                <ul class="navbar-nav px-2">
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'constant_list' %}">定数一覧</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'user_list' %}">ユーザー一覧</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'enrollmentsHistory' %}">検定履歴</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'enrollmentsCreate' %}">検定問題作成</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white">動画・テキストアップ</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link text-white" href="#">お知らせ投稿</a>
+                  </li>
+                  <li class="nav-item mt-4 pt-4 border-top border-white border-opacity-25">
+                    <a class="nav-link text-white opacity-75" href="{% url 'accounts:logout' %}">ログアウト</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- メイン表示領域 -->
+            <main>
+              <h1>Staff研修管理システムへようこそ</h1>
+              <p>
+                EngageUpへログインいただきありがとうございます。<br>
+                左上のメニューより、ユーザーの管理や検定問題の作成、コンテンツのアップロードをスムーズに行うことができます。
+              </p>
+              
+              <div class="mt-4">
+                <button class="btn btn-primary">クイックスタート</button>
+              </div>
+            </main>
+
+            <!-- フッター -->
+            <footer class="text-center py-4">
+              <span class="font-serif">&copy; GroupG</span>
+            </footer>
+          </div>
         </div>
-
-        <!-- 右カラム -->
-        <div class="right-column">
-            
-            <!-- 上：復習通知 -->
-            <a href="#" class="content-box notification-box">
-                <h2>🔔 復習通知</h2>
-                
-                <!-- ▼▼▼ ここに復習通知の中身を追加する ▼▼▼ -->
-                
-            </a>
-
-            <!-- 下：マイリスト -->
-            <a href="#" class="content-box mylist-box">
-                <h2>📁 マイリスト</h2>
-                
-                <!-- ▼▼▼ ここにマイリストの中身を追加する ▼▼▼ -->
-                
-            </a>
-            
-        </div>
-
+      </div>
     </div>
-</div>
-{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
