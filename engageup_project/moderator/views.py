@@ -17,6 +17,10 @@ def moderator_badge(request):
     return render(request, "moderator/mo_badge.html")
 
 
+def moderator_news(request):
+    return render(request, "moderator/mo_news.html")
+
+
 # アカウントを作成する
 # アカウント作成のクラスを作成する
 

@@ -12,4 +12,7 @@ urlpatterns = [
     path(
         "moderator_badge/", views.moderator_badge, name="moderatorBadge"
     ),  # バッジ管理ページ
+    path(
+        "moderator_news/", views.moderator_news, name="moderatorNews"
+    ),  # お知らせ投稿ページ
 ]
