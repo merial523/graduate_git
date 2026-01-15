@@ -14,7 +14,7 @@ class Constant(models.Model):    #定数をまとめたテーブル
 
 class Course(models.Model): #講座
     subject = models.CharField(verbose_name="科目", max_length=50)  #科目
-    courseCount = models.IntegerField(verbose_name="講座数")    #講座数
+    course_count = models.IntegerField(verbose_name="講座数")    #講座数
     is_mylist = models.BooleanField(verbose_name="マイリストに入っているか",default=False)  #マイリストに入っているか
 
 
