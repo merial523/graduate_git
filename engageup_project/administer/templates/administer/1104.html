@@ -1,54 +1,91 @@
-<!-- visitor/templates/visitor/select_rank.html -->
-<h1>ランクを変更</h1>
+{% extends 'base.html' %}
 
-<form method="post">
-    {% csrf_token %}
+{% block content %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">ランクを変更</h2>
+        <a href="{% url 'administer_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-house"></i> 管理ホームへ戻る
+        </a>
+    </div>
+    
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
 
-    <table border="1">
-        <tr>
-            <th>選択</th>
-            <th>ランク</th>
-            <th>ユーザー名</th>
-            <th>メール</th>
-        </tr>
+            <div class="table-responsive">
+                <table class="table table-hover border">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center">選択</th>
+                            <th>ランク</th>
+                            <th>ユーザー名</th>
+                            <th>メール</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr {% if user == request.user %}class="table-light text-muted"{% endif %}>
+                            <td class="text-center">
+                                {% if user == request.user %}
+                                    <input type="checkbox" class="form-check-input" disabled>
+                                {% else %}
+                                    <input type="checkbox" name="selected_user" value="{{ user.pk }}" class="form-check-input">
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-secondary">{{ user.rank }}</span></td>
+                            <td>{{ user.username }}{% if user == request.user %} <span class="small">(あなた)</span>{% endif %}</td>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-        {% for user in users %}
-        <tr>
-            <td>
-                {% if user == request.user %}
-                    <!-- 自分自身は選択不可 -->
-                    <input type="checkbox" disabled>
-                {% else %}
-                    <input type="checkbox" name="selected_user" value="{{ user.pk }}">
-                {% endif %}
-            </td>
-            <td>{{ user.rank }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-      <div style="margin-top:20px;">
-      {% if is_paginated %}
-          {% if page_obj.has_previous %}
-              <a href="?page=1">« 最初</a>
-              <a href="?page={{ page_obj.previous_page_number }}">‹ 前</a>
-          {% endif %}
+            {% if is_paginated %}
+            <nav class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1">«</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">»</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
 
-          <span>
-              {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-          </span>
+            <div class="mt-5 p-4 bg-light rounded border text-center">
+                <h5 class="mb-4">変更後のランクを選択</h5>
+                
+                <div class="d-flex justify-content-center gap-4 mb-4">
+                    {% for radio in form.rank %}
+                        <div class="form-check">
+                            {{ radio.tag }}
+                            <label class="form-check-label fw-bold" for="{{ radio.id_for_label }}">
+                                {{ radio.choice_label }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
 
-          {% if page_obj.has_next %}
-              <a href="?page={{ page_obj.next_page_number }}">次 ›</a>
-              <a href="?page={{ page_obj.paginator.num_pages }}">最後 »</a>
-          {% endif %}
-      {% endif %}
-  </div>
+                <button type="submit" class="btn btn-success px-5 py-2 shadow-sm">
+                    選択したユーザーを更新
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
-    <h3>変更するランク</h3>
-    {{ form.rank }}
-
-    <br>
-    <button type="submit">保存</button>
-</form>
+<style>
+    /* 画像にあった「謎の枠線（ul/liの装飾）」を完全に消すための設定 */
+    .form-check input[type="radio"] {
+        margin-right: 5px;
+    }
+    /* Djangoが生成する不要なリストタグのドットを消す */
+    ul { list-style: none; padding: 0; }
+</style>
+{% endblock %}
