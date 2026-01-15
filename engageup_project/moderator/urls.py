@@ -9,9 +9,12 @@ urlpatterns = [
         views.SequentialUserCreateView.as_view(),
         name="moderator_create_user",
     ),  # ユーザーを作成する
-    path(
-        "moderator_badge/", views.moderator_badge, name="moderatorBadge"
-    ),  # バッジ管理ページ
+    # バッジ管理一覧画面
+    # reverse_lazy("moderator:moderatorBadge") と対応させる
+    path("badges/", views.BadgeManageView.as_view(), name="moderatorBadge"),
+    # バッジ編集画面
+    # <int:pk> はバッジのID（数字）が入ります。HTMLの url 'moderator:badge_edit' と対応
+    path("badges/<int:pk>/edit/", views.BadgeUpdateView.as_view(), name="badge_edit"),
     path(
         "moderator_news/", views.moderator_news, name="moderatorNews"
     ),  # お知らせ投稿ページ
