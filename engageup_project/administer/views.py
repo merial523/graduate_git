@@ -7,8 +7,14 @@ from .forms import UserRankForm,ConstantForm
 def administer_index(request):
     return render(request, "administer/administer_index.html")
 
-
 class UserListView(ListView):
+    model = User
+    context_object_name = 'users'
+    template_name = 'administer/ad_user_list.html'
+    paginate_by = 10  # ← スペル修正
+
+
+class UserRankListView(ListView):
     model = User
     context_object_name = 'users'
     template_name = 'administer/1104.html'

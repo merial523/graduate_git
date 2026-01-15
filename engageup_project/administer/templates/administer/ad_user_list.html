@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">ユーザーリスト</h2>
+        <a href="{% url 'administer_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-house"></i> 管理ホームへ戻る
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="table-responsive">
+                <table class="table table-hover border">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ランク</th>
+                            <th>ユーザー名</th>
+                            <th>メール</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ user.rank }}</span></td>
+                            <td>{{ user.username }}{% if user == request.user %} <span class="small">(あなた)</span>{% endif %}</td>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+            <nav class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1">«</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">»</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            <a class="nav-link text-white" href="{% url 'user_list'%}">ランク変更</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* 画像にあった「謎の枠線（ul/liの装飾）」を完全に消すための設定 */
+    .form-check input[type="radio"] {
+        margin-right: 5px;
+    }
+    /* Djangoが生成する不要なリストタグのドットを消す */
+    ul { list-style: none; padding: 0; }
+</style>
+{% endblock %}
