@@ -1,10 +1,11 @@
 from django.shortcuts import render
-from django.views.generic import FormView
+from django.views.generic import FormView, ListView, UpdateView
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.utils.crypto import get_random_string
 from main.models import User
 from .forms import SequentialUserCreateForm
+from main.models import Badge
 
 # Create your views here.
 
@@ -82,3 +83,22 @@ class SequentialUserCreateView(FormView):
             User.objects.bulk_create(users)
 
         return super().form_valid(form)
+
+
+class BadgeManageView(ListView):
+    model = Badge
+    template_name = "moderator/mo_badge.html"
+    context_object_name = "badges"
+
+    def get_queryset(self):
+        query = self.request.GET.get("q")
+        if query:
+            return Badge.objects.filter(name__icontains=query)
+        return Badge.objects.all()
+
+
+class BadgeUpdateView(UpdateView):
+    model = Badge
+    fields = ["name", "icon", "exam"]
+    template_name = "moderator/mo_badge_update.html"
+    success_url = reverse_lazy("moderator:moderatorBadge")

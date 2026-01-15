@@ -1,24 +1,68 @@
 {% extends "moderator/moderator_base.html" %}
-{% load static %}
 
 {% block content %}
-<!-- main/templates/main/badge_dummy.html -->
-<h2>バッジ管理画面（仮）</h2>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>バッジ管理一覧</h2>
+    </div>
 
-<div style="border: 1px solid #ccc; padding: 20px;">
-    <h3>新しいバッジを作る</h3>
-    <p>バッジ名：<input type="text" placeholder="例：ゴールドバッジ"></p>
-    <p>画像：<input type="file"></p>
-    <button type="button">保存（まだ動きません）</button>
+    <!-- 検索フォーム -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" action="" class="row g-3">
+                <div class="col-auto">
+                    <input type="text" name="q" class="form-control" placeholder="バッジ名で検索..." value="{{ request.GET.q }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">検索</button>
+                    {% if request.GET.q %}
+                        <a href="{% url 'moderator:moderatorBadge' %}" class="btn btn-outline-secondary">クリア</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- バッジ一覧テーブル -->
+    <div class="table-responsive shadow-sm">
+        <table class="table table-hover align-middle border">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 100px;">画像</th>
+                    <th>バッジ名</th>
+                    <th>紐付いている検定</th>
+                    <th style="width: 120px;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for badge in badges %}
+                <tr>
+                    <td>
+                        {% if badge.icon %}
+                            <img src="{{ badge.icon.url }}" alt="{{ badge.name }}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: contain;">
+                        {% else %}
+                            <span class="text-muted" style="font-size: 0.8rem;">なし</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ badge.name }}</strong></td>
+                    <td>{{ badge.exam.title }}</td>
+                    <td>
+                        <a href="{% url 'moderator:badge_edit' badge.pk %}" class="btn btn-sm btn-outline-info">
+                            編集する
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">バッジが見つかりません。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <a href="/" class="btn btn-link text-secondary">← ホームへ戻る</a>
+    </div>
 </div>
-
-<hr>
-
-<h3>登録済みバッジ一覧（仮）</h3>
-<ul>
-    <li>新人バッジ <button>編集</button> <button>削除</button></li>
-    <li>1級合格バッジ <button>編集</button> <button>削除</button></li>
-</ul>
-
-<a href="/">ホームへ戻る</a>
 {% endblock %}

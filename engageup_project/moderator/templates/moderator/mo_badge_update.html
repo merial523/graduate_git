@@ -1,0 +1,55 @@
+{% extends "moderator/moderator_base.html" %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="mb-4">
+        <a href="{% url 'moderator:moderatorBadge' %}" class="btn btn-sm btn-outline-secondary">← 一覧に戻る</a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">バッジ情報の編集</h2>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-4">名称、画像、または紐付いている検定を変更できます。</p>
+
+            <!-- enctype="multipart/form-data" は画像を扱うために必須です -->
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="badge-form">
+                    {{ form.as_p }}
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        変更を保存する
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* フォームの見た目を少し整えるスタイル */
+    .badge-form p {
+        margin-bottom: 1.5rem;
+    }
+    .badge-form input[type="text"], 
+    .badge-form select, 
+    .badge-form textarea {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+</style>
+{% endblock %}
