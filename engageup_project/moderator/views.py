@@ -39,16 +39,28 @@ from .forms import SequentialUserCreateForm
 class SequentialUserCreateView(FormView):
     template_name = "moderator/mo_create_user.html"
     form_class = SequentialUserCreateForm
-    success_url = reverse_lazy("moderator:moderator_index")
 
     PASSWORD_LENGTH = 12
     PASSWORD_CHARS = (
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
     )
 
+    def get_success_url(self):
+        rank = self.request.user.rank
+
+        if rank == "administer":
+            return reverse_lazy("administer:administer_index")
+        elif rank == "moderator":
+            return reverse_lazy("moderator:moderator_index")
+        elif rank == "staff":
+            return reverse_lazy("staff:staff_index")
+
+        return reverse_lazy("accounts:home")
+
     def generate_password(self):
         return get_random_string(
-            length=self.PASSWORD_LENGTH, allowed_chars=self.PASSWORD_CHARS
+            length=self.PASSWORD_LENGTH,
+            allowed_chars=self.PASSWORD_CHARS
         )
 
     def form_valid(self, form):
@@ -70,14 +82,11 @@ class SequentialUserCreateView(FormView):
                 return self.form_invalid(form)
 
             raw_password = self.generate_password()
-
             user = User(username=username, email=email, rank=rank)
             user.set_password(raw_password)
 
-            # 🔑 後で表示・保存したい場合に一時的に保持
             user._raw_password = raw_password
             users.append(user)
-            # ここにメールアドレスに初期パスワードを付けて送信する
 
         with transaction.atomic():
             User.objects.bulk_create(users)

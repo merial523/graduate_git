@@ -6,32 +6,35 @@ from .forms import UserRankForm,ConstantForm
 
 def administer_index(request):
     return render(request, "administer/administer_index.html")
-
 class UserListView(ListView):
     model = User
     template_name = 'administer/ad_user_list.html'
     context_object_name = 'users'
     paginate_by = 10
 
-    def get_queryset(self):     #ユーザー一覧を表示
+    def get_queryset(self):
         show = self.request.GET.get('show')
 
-        if show == 'all':   #全ユーザー表示
+        if show == 'all':
             return User.objects.all()
-        else:               #アクティブのユーザーだけを表示
-            return User.objects.filter(is_active=True)
+        return User.objects.filter(is_active=True)
 
-    def get_context_data(self, **kwargs):   #すべてのユーザーを表示する
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['show_all'] = self.request.GET.get('show') == 'all'
         return context
 
-    def post(self, request, *args, **kwargs):   #アカウントの論理削除
+    def post(self, request, *args, **kwargs):
         action = request.POST.get('action')
-        user_ids = request.POST.getlist('user_ids')
+        selected_users = request.POST.getlist('selected_user')
 
-        if action == 'deactivate' and user_ids:
-            User.objects.filter(id__in=user_ids).update(is_active=False)
+        if action == 'soft_delete' and selected_users:
+            User.objects.filter(
+                pk__in=selected_users,
+                is_active=True
+            ).exclude(
+                pk=request.user.pk
+            ).update(is_active=False)
 
         return redirect(request.path)
 
@@ -63,7 +66,7 @@ class UserRankListView(ListView):
                 user.rank = new_rank
                 user.save()
 
-        return redirect('select_rank')
+        return redirect('administer:select_rank')
 
 
 class ConstantListView(ListView):

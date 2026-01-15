@@ -22,12 +22,11 @@
   </div>
   <div class="offcanvas-body" style="background-color: #28a745; color:white;">
     <ul class="navbar-nav">
-      <li class="nav-item"><a class="nav-link text-white" href="{% url 'constant_list'%}">定数一覧</a></li>
-      <li class="nav-item"><a class="nav-link text-white" href="{% url 'user_list'%}">ユーザー一覧</a></li>
-      <li class="nav-item"><a class="nav-link text-white" href="{% url 'enrollmentsHistory'%}">検定履歴</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="{% url 'administer:constant_list'%}">定数一覧</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="{% url 'administer:user_list'%}">ユーザー一覧</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="{% url 'enrollmentsCreate'%}">検定問題作成</a></li>
-      <li class="nav-item"><a class="nav-link text-white" href="{% url 'coursesTextUpload'%}">動画・テキストアップロード</a></li>
-      <li class="nav-item"><a class="nav-link text-white" href="{% url 'moderator:moderatorNews'%}">お知らせ投稿</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="{% url 'courses:coursesTextUpload'%}">動画・テキストアップロード</a></li>
+      <li class="nav-item"><a class="nav-link text-white" href="">お知らせ投稿</a></li>
       <li class="nav-item"><a class="nav-link text-white" href="{% url 'accounts:logout'%}">ログアウト</a></li>
     </ul>
   </div>
