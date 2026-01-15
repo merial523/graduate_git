@@ -6,25 +6,18 @@
 
     <table border="1">
         <tr>
-            <th>選択</th>
-            <th>ランク</th>
-            <th>ユーザー名</th>
-            <th>メール</th>
+            <th>定数名</th>
+            <th>値</th>
         </tr>
 
-        {% for user in users %}
+        {% for constant in constants %}
         <tr>
-            <td>
-                {% if user == request.user %}
-                    <!-- 自分自身は選択不可 -->
-                    <input type="checkbox" disabled>
-                {% else %}
-                    <input type="checkbox" name="selected_user" value="{{ user.pk }}">
-                {% endif %}
-            </td>
-            <td>{{ user.rank }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
+            <td>会社コード</td>
+            <td>{{ constant.company_code }}</td>
+        </tr>
+        <tr>
+            <td>アドレス</td>
+            <td>{{ constant.address }}</td>
         </tr>
         {% endfor %}
     </table>
@@ -33,7 +26,7 @@
           {% if page_obj.has_previous %}
               <a href="?page=1">« 最初</a>
               <a href="?page={{ page_obj.previous_page_number }}">‹ 前</a>
-          {% endif %}
+        {% endif %}
 
           <span>
               {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
@@ -46,9 +39,6 @@
       {% endif %}
   </div>
 
-    <h3>変更するランク</h3>
-    {{ form.rank }}
-
     <br>
-    <button type="submit">保存</button>
+    <a class="nav-link text-white" href="{% url 'constant_update'%}">編集</a>
 </form>

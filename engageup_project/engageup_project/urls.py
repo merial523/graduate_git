@@ -26,5 +26,6 @@ urlpatterns = [
     path("courses/", include("courses.urls")),  # トップページは Courses アプリに委譲
     path("profile/", include("prof.urls")),# トップページは Profile アプリに委譲
     path("mylist/", include("mylist.urls")),  # トップページは Mylist アプリに委譲
+    path("moderator/", include("moderator.urls", namespace="moderator")),#トップページはmoderatorアプリに委譲
     path('accounts/', include('accounts.urls', namespace='accounts')),  # トップページはaccountsに譲渡
 ]

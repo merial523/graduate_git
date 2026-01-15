@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'common',
     'prof',
     'mylist',
-    'main',
+    'main.apps.MainConfig',
     'administer',
     'moderator',
     'visitor',

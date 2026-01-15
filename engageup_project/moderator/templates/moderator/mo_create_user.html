@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>アカウント一括作成</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div style="color:red;">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>{{ form.company_code.label }}</th>
+            <td>
+                {{ form.company_code }}
+                {{ form.company_code.errors }}
+            </td>
+        </tr>
+
+        <tr>
+            <th>{{ form.start_number.label }}</th>
+            <td>
+                {{ form.start_number }}
+                {{ form.start_number.errors }}
+            </td>
+        </tr>
+
+        <tr>
+            <th>{{ form.count.label }}</th>
+            <td>
+                {{ form.count }}
+                {{ form.count.errors }}
+            </td>
+        </tr>
+
+        <tr>
+            <th>{{ form.rank.label }}</th>
+            <td>
+                {{ form.rank }}
+                {{ form.rank.errors }}
+            </td>
+        </tr>
+    </table>
+
+    <br>
+    <button type="submit">ユーザー作成</button>
+</form>
+{% endblock %}

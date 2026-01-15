@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
 
+app_name = 'moderator'
 urlpatterns = [
-    path("", views.moderator_indexindex, name="moderator_index"),  # トップページ用
+    path("", views.moderator_index, name="moderator_index"),  # トップページ用
+    path("create-user",views.SequentialUserCreateView.as_view(),name = "moderator_create_user")#ユーザーを作成する
+
 ]

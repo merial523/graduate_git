@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
-from django.views.generic import ListView
-from main.models import User
-from .forms import UserRankForm
+from django.urls import reverse_lazy
+from django.views.generic import ListView,UpdateView
+from main.models import User,Constant
+from .forms import UserRankForm,ConstantForm
 
 def administer_index(request):
     return render(request, "administer/administer_index.html")
@@ -36,3 +37,19 @@ class UserListView(ListView):
                 user.save()
 
         return redirect('select_rank')
+
+
+class ConstantListView(ListView):
+    model = Constant
+    context_object_name = 'constants'
+    template_name = 'administer/ad_constant_list.html'
+    paginate_by = 10  # ← スペル修正
+
+class ConstantUpdateView(UpdateView):
+    model = Constant
+    form_class = ConstantForm
+    template_name = 'administer/ad_constant_update.html'
+    success_url = reverse_lazy('constant_list')
+
+    def get_object(self, queryset=None):
+        return Constant.objects.first()
