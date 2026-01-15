@@ -9,10 +9,31 @@ def administer_index(request):
 
 class UserListView(ListView):
     model = User
-    context_object_name = 'users'
     template_name = 'administer/ad_user_list.html'
-    paginate_by = 10  # ← スペル修正
+    context_object_name = 'users'
+    paginate_by = 10
 
+    def get_queryset(self):     #ユーザー一覧を表示
+        show = self.request.GET.get('show')
+
+        if show == 'all':   #全ユーザー表示
+            return User.objects.all()
+        else:               #アクティブのユーザーだけを表示
+            return User.objects.filter(is_active=True)
+
+    def get_context_data(self, **kwargs):   #すべてのユーザーを表示する
+        context = super().get_context_data(**kwargs)
+        context['show_all'] = self.request.GET.get('show') == 'all'
+        return context
+
+    def post(self, request, *args, **kwargs):   #アカウントの論理削除
+        action = request.POST.get('action')
+        user_ids = request.POST.getlist('user_ids')
+
+        if action == 'deactivate' and user_ids:
+            User.objects.filter(id__in=user_ids).update(is_active=False)
+
+        return redirect(request.path)
 
 class UserRankListView(ListView):
     model = User
