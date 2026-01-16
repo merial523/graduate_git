@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>検定一覧（管理パネル）</h2>
+        <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary">+ 新しい検定を作成</a>
+    </div>
+
+    <table class="table table-hover border shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>検定名</th>
+                <th>問題数</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exam in exams %}
+            <tr>
+                <td><strong>{{ exam.title }}</strong></td>
+                <td>{{ exam.questions.count }} 問</td>
+                <td>
+                    <a href="{% url 'enrollments:add_question' exam.id %}" class="btn btn-sm btn-info text-white">問題を登録</a>
+                    <!-- バッジ編集（moderatorアプリにある場合） -->
+                    <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ編集</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">検定が登録されていません。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

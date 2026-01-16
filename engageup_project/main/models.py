@@ -104,9 +104,14 @@ class User(AbstractUser):  # ユーザーのランク
 
 class Exam(models.Model):  # 検定
     title = models.CharField(verbose_name="検定名", max_length=100)
+    description = models.TextField(verbose_name="説明・研修テキスト", blank=True) 
+    passing_score = models.IntegerField(verbose_name="合格基準点", default=80) # 自動採点に必要
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日") # 管理用
+
 
     def __str__(self):
         return self.title
+    
 
     def save(self, *args, **kwargs):
         # 新規作成かどうかの判定
@@ -118,6 +123,22 @@ class Exam(models.Model):  # 検定
             # Badgeクラスはこの下にありますが、メソッドの中なので呼び出せます
             Badge.objects.create(exam=self, name=f"{self.title}合格バッジ")
 
+class Question(models.Model):
+    # どの検定の問題か
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="questions")
+    text = models.TextField(verbose_name="問題文")
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.text[:20]}"
+
+class Choice(models.Model):
+    # どの問題の選択肢か
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
+    text = models.CharField(verbose_name="選択肢の内容", max_length=200)
+    is_correct = models.BooleanField(verbose_name="これが正解か", default=False)
+
+    def __str__(self):
+        return self.text
 
 class Badge(models.Model):  # バッジ
     exam = models.OneToOneField("Exam", on_delete=models.CASCADE, related_name="badge")
@@ -128,3 +149,4 @@ class Badge(models.Model):  # バッジ
 
     def __str__(self):
         return self.name
+    
