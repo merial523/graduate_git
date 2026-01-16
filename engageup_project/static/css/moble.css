@@ -1,0 +1,157 @@
+/* --- スタイルガイド --- */
+:root {
+  --primary-color: #76b19d; /* 清潔感のあるグリーン */
+  --accent-color: #e88d6a; /* 温かみのあるオレンジ */
+  --bg-color: #f8f2f2; /* 背景色 */
+  --text-color: #444;
+  --card-bg: #ffffff;
+  --transition-base: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
+    "M PLUS Rounded 1c", sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif {
+  font-family: "Libre Baskerville", serif;
+}
+
+.center {
+  width: 100%;
+  min-height: calc(100vh - 48px);
+  background: #ffffff;
+  max-width: 600px; /* ダッシュボード用に少し広めに調整 */
+  margin: 24px auto;
+  border-radius: 32px;
+  box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition-base);
+}
+
+/* ナビゲーション */
+.navbar {
+  background-color: var(--primary-color) !important;
+  padding: 1rem 1.5rem;
+}
+.navbar-brand {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+/* メニュー */
+.offcanvas {
+  background-color: var(--primary-color) !important;
+  border-radius: 0 32px 32px 0;
+}
+.nav-link {
+  transition: var(--transition-base);
+  padding: 12px 1rem !important;
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(5px);
+}
+
+/* --- メインコンテンツ（ダッシュボード） --- */
+main {
+  flex: 1;
+  padding: 2rem 1.5rem !important;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-left: 15px;
+}
+
+.page-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 24px;
+  background-color: var(--accent-color);
+  border-radius: 3px;
+}
+
+.dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* カード共通スタイル */
+a.content-box {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  border-radius: 24px; /* 丸みを強く */
+  padding: 20px;
+  border: 1px solid #f0efef;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: var(--transition-base);
+  cursor: pointer;
+}
+
+a.content-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color);
+}
+
+.content-box h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px dashed #f0f0f0; /* 点線で柔らかい印象に */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.box-placeholder {
+  color: #aaa;
+  font-size: 0.9rem;
+  font-style: italic;
+  padding: 10px 0;
+}
+
+/* フッター */
+footer {
+  background-color: #fafafa !important;
+  color: #bbb !important;
+  font-size: 0.8rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* レスポンシブ調整（PC時のみ2カラムにする場合） */
+@media (min-width: 992px) {
+  /* 今回はcenter幅が560px〜600px固定のため、基本は1カラムが綺麗です */
+}
+
+@media (max-width: 576px) {
+  .center {
+    margin: 0;
+    border-radius: 0;
+  }
+}
