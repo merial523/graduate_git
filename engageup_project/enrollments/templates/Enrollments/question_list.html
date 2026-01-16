@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'enrollments:exam_list' %}">検定一覧</a></li>
+            <li class="breadcrumb-item active">{{ exam.title }} の問題管理</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ exam.title }} - 問題一覧</h2>
+        <a href="{% url 'enrollments:add_question' exam.id %}" class="btn btn-success">＋新規問題を追加</a>
+    </div>
+
+    {% for question in questions %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>問 {{ forloop.counter }}</strong>
+            <div>
+                <a href="{% url 'enrollments:edit_question' question.id %}" class="btn btn-sm btn-primary">編集</a>
+                <!-- 削除ボタン（簡易版） -->
+                <form action="{% url 'enrollments:delete_question' question.id %}" method="post" style="display:inline;" onsubmit="return confirm('本当に削除しますか？');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text fw-bold">{{ question.text }}</p>
+            <ul class="list-group list-group-flush">
+                {% for choice in question.choices.all %}
+                <li class="list-group-item {% if choice.is_correct %}list-group-item-success{% endif %}">
+                    {{ choice.text }} {% if choice.is_correct %}<span class="badge bg-success ms-2">正解</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">まだ問題が登録されていません。</div>
+    {% endfor %}
+</div>
+{% endblock %}

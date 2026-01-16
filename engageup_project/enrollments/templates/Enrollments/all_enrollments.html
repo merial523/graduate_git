@@ -22,10 +22,14 @@
                 <td><strong>{{ exam.title }}</strong></td>
                 <td>{{ exam.questions.count }} 問</td>
                 <td>
-                    <a href="{% url 'enrollments:add_question' exam.id %}" class="btn btn-sm btn-info text-white">問題を登録</a>
                     <!-- バッジ編集（moderatorアプリにある場合） -->
                     <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ編集</a>
+                    <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">
+                    問題を確認・管理 ({{ exam.questions.count }}問)
+                    </a>
                 </td>
+                
+                
             </tr>
             {% empty %}
             <tr>
