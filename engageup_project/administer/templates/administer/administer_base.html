@@ -14,57 +14,14 @@
       rel="stylesheet"
     />
 
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
 
-    <style>
-      /* --- ねこねこ風スタイル（色とフォントのみ） --- */
-      :root {
-        --primary-color: #76b19d; /* 清潔感のあるセージグリーン */
-        --bg-color: #f8f2f2;      /* 温かみのある背景色 */
-        --text-color: #444444;    /* 柔らかい黒 */
-        --transition-smooth: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
-      }
-
-      body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        /* 丸ゴシック系フォントを設定 */
-        font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
-          "M PLUS Rounded 1c", sans-serif;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      /* 英語ロゴ等 */
-      .navbar-brand {
-        font-family: "Libre Baskerville", serif;
-        font-weight: 700;
-      }
-
-      /* ナビゲーション・フッター・メニューの背景色を統一 */
-      .bg-custom-theme {
-        background-color: var(--primary-color) !important;
-      }
-
-      /* ホバー時の滑らかな動き */
-      .nav-link,
-      .btn {
-        transition: var(--transition-smooth);
-      }
-
-      .nav-link:hover {
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-      }
-
-      /* オフキャンバスの閉じるボタンの色調整 */
-      .btn-close {
-        filter: invert(1) grayscale(100%) brightness(200%);
-      }
-    </style>
+    <!-- original CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   </head>
   <body>
     <!-- ヘッダー部分 -->
@@ -124,7 +81,9 @@
             >
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white" href="{% url 'enrollments:exam_list'%}"
+            <a
+              class="nav-link text-white"
+              href="{% url 'enrollments:exam_list'%}"
               >検定問題作成</a
             >
           </li>
@@ -135,6 +94,35 @@
               >動画・テキストアップロード</a
             >
           </li>
+          <!-- moderatorも利用可能 -->
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'courses:courses_list'%}"
+              >コース一覧</a
+            >
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'moderator:moderator_create_user'%}"
+              >アカウント作成</a
+            >
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'enrollments:enrollmentsIndex'%}"
+              >検定</a
+            >
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link text-white"
+              href="{% url 'moderator:moderatorBadge'%}"
+              >バッジ管理</a
+            >
+          </li>
           <li class="nav-item">
             <a class="nav-link text-white" href="">お知らせ投稿</a>
           </li>
@@ -142,7 +130,8 @@
             class="nav-item mt-4 pt-4 border-top border-white border-opacity-25"
           >
             <a
-              class="nav-link text-white opacity-75"
+              class="nav-link opacity-75"
+              style="color: #e86a6a"
               href="{% url 'accounts:logout'%}"
               >ログアウト</a
             >

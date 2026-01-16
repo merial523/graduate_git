@@ -1,0 +1,43 @@
+/* --- ねこねこ風スタイル（色とフォントのみ） --- */
+:root {
+  --primary-color: #76b19d; /* 清潔感のあるセージグリーン */
+  --bg-color: #f8f2f2; /* 温かみのある背景色 */
+  --text-color: #444444; /* 柔らかい黒 */
+  --transition-smooth: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  /* 丸ゴシック系フォントを設定 */
+  font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
+    "M PLUS Rounded 1c", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 英語ロゴ等 */
+.navbar-brand {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+}
+
+/* ナビゲーション・フッター・メニューの背景色を統一 */
+.bg-custom-theme {
+  background-color: var(--primary-color) !important;
+}
+
+/* ホバー時の滑らかな動き */
+.nav-link,
+.btn {
+  transition: var(--transition-smooth);
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+/* オフキャンバスの閉じるボタンの色調整 */
+.btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
