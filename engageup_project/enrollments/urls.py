@@ -17,4 +17,14 @@ urlpatterns = [
     # 問題追加
     path('exams/<int:exam_id>/question/add/', views.add_question, name='add_question'),
 
+    # 特定の検定の問題一覧を見る
+    path('exam/<int:exam_id>/questions/', views.question_list, name='question_list'),
+    
+    # 特定の問題を編集する
+    path('question/<int:question_id>/edit/', views.edit_question, name='edit_question'),
+    
+    # 特定の問題を削除する（おまけ）
+    path('question/<int:question_id>/delete/', views.delete_question, name='delete_question'),
+
+
 ]

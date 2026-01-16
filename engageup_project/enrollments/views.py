@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView
 from django.urls import reverse_lazy
 from main.models import Exam, Question, Badge 
-from .forms import QuestionForm, ChoiceFormSet
+from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet
 
 
 def enrollments_index(request):
@@ -68,4 +68,52 @@ def add_question(request, exam_id):
         'exam': exam,
         'form': form,
         'formset': formset,
+        'exam_id': exam_id,
     })
+
+    # --- 1. 問題の一覧を表示する ---
+def question_list(request, exam_id):
+    exam = get_object_or_404(Exam, pk=exam_id)
+    # 紐付いている問題をすべて取得（related_name='questions' を活用）
+    questions = exam.questions.all() 
+    return render(request, 'enrollments/question_list.html', {
+        'exam': exam,
+        'questions': questions,
+    })
+
+# --- 2. 既存の問題を編集する ---
+def edit_question(request, question_id):
+    # 修正したい問題を特定
+    question = get_object_or_404(Question, pk=question_id)
+    exam = question.exam 
+
+    if request.method == "POST":
+        # ★ instance=question を渡すことで、新規作成ではなく「このデータを更新」になる
+        form = QuestionForm(request.POST, instance=question)
+        formset = EditChoiceFormSet(request.POST, instance=question)
+        
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            # 編集が終わったら、その検定の問題一覧画面に戻る
+            return redirect('enrollments:question_list', exam_id=exam.id)
+    else:
+        # ★ 既存のデータをフォームに初期値として入れる
+        form = QuestionForm(instance=question)
+        formset = EditChoiceFormSet(instance=question)
+        
+    return render(request, 'enrollments/question_form.html', { # 登録と同じテンプレートを使い回せます
+        'exam': exam,
+        'form': form,
+        'formset': formset,
+        'exam_id': exam.id,
+        'is_edit': True, # テンプレート側で「編集」と表示を切り替えるためのフラグ
+    })
+
+# --- 3. 問題を削除する ---
+def delete_question(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    exam_id = question.exam.id
+    if request.method == "POST":
+        question.delete()
+    return redirect('enrollments:question_list', exam_id=exam_id)
