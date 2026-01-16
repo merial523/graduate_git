@@ -1,44 +1,84 @@
-<!-- visitor/templates/visitor/select_rank.html -->
-<h1>ランクを変更</h1>
+{% extends 'administer/administer_base.html' %}
+{% load static %}
 
-<form method="post">
-    {% csrf_token %}
+{% block content %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0 text-dark">
+            <i class="bi bi-info-circle-fill me-2 text-success"></i>システム定数一覧
+        </h2>
+        <a href="{% url 'administer:administer_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-house"></i> 管理ホーム
+        </a>
+    </div>
 
-    <table border="1">
-        <tr>
-            <th>定数名</th>
-            <th>値</th>
-        </tr>
+    <div class="card-body p-4">
+        <div class="alert alert-light border-start border-4 border-success mb-4">
+            システム全体で使用される基本設定値を確認できます。
+        </div>
 
-        {% for constant in constants %}
-        <tr>
-            <td>会社コード</td>
-            <td>{{ constant.company_code }}</td>
-        </tr>
-        <tr>
-            <td>アドレス</td>
-            <td>{{ constant.address }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-      <div style="margin-top:20px;">
-      {% if is_paginated %}
-          {% if page_obj.has_previous %}
-              <a href="?page=1">« 最初</a>
-              <a href="?page={{ page_obj.previous_page_number }}">‹ 前</a>
+        <div class="table-responsive">
+            <table class="table table-hover border align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%;">設定項目</th>
+                        <th>現在の設定値</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for constant in constants %}
+                    <tr>
+                        <td class="fw-bold bg-light">会社コード</td>
+                        <td class="font-monospace text-primary">{{ constant.company_code }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">アドレス</td>
+                        <td>{{ constant.address }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center text-muted py-4">データが登録されていません。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mt-4">
+            <ul class="pagination pagination-sm justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; 最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">前へ</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ paginator.num_pages }}">最後 &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
         {% endif %}
 
-          <span>
-              {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-          </span>
+        <hr class="my-4">
 
-          {% if page_obj.has_next %}
-              <a href="?page={{ page_obj.next_page_number }}">次 ›</a>
-              <a href="?page={{ page_obj.paginator.num_pages }}">最後 »</a>
-          {% endif %}
-      {% endif %}
-  </div>
-
-    <br>
-    <a class="nav-link text-white" href="{% url 'administer:constant_update'%}">編集</a>
-</form>
+        <div class="d-flex justify-content-end">
+            <a href="{% url 'administer:constant_update' %}" class="btn btn-success px-5 shadow-sm py-2 fw-bold">
+                <i class="bi bi-pencil-square me-2"></i>設定を編集する
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
