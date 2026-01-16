@@ -1,98 +1,110 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>コース一覧</title>
-</head>
-<body>
+{% extends 'moderator/moderator_base.html' %}
 
-<h1>コース一覧</h1>
+{% block content %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h2 class="h5 mb-0">コース一覧</h2>
+        <div class="d-flex gap-2">
+            <a href="{% url 'courses:courses_create' %}" class="btn btn-primary btn-sm shadow-sm">
+                <i class="bi bi-plus-lg"></i> コース作成
+            </a>
+            <a href="{% url 'administer:administer_index' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-house"></i> 管理ホーム
+            </a>
+        </div>
+    </div>
 
-<!-- 操作ボタン -->
-<div>
-    <a href="{% url 'courses:courses_create' %}">＋ コース作成</a>
-    |
-    <a href="{% url 'courses:courses_list' %}">有効コース</a>
-    |
-    <a href="{% url 'courses:courses_list' %}?show=deleted">削除済みコース</a>
-</div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="table-responsive">
+                <table class="table table-hover border align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" style="width: 50px;">選択</th>
+                            <th>ID</th>
+                            <th>科目</th>
+                            <th>回数</th>
+                            <th>状態</th>
+                            <th class="text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        {# 削除済み（is_active=False）の場合は行を暗くする #}
+                        <tr class="{% if not course.is_active %}table-secondary text-muted opacity-75{% endif %}">
+                            <td class="text-center">
+                                <input type="checkbox" name="course_ids" value="{{ course.id }}" class="form-check-input">
+                            </td>
+                            <td>{{ course.id }}</td>
+                            <td class="fw-bold">{{ course.subject }}</td>
+                            <td>{{ course.courseCount }}</td>
+                            <td>
+                                {% if course.is_active %}
+                                    <span class="badge bg-success">有効</span>
+                                {% else %}
+                                    <span class="badge bg-dark">削除済み</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if course.is_active %}
+                                    <a href="{% url 'courses:courses_update' course.id %}" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-pencil"></i> 変更
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">コースが登録されていません。</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-<hr>
-
-<form method="post">
-    {% csrf_token %}
-
-    <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-            <tr>
-                <th>選択</th>
-                <th>ID</th>
-                <th>科目</th>
-                <th>回数</th>
-                <th>状態</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for course in courses %}
-            <tr>
-                <td>
-                    <input type="checkbox" name="course_ids" value="{{ course.id }}">
-                </td>
-                <td>{{ course.id }}</td>
-                <td>{{ course.subject }}</td>
-                <td>{{ course.courseCount }}</td>
-                <td>
-                    {% if course.is_active %}
-                        有効
-                    {% else %}
-                        削除済み
+            {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">前へ</a>
+                        </li>
                     {% endif %}
-                </td>
-                <td>
-                    {% if course.is_active %}
-                        <a href="{% url 'courses:courses_update' course.id %}">
-                            変更
-                        </a>
-                    {% else %}
-                        -
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">次へ</a>
+                        </li>
                     {% endif %}
-                </td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="6">コースがありません</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+                </ul>
+            </nav>
+            {% endif %}
 
-    <br>
-
-    <!-- 一括操作 -->
-    <button type="submit" name="action" value="delete">
-        選択したコースを削除
-    </button>
-
-    <button type="submit" name="action" value="restore">
-        選択したコースを復元
-    </button>
-</form>
-
-<hr>
-
-<!-- ページネーション -->
-<div>
-    {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}">前へ</a>
-    {% endif %}
-
-    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">次へ</a>
-    {% endif %}
+            <div class="d-flex justify-content-between gap-2 mt-4 pt-3 border-top">
+                <div class="d-flex gap-2 flex-fill">
+                    <button type="submit" name="action" value="delete" class="btn btn-danger flex-fill shadow-sm py-2" onclick="return confirm('選択したコースを削除（無効化）しますか？')">
+                        <i class="bi bi-trash"></i> 選択削除
+                    </button>
+                    <button type="submit" name="action" value="restore" class="btn btn-warning flex-fill shadow-sm py-2" onclick="return confirm('選択したコースを復元しますか？')">
+                        <i class="bi bi-arrow-counterclockwise"></i> 選択復元
+                    </button>
+                </div>
+                <div class="d-flex gap-2 flex-fill">
+                    <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-success flex-fill shadow-sm py-2">
+                        有効コース
+                    </a>
+                    <a href="{% url 'courses:courses_list' %}?show=deleted" class="btn btn-outline-dark flex-fill shadow-sm py-2">
+                        削除済みコース
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

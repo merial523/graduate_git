@@ -1,53 +1,100 @@
-{% extends "base.html" %}
+{% extends 'moderator/moderator_base.html' %}
 {% load static %}
 
 {% block content %}
-<h2>アカウント一括作成</h2>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0 text-dark">
+                    <i class="bi bi-person-plus-fill me-2 text-success"></i>アカウント一括作成
+                </h2>
+                <a href="{% url 'administer:user_list' %}" class="btn btn-outline-secondary btn-sm">
+                    戻る
+                </a>
+            </div>
 
-<form method="post">
-    {% csrf_token %}
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
 
-    {% if form.non_field_errors %}
-        <div style="color:red;">
-            {{ form.non_field_errors }}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger shadow-sm">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ form.company_code.label }}</label>
+                        {{ form.company_code }}
+                        {% if form.company_code.errors %}
+                            <div class="text-danger small mt-1">{{ form.company_code.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ form.start_number.label }}</label>
+                            {{ form.start_number }}
+                            {% if form.start_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.start_number.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ form.count.label }}</label>
+                            {{ form.count }}
+                            {% if form.count.errors %}
+                                <div class="text-danger small mt-1">{{ form.count.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ form.rank.label }}</label>
+                        {{ form.rank }}
+                        {% if form.rank.errors %}
+                            <div class="text-danger small mt-1">{{ form.rank.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg shadow-sm py-2 fw-bold">
+                            <i class="bi bi-check-circle me-2"></i>ユーザーを作成する
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-footer bg-light text-muted small py-3">
+                ※ 企業コードと開始番号を組み合わせたIDで、指定した数分のアカウントが生成されます。
+            </div>
         </div>
-    {% endif %}
+    </div>
+</div>
 
-    <table border="1" cellpadding="8">
-        <tr>
-            <th>{{ form.company_code.label }}</th>
-            <td>
-                {{ form.company_code }}
-                {{ form.company_code.errors }}
-            </td>
-        </tr>
-
-        <tr>
-            <th>{{ form.start_number.label }}</th>
-            <td>
-                {{ form.start_number }}
-                {{ form.start_number.errors }}
-            </td>
-        </tr>
-
-        <tr>
-            <th>{{ form.count.label }}</th>
-            <td>
-                {{ form.count }}
-                {{ form.count.errors }}
-            </td>
-        </tr>
-
-        <tr>
-            <th>{{ form.rank.label }}</th>
-            <td>
-                {{ form.rank }}
-                {{ form.rank.errors }}
-            </td>
-        </tr>
-    </table>
-
-    <br>
-    <button type="submit">ユーザー作成</button>
-</form>
+<style>
+    /* DjangoのForm入力項目にBootstrapのスタイルを強制適用 */
+    input[type="text"], 
+    input[type="number"], 
+    select {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    input:focus, select:focus {
+        border-color: #28a745;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+    }
+</style>
 {% endblock %}
