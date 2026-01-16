@@ -146,3 +146,6 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"  # ログアウト後のリダイレク
 
 
 AUTH_USER_MODEL = "main.User"
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
