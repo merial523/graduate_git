@@ -4,17 +4,43 @@
 <div class="container mt-5" style="max-width: 600px;">
     <h2>新規検定の作成</h2>
     <hr>
+    
+    <!-- ★エラー表示：これがあると何がダメなのかわかります -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            入力内容にエラーがあります。確認してください。
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
     <div class="card shadow-sm">
         <div class="card-body">
             <form method="POST">
                 {% csrf_token %}
+                
+                <!-- 検定タイトル -->
                 <div class="mb-3">
-                    <label class="form-label">検定タイトル</label>
+                    <label class="form-label">検定タイトル <span class="badge bg-danger">必須</span></label>
                     {{ form.title }}
+                    {% if form.title.errors %}<div class="text-danger small">{{ form.title.errors }}</div>{% endif %}
                 </div>
+
+                <!-- 説明文（モデルでblank=Trueにしていれば必須ではないですが、あったほうが良い） -->
+                <div class="mb-3">
+                    <label class="form-label">説明・研修テキスト</label>
+                    {{ form.description }}
+                </div>
+
+                <!-- 合格基準点 -->
+                <div class="mb-3">
+                    <label class="form-label">合格基準点（％）</label>
+                    {{ form.passing_score }}
+                    <div class="form-text">例：80 と入力すると80%以上で合格になります</div>
+                </div>
+
                 <div class="mt-4">
-                    <button type="submit" class="btn btn-success">検定を登録して次へ</button>
-                    <a href="{% url 'enrollments:exam_list' %}" class="btn btn-secondary">キャンセル</a>
+                    <button type="submit" class="btn btn-success w-100">検定を登録して次へ</button>
+                    <a href="{% url 'enrollments:exam_list' %}" class="btn btn-link w-100 mt-2">キャンセル</a>
                 </div>
             </form>
         </div>
@@ -22,7 +48,14 @@
 </div>
 
 <style>
-    /* 入力欄を綺麗にする */
-    input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    /* DjangoのフォームパーツにBootstrap風のクラスを適用する裏技的CSS */
+    input[type="text"], input[type="number"], textarea, select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        display: block;
+    }
+    textarea { height: 100px; }
 </style>
 {% endblock %}
