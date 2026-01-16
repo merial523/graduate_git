@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -26,10 +27,9 @@
   <body>
     <div class="container-fluid">
       <div class="row justify-content-center">
-        <div class="col-12 col-md-10 col-lg-6">
+        <div class="col-12 col-md-10 col-lg-6"
+              style="padding-left: 0; padding-right: 0">
           <div class="center">
-            {% load static %}
-
             <!-- ナビバー -->
             <nav class="navbar navbar-dark">
               <div class="container-fluid">
@@ -88,7 +88,8 @@
                     class="nav-item mt-4 pt-4 border-top border-white border-opacity-25"
                   >
                     <a
-                      class="nav-link text-white opacity-75"
+                      class="nav-link opacity-75 fw-bold"
+                      style="color: #e86a6a"
                       href="{% url 'accounts:logout'%}"
                       >ログアウト</a
                     >
@@ -97,10 +98,10 @@
               </div>
             </div>
 
-            <!-- メイン表示領域（統合部分） -->
-            <main>
-                {% block content %}{% endblock %}
-            </main>
+            <!-- メインコンテンツ部分 -->
+            <div class="container mt-4" style="min-height: 80vh">
+              {% block content %}{% endblock %}
+            </div>
 
             <!-- フッター -->
             <footer class="text-center py-4">
