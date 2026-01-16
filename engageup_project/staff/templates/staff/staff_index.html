@@ -1,26 +1,185 @@
 {% extends 'staff/staff_base.html' %} 
 
-{% block title %}ホーム{% endblock %}
+{% block title %}ホーム | EngageUp{% endblock %}
 
 {% block content %}
-
-<div class="dashboard-wrapper">
-  <!-- バッジ取得ランキング -->
-  <a href="#" class="content-box">
-    <h2>🏆 バッジ取得ランキング</h2>
-    <div class="box-placeholder">現在のランキングを表示中...</div>
-  </a>
-
-  <!-- 復習通知 -->
-  <a href="#" class="content-box">
-    <h2>🔔 復習通知</h2>
-    <div class="box-placeholder">新しい通知はありません</div>
-  </a>
-
-  <!-- マイリスト -->
-  <a href="#" class="content-box">
-    <h2>📁 マイリスト</h2>
-    <div class="box-placeholder">保存済みのコンテンツを表示...</div>
-  </a>
+<!-- 1. ユーザーウェルカムエリア -->
+<div class="welcome-banner mb-4">
+    <div class="d-flex align-items-center">
+        <div class="avatar-wrapper">
+            <!-- 将来的には {{ user.profile_image.url }} -->
+            <span class="user-icon">🐱</span>
+        </div>
+        <div class="ms-3">
+            <h2 class="greeting-text">
+                お疲れ様です、ゲストさん
+                <!-- {% if user.is_authenticated %}{{ user.last_name }}{% else %}ゲスト{% endif %}さん！ -->
+            </h2>
+            <p class="status-msg">現在のランク：<strong>シルバー会員</strong> <!-- 将来的に {{ user.rank }} --></p>
+        </div>
+    </div>
 </div>
+
+<!-- 2. 学習ステータス（クイック統計） -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="stat-box">
+            <p class="stat-label">完了した検定</p>
+            <p class="stat-value">24<small>件</small></p> <!-- {{ completed_count }} -->
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-box accent">
+            <p class="stat-label">所持バッジ</p>
+            <p class="stat-value">12<small>個</small></p> <!-- {{ badges_count }} -->
+        </div>
+    </div>
+</div>
+
+<!-- 3. 【重要】バッジ取得ランキング（ホームページ限定） -->
+<div class="content-box ranking-section mb-4">
+    <div class="box-header">
+        <h2 class="page-title">🏆 リアルタイム・ランキング</h2>
+        <span class="update-time">1時間ごとに更新</span>
+    </div>
+    
+    <div class="ranking-container">
+        <!-- 1位（もっとも目立たせる） -->
+        <div class="rank-card gold">
+            <div class="rank-badge">1</div>
+            <div class="user-img">🥇</div>
+            <div class="rank-info">
+                <span class="user-name">田中 太郎</span> <!-- {{ top_rank.0.user.last_name }} -->
+                <span class="score">32枚獲得</span> <!-- {{ top_rank.0.badge_count }} -->
+            </div>
+        </div>
+
+        <!-- 2位・3位（横並び） -->
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="rank-card silver">
+                    <div class="rank-badge">2</div>
+                    <span class="user-name">佐藤 次郎</span>
+                    <span class="score text-muted">28枚</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="rank-card bronze">
+                    <div class="rank-badge">3</div>
+                    <span class="user-name">鈴木 三郎</span>
+                    <span class="score text-muted">25枚</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4位以下（リスト形式） -->
+        <div class="rank-list-mini">
+            <!-- {% for rank in rank_others %} -->
+            <div class="rank-list-item">
+                <span class="num">4</span>
+                <span class="name">高橋 五郎</span>
+                <span class="pts">22枚</span>
+            </div>
+            <div class="rank-list-item">
+                <span class="num">5</span>
+                <span class="name">渡辺 七子</span>
+                <span class="pts">20枚</span>
+            </div>
+            <!-- {% endfor %} -->
+        </div>
+    </div>
+</div>
+
+<!-- 4. 通知 ＆ マイリスト -->
+<div class="dashboard-wrapper">
+    <a href="#" class="content-box mb-3">
+        <h2>🔔 復習が必要な検定</h2>
+        <div class="box-placeholder">
+            <!-- 将来的には期限が近い検定を1つ表示 -->
+            ビジネスマナー基礎（残り3日）
+        </div>
+    </a>
+
+    <a href="#" class="content-box">
+        <h2>📁 お気に入りリスト</h2>
+        <div class="box-placeholder">
+            <!-- {{ favorite_courses.count }}件の保存済みコースがあります -->
+            保存した動画やテキストをチェック
+        </div>
+    </a>
+</div>
+
+<style>
+/* --- ホームページ専用デザインCSS --- */
+
+/* ウェルカムエリア */
+.welcome-banner {
+    background: white;
+    padding: 20px;
+    border-radius: 24px;
+    border: 1px solid #f0f0f0;
+}
+.avatar-wrapper {
+    width: 60px; height: 60px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 4px 15px rgba(118, 177, 157, 0.3);
+}
+.greeting-text { font-size: 1.1rem; font-weight: 800; margin: 0; }
+.status-msg { font-size: 0.8rem; color: #777; margin: 0; }
+
+/* 統計ボックス */
+.stat-box {
+    background: white; padding: 15px; border-radius: 20px;
+    text-align: center; border: 1px solid #f0f0f0;
+}
+.stat-box.accent { background: #fffaf5; border-color: var(--accent-color); }
+.stat-label { font-size: 0.7rem; color: #999; margin-bottom: 2px; }
+.stat-value { font-size: 1.6rem; font-weight: 900; color: var(--primary-color); margin: 0; }
+.stat-box.accent .stat-value { color: var(--accent-color); }
+
+/* ランキングセクション */
+.ranking-section { background: #fdfdfd; }
+.box-header { display: flex; justify-content: space-between; align-items: center; }
+.update-time { font-size: 0.65rem; color: #bbb; }
+
+.rank-card {
+    background: white; border-radius: 16px; padding: 15px;
+    position: relative; border: 1px solid #eee; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 15px;
+    transition: var(--transition-base);
+}
+.rank-badge {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 0.9rem; background: #eee;
+}
+
+/* 順位別カラー */
+.gold { border: 2px solid #FFD700; background: #fffdf0; }
+.gold .rank-badge { background: #FFD700; color: white; }
+.silver { background: #f8f8f8; }
+.silver .rank-badge { background: #C0C0C0; color: white; }
+.bronze { background: #f8f8f8; }
+.bronze .rank-badge { background: #CD7F32; color: white; }
+
+.gold .user-name { font-size: 1.1rem; font-weight: 900; }
+.rank-info { display: flex; flex-direction: column; }
+.score { font-weight: 800; color: var(--accent-color); font-size: 0.9rem; }
+
+/* 4位以下のリスト */
+.rank-list-mini {
+    border-top: 1px dashed #ddd; padding-top: 10px;
+}
+.rank-list-item {
+    display: flex; justify-content: space-between; padding: 6px 10px;
+    font-size: 0.85rem; border-bottom: 1px solid #f9f9f9;
+}
+.rank-list-item .num { font-weight: bold; color: #aaa; margin-right: 10px; }
+.rank-list-item .name { flex: 1; }
+.rank-list-item .pts { font-weight: bold; }
+
+</style>
 {% endblock %}
