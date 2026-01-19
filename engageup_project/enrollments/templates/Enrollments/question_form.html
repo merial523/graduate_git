@@ -4,9 +4,22 @@
 {% block content %}
 <h2>{% if is_edit %}問題を編集{% else %}問題を追加{% endif %}</h2>
 
-<a href="{% url 'enrollments:question_list' exam_id %}">
-    ← 問題一覧に戻る
-</a>
+<!-- ★ ここにAI生成へのリンクボタンを追加 -->
+<div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+    <a href="{% url 'enrollments:question_list' exam_id %}" style="text-decoration: none; color: #666;">
+        ← 問題一覧に戻る
+    </a>
+
+    {% if not is_edit %}
+        <span style="color: #ccc;">|</span>
+        <a href="{% url 'enrollments:exam_ai_add' exam_id %}" 
+           style="background-color: #4CAF50; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.9em;">
+            ✨ AIで問題を自動生成する
+        </a>
+    {% endif %}
+</div>
+
+
 
 <hr>
 

@@ -26,5 +26,6 @@ urlpatterns = [
     # 特定の問題を削除する（おまけ）
     path('question/<int:question_id>/delete/', views.delete_question, name='delete_question'),
 
+    path('exam/<int:exam_id>/ai_add/', views.add_question_ai, name='exam_ai_add'), # AIによる問題追加
 
 ]

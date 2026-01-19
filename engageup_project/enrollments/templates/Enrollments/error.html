@@ -1,0 +1,32 @@
+{% extends 'administer/administer_base.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #f5c6cb; border-radius: 8px; background-color: #f8d7da; color: #721c24;">
+    <h2 style="margin-top: 0; display: flex; align-items: center;">
+        <span style="font-size: 1.5em; margin-right: 10px;">⚠️</span> エラーが発生しました
+    </h2>
+    
+    <div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #ebccd1; margin: 20px 0; font-family: monospace; white-space: pre-wrap;">
+        {{ error }}
+    </div>
+
+    <p>以下の点を確認してください：</p>
+    <ul style="margin-bottom: 20px;">
+        <li>教材（PDF）が正しくアップロードされているか</li>
+        <li>インターネット接続やAPIキーの設定に問題がないか</li>
+        <li>PDFの内容が空（画像のみなど）ではないか</li>
+    </ul>
+
+    <div style="display: flex; gap: 10px;">
+        <!-- 一つ前の画面に戻る -->
+        <a href="javascript:history.back()" style="background-color: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            前の画面に戻る
+        </a>
+        
+        <!-- 検定一覧に戻る（URL名はプロジェクトに合わせて調整してください） -->
+        <a href="{% url 'enrollments:exam_list' %}" style="background-color: #f8f9fa; color: #333; padding: 10px 20px; text-decoration: none; border: 1px solid #ccc; border-radius: 5px;">
+            検定一覧へ
+        </a>
+    </div>
+</div>
+{% endblock %}

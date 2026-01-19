@@ -1,7 +1,12 @@
+import json
+import fitz  # PyMuPDF
+import os
+import google.generativeai as genai
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView
 from django.urls import reverse_lazy
-from main.models import Exam, Question, Badge 
+from main.models import Exam, Question, Badge ,Choice
 from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet
 
 
@@ -27,7 +32,7 @@ class ExamListView(ListView):
 # 2. 検定作成（タイトル登録）
 class ExamCreateView(CreateView):
     model = Exam
-    fields = ["title", "description", "passing_score"] 
+    fields = ["title", "description", "passing_score","exams_file"]  # 教材ファイルを追加
     template_name = "enrollments/exam_create.html" # 名前を変更
     success_url = reverse_lazy("enrollments:exam_list") 
 
@@ -117,3 +122,60 @@ def delete_question(request, question_id):
     if request.method == "POST":
         question.delete()
     return redirect('enrollments:question_list', exam_id=exam_id)
+
+def add_question_ai(request, exam_id):
+    exam = get_object_or_404(Exam, pk=exam_id)
+
+    if not exam.exams_file:
+        return render(request, 'enrollments/error.html', {'error': '教材がありません'})
+
+    if request.method == "POST":
+        # ★ 画面から入力された問題数を取得（送られてこなければ5にする）
+        num_questions = request.POST.get('count', 5)
+        
+        try:
+            # 1. テキスト抽出
+            text_content = ""
+            with exam.exams_file.open('rb') as f:
+                doc = fitz.open(stream=f.read(), filetype="pdf")
+                for page in doc:
+                    text_content += page.get_text()
+
+            # 2. AIの設定
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            
+            # ★ プロンプトに num_questions を埋め込む
+            prompt = f"""
+            以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
+            出力は必ず以下のJSON形式のリストのみで返してください。
+            [
+              {{
+                "text": "問題文",
+                "choices": [
+                  {{"text": "正解", "is_correct": true}},
+                  {{"text": "間違い1", "is_correct": false}},
+                  {{"text": "間違い2", "is_correct": false}},
+                  {{"text": "間違い3", "is_correct": false}}
+                ]
+              }}
+            ]
+            教材: {text_content[:8000]}
+            """
+
+            # 3. 生成・保存処理（ここは前回と同じ）
+            response = model.generate_content(prompt)
+            raw_json = response.text.replace('```json', '').replace('```', '').strip()
+            quiz_data = json.loads(raw_json)
+
+            for item in quiz_data:
+                q = Question.objects.create(exam=exam, text=item['text'])
+                for c in item['choices']:
+                    Choice.objects.create(question=q, text=c['text'], is_correct=c['is_correct'])
+
+            return redirect('enrollments:question_list', exam_id=exam.id)
+
+        except Exception as e:
+            return render(request, 'enrollments/error.html', {'error': str(e)})
+
+    return render(request, 'enrollments/exam_ai_add.html', {'exam': exam})
