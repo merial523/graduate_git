@@ -1,10 +1,47 @@
-{% extends 'administer/administer_base.html' %}
+{% extends 'administer/administer_base.html' %} 
 
-{% block title %}ホーム{% endblock %}
+{% block title %}EngageUp{% endblock %}
 
 {% block content %}
-<div class="container text-center">
-  <h1>administer画面研修管理システムへようこそ</h1>
-  <p>ここから各種操作ができます。</p>
+<div class="mb-5">
+  <h1 class="page-title text-dark">Admin Dashboard</h1>
+  <p class="text-muted fs-5">システム全体の管理・操作を行います</p>
+</div>
+
+<div class="dashboard-grid">
+  <a href="{% url 'administer:constant_list' %}" class="admin-card">
+    <h2>定数一覧</h2>
+    <p>システム設定値の管理</p>
+  </a>
+
+  <a href="{% url 'administer:user_list' %}" class="admin-card">
+    <h2>ユーザー一覧</h2>
+    <p>権限・アカウント管理</p>
+  </a>
+
+  <a href="{% url 'enrollments:exam_list' %}" class="admin-card">
+    <h2>検定問題作成</h2>
+    <p>試験・設問の管理</p>
+  </a>
+
+  <a href="{% url 'courses:courses_list' %}" class="admin-card">
+    <h2>コース・動画管理</h2>
+    <p>教材の登録・更新</p>
+  </a>
+
+  <a href="{% url 'moderator:moderator_create_user' %}" class="admin-card">
+    <h2>アカウント作成</h2>
+    <p>アカウントの一括作成</p>
+  </a>
+
+  <a href="{% url 'enrollments:enrollmentsIndex' %}" class="admin-card">
+    <h2>検定進捗状況</h2>
+    <p>受講・合格状況の確認</p>
+  </a>
+
+  <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">
+    <h2>バッジ管理</h2>
+    <p>評価・称号設定</p>
+  </a>
 </div>
 {% endblock %}

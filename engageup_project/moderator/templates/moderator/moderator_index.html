@@ -1,10 +1,38 @@
 {% extends 'moderator/moderator_base.html' %}
 
-{% block title %}ホーム{% endblock %}
+{% block title %}EngageUp{% endblock %}
 
 {% block content %}
-<div class="container text-center">
-  <h1>moderator画面研修管理システムへようこそ</h1>
-  <p>ここから各種操作ができます。</p>
+<div class="mb-5">
+  <h1 class="page-title text-dark">Moderator Dashboard</h1>
+  <p class="text-muted fs-5">研修の進行管理、お知らせの運用を行います</p>
+</div>
+
+<!-- モデレーター用操作カード -->
+<div class="dashboard-grid">
+  <a href="{% url 'courses:courses_list' %}" class="admin-card">
+    <h2>コース一覧</h2>
+    <p>公開中の研修コースを確認</p>
+  </a>
+
+  <a href="{% url 'moderator:moderator_create_user' %}" class="admin-card">
+    <h2>アカウント作成</h2>
+    <p>新規受講者の個別・一括登録</p>
+  </a>
+
+  <a href="{% url 'enrollments:enrollmentsIndex' %}" class="admin-card">
+    <h2>検定管理</h2>
+    <p>受講生の進捗状況・合格判定</p>
+  </a>
+
+  <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">
+    <h2>バッジ管理</h2>
+    <p>付与されたバッジの統計と管理</p>
+  </a>
+
+  <a href="{% url 'moderator:moderatorNews' %}" class="admin-card">
+    <h2>お知らせ投稿</h2>
+    <p>受講生向け通知の作成・配信</p>
+  </a>
 </div>
 {% endblock %}
