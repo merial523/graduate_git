@@ -98,15 +98,7 @@
             <span class="material-icons">person_add</span>
             アカウント作成
           </a>
-
-          <a
-            class="menu-item {% if 'enrollmentsIndex' in request.path %}active{% endif %}"
-            href="{% url 'enrollments:enrollmentsIndex' %}"
-          >
-            <span class="material-icons">analytics</span>
-            検定進捗状況
-          </a>
-
+          
           <a
             class="menu-item {% if 'Badge' in request.path %}active{% endif %}"
             href="{% url 'moderator:moderatorBadge' %}"

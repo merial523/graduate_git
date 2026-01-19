@@ -21,20 +21,23 @@ body {
   background-color: var(--primary-color); /* サイドバーと同じ色をベースに敷く */
 }
 
-/* ===== Sidebar ===== */
+/* ===== Sidebar (全体設定) ===== */
 .sidebar {
   width: 260px;
   background: var(--primary-color);
   color: #fff;
   display: flex;
-  flex-direction: column;
-  padding: 0; /* アクティブ要素を右端に密着させるため0 */
+  flex-direction: column; /* 上下に並べる */
+  padding: 0;
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100vh; /* 画面の高さに固定 */
+  overflow: hidden; /* サイドバー自体からはみ出さないようにする */
 }
 
+/* ロゴ部分は固定 */
 .sidebar-logo {
+  flex-shrink: 0; /* 縮まないように固定 */
   font-family: "Libre Baskerville", serif;
   font-size: 1.6rem;
   padding: 32px 24px;
@@ -42,9 +45,24 @@ body {
   color: #fff;
 }
 
+/* メニュー一覧（ここをスクロール可能にする） */
 .sidebar-menu {
-  flex: 1;
-  padding-left: 16px; /* 左側に余白を持たせる */
+  flex: 1; /* 残りのスペースをすべて使う */
+  overflow-y: auto; /* 縦方向にスクロールを許可 */
+  padding-left: 16px;
+  padding-right: 8px; /* スクロールバー用の微調整 */
+}
+
+/* スクロールバーのデザイン（ねこねこ風に目立たなく、かつ綺麗に） */
+.sidebar-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+.sidebar-menu::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .menu-item {
@@ -113,9 +131,13 @@ body {
 }
 
 /* ===== Sidebar Footer ===== */
+/* ログアウト部分は最下部に固定 */
 .sidebar-footer {
+  flex-shrink: 0; /* 縮まないように固定 */
   padding: 24px;
+  background: var(--primary-color); /* 背景を敷いてメニューが透けないようにする */
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
 }
 
 .logout {
