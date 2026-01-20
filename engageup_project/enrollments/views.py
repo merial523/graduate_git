@@ -4,7 +4,7 @@ import os
 import google.generativeai as genai
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
 from main.models import Exam, Question, Badge ,Choice
 from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet
@@ -35,6 +35,15 @@ class ExamCreateView(CreateView):
     fields = ["title", "description", "passing_score","exams_file"]  # 教材ファイルを追加
     template_name = "enrollments/exam_create.html" # 名前を変更
     success_url = reverse_lazy("enrollments:exam_list") 
+
+class ExamUpdateView(UpdateView):
+    model = Exam
+    fields = ["title", "description", "passing_score", "exams_file"]
+    template_name = "enrollments/exam_create.html" # 作成画面と同じテンプレートを使い回せます
+    
+    def get_success_url(self):
+        # 編集が終わったら、その検定の問題一覧に戻る
+        return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
 
 # 3. 問題追加（1問ずつ登録）
 def add_question(request, exam_id):
@@ -143,8 +152,14 @@ def add_question_ai(request, exam_id):
 
             # 2. AIの設定
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            model = genai.GenerativeModel("gemini-1.5-flash")
             
+            # --- ここから追記 ---
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    print(f"利用可能なモデル: {m.name}")
+
+            model = genai.GenerativeModel("gemini-flash-latest")
+                        
             # ★ プロンプトに num_questions を埋め込む
             prompt = f"""
             以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
@@ -179,3 +194,4 @@ def add_question_ai(request, exam_id):
             return render(request, 'enrollments/error.html', {'error': str(e)})
 
     return render(request, 'enrollments/exam_ai_add.html', {'exam': exam})
+

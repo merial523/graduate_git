@@ -22,4 +22,17 @@
         <a href="{% url 'enrollments:add_question' exam.id %}" style="margin-left: 20px; color: #666;">キャンセル</a>
     </form>
 </div>
+
+<script>
+    document.getElementById('ai-form').addEventListener('submit', function() {
+        const btn = document.getElementById('submit-btn');
+        // ボタンを無効化（連打防止）
+        btn.disabled = true;
+        // メッセージを変更
+        btn.innerText = '✨ AIが問題を生成中... ';
+        // 少し見た目を薄くする
+        btn.style.backgroundColor = '#8bc34a';
+        btn.style.cursor = 'not-allowed';
+    });
+</script>
 {% endblock %}
