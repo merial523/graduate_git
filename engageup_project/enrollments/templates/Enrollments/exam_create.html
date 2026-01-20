@@ -6,7 +6,6 @@
     <h2>新規検定の作成</h2>
     <hr>
     
-    <!-- ★エラー表示：これがあると何がダメなのかわかります -->
     {% if form.errors %}
         <div class="alert alert-danger">
             入力内容にエラーがあります。確認してください。
@@ -16,7 +15,7 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <!-- 検定タイトル -->
@@ -26,7 +25,15 @@
                     {% if form.title.errors %}<div class="text-danger small">{{ form.title.errors }}</div>{% endif %}
                 </div>
 
-                <!-- 説明文（モデルでblank=Trueにしていれば必須ではないですが、あったほうが良い） -->
+                <!-- ★ 修正ポイント2: 教材ファイルのアップロード欄を追加 -->
+                <div class="mb-3">
+                    <label class="form-label">教材ファイル (PDF) <span class="badge bg-danger">必須</span></label>
+                    {{ form.exams_file }}
+                    <div class="form-text">AIで問題を生成するために必要です。</div>
+                    {% if form.exams_file.errors %}<div class="text-danger small">{{ form.exams_file.errors }}</div>{% endif %}
+                </div>
+
+                <!-- 説明文 -->
                 <div class="mb-3">
                     <label class="form-label">説明・研修テキスト</label>
                     {{ form.description }}
@@ -49,13 +56,16 @@
 </div>
 
 <style>
-    /* DjangoのフォームパーツにBootstrap風のクラスを適用する裏技的CSS */
-    input[type="text"], input[type="number"], textarea, select {
+    /* CSSに file 入力用のスタイルも追加 */
+    input[type="text"], input[type="number"], input[type="file"], textarea, select {
         width: 100%;
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 5px;
         display: block;
+    }
+    input[type="file"] {
+        background-color: #f8f9fa;
     }
     textarea { height: 100px; }
 </style>

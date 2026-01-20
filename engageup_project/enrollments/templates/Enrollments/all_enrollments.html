@@ -22,6 +22,11 @@
                 <td><strong>{{ exam.title }}</strong></td>
                 <td>{{ exam.questions.count }} 問</td>
                 <td>
+                    <p>教材：{% if exam.exams_file %}あり{% else %}未登録{% endif %}</p>
+                    <!-- 編集ボタン -->
+                    <a href="{% url 'enrollments:exam_edit' exam.id %}" class="btn btn-sm btn-outline-primary">
+                        検定編集・教材を変更
+                    </a>
                     <!-- バッジ編集（moderatorアプリにある場合） -->
                     <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ編集</a>
                     <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">

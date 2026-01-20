@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 
-app_name = 'enrollments'  # ← ★これが必要です！
+app_name = 'enrollments' 
 
 
 urlpatterns = [
@@ -28,4 +28,5 @@ urlpatterns = [
 
     path('exam/<int:exam_id>/ai_add/', views.add_question_ai, name='exam_ai_add'), # AIによる問題追加
 
+    path('exam/<int:pk>/edit/', views.ExamUpdateView.as_view(), name='exam_edit'), # 検定編集
 ]

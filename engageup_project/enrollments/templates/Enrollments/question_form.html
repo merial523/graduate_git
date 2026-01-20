@@ -68,6 +68,9 @@
     <button type="submit">
         {% if is_edit %}更新{% else %}登録{% endif %}
     </button>
+    <a href="{% url 'enrollments:question_list' exam_id %}" style="text-decoration: none; color: #666;">
+        ← 問題一覧に戻る
+    </a>
 </form>
 
 <!-- ===== formset用 JS（完全版） ===== -->
