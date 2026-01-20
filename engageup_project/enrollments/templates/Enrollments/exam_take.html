@@ -1,0 +1,27 @@
+{% extends 'administer/administer_base.html' %}
+{% block content %}
+<h2>受験中: {{ exam.title }}</h2>
+<p>{{ exam.description }}</p>
+<hr>
+
+<form method="post" action="{% url 'enrollments:exam_grade' exam.id %}">
+    {% csrf_token %}
+    
+    {% for q in questions %}
+    <div style="margin-bottom: 30px;">
+        <p><strong>問{{ forloop.counter }}. {{ q.text }}</strong></p>
+        {% for choice in q.choices.all %}
+        <label>
+            <input type="radio" name="question_{{ q.id }}" value="{{ choice.id }}" required>
+            {{ choice.text }}
+        </label><br>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" style="padding: 10px 20px;">解答を送信して採点</button>
+</form>
+
+<br>
+<a href="{% url 'enrollments:exam_list_user' %}">キャンセルして戻る</a>
+{% endblock %}

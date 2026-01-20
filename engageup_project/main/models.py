@@ -103,15 +103,31 @@ class User(AbstractUser):  # ユーザーのランク
 
 
 class Exam(models.Model):  # 検定
+    # --- 試験タイプ（仮・本）の選択肢 ---
+    EXAM_TYPE_CHOICES = [
+        ('mock', '仮試験'),
+        ('main', '本試験'),
+    ]
     title = models.CharField(verbose_name="検定名", max_length=100)
     exams_file = models.FileField(verbose_name="教材ファイル", upload_to="exams_files/", null=True, blank=True)
     description = models.TextField(verbose_name="説明・研修テキスト", blank=True) 
     passing_score = models.IntegerField(verbose_name="合格基準点", default=80) # 自動採点に必要
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日") # 管理用
-
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ") # 検定が有効かどうか
+    
+    # ★追加：仮試験か本試験か
+    exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='mock', verbose_name="試験タイプ")
+    
+    # ★追加：本試験の場合の前提条件（どの仮試験をクリアすべきか）
+    prerequisite = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, 
+        verbose_name="前提となる仮試験", related_name="next_exams"
+    )
 
     def __str__(self):
-        return self.title
+        return f"[{self.get_exam_type_display()}] {self.title}"
+
+    
     
 
     def save(self, *args, **kwargs):
@@ -123,6 +139,8 @@ class Exam(models.Model):  # 検定
         if is_new:
             # Badgeクラスはこの下にありますが、メソッドの中なので呼び出せます
             Badge.objects.create(exam=self, name=f"{self.title}合格バッジ")
+
+
 
 class Question(models.Model):
     # どの検定の問題か
@@ -150,4 +168,18 @@ class Badge(models.Model):  # バッジ
 
     def __str__(self):
         return self.name
+    
+
+# ★新規追加：ユーザーがどの試験に合格したかを記録する
+class UserExamStatus(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE, verbose_name="ユーザー")
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, verbose_name="検定")
+    is_passed = models.BooleanField(default=False, verbose_name="合格したか")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日")
+
+    class Meta:
+        unique_together = ('user', 'exam') # 1人1試験1レコード
+
+    def __str__(self):
+        return f"{self.user.username} - {self.exam.title} ({'合格' if self.is_passed else '未'})"
     
