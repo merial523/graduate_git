@@ -1,7 +1,7 @@
 import json
-import fitz  # PyMuPDF
+import fitz  # type: ignore # PyMuPDF
 import os
-import google.generativeai as genai
+import google.generativeai as genai # type: ignore
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView
