@@ -29,4 +29,8 @@ urlpatterns = [
     path('exam/<int:exam_id>/ai_add/', views.add_question_ai, name='exam_ai_add'), # AIによる問題追加
 
     path('exam/<int:pk>/edit/', views.ExamUpdateView.as_view(), name='exam_edit'), # 検定編集
+
+    path('exams/bulk_action/', views.bulk_action_exam, name='bulk_action_exam'), # 検定一括操作
+
+    path('exam/<int:exam_id>/delete/', views.delete_exam, name='exam_delete'), # 検定削除（論理）
 ]

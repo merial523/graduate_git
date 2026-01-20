@@ -3,45 +3,112 @@
 
 {% block content %}
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>検定一覧（管理パネル）</h2>
-        <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary">+ 新しい検定を作成</a>
-    </div>
+    
+    <!-- 1. ヘッダー部分（モード切り替えと一括操作ボタン） -->
+    <form action="{% url 'enrollments:bulk_action_exam' %}" method="post" id="bulk-form">
+        {% csrf_token %}
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                {% if is_trash_mode %}
+                    <h2 class="text-secondary">検定削除済みを見る</h2>
+                    <input type="hidden" name="action" value="restore">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('選択した検定を復元しますか？')">選択した項目を復元</button>
+                    <a href="{% url 'enrollments:exam_list' %}" class="btn btn-outline-secondary ms-2">通常一覧に戻る</a>
+                {% else %}
+                    <h2>検定一覧（管理パネル）</h2>
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('選択した検定を削除済みへ移動しますか？')">選択した項目を削除</button>
+                    <a href="{% url 'enrollments:exam_list' %}?show=deleted" class="btn btn-outline-danger ms-2">検定削除済みを見る</a>
+                    <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary ms-2">+ 新しい検定を作成</a>
+                {% endif %}
+            </div>
+        </div>
 
-    <table class="table table-hover border shadow-sm">
-        <thead class="table-dark">
-            <tr>
-                <th>検定名</th>
-                <th>問題数</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for exam in exams %}
-            <tr>
-                <td><strong>{{ exam.title }}</strong></td>
-                <td>{{ exam.questions.count }} 問</td>
-                <td>
-                    <p>教材：{% if exam.exams_file %}あり{% else %}未登録{% endif %}</p>
-                    <!-- 編集ボタン -->
-                    <a href="{% url 'enrollments:exam_edit' exam.id %}" class="btn btn-sm btn-outline-primary">
-                        検定編集・教材を変更
-                    </a>
-                    <!-- バッジ編集（moderatorアプリにある場合） -->
-                    <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ編集</a>
-                    <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">
-                    問題を確認・管理 ({{ exam.questions.count }}問)
-                    </a>
-                </td>
-                
-                
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3" class="text-center">検定が登録されていません。</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <!-- 2. テーブル部分 -->
+        <table class="table table-hover border shadow-sm bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 40px;">
+                        <!-- 全選択チェックボックス -->
+                        <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;">
+                    </th>
+                    <th>検定名</th>
+                    <th>問題数</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in exams %}
+                <tr class="{% if is_trash_mode %}table-light text-muted{% endif %}">
+                    <td>
+                        <!-- 個別選択チェックボックス -->
+                        <input type="checkbox" name="selected_exams" value="{{ exam.id }}" class="exam-check form-check-input" style="cursor: pointer;">
+                    </td>
+                    <td><strong>{{ exam.title }}</strong></td>
+                    <td>{{ exam.questions.count }} 問</td>
+                    <td>
+                        {% if is_trash_mode %}
+                            <!-- 削除済みモードの操作 -->
+                            <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-success" onclick="return confirm('復元しますか？')">
+                                復元
+                            </button>
+                        {% else %}
+                            <!-- 通常モードの操作 -->
+                            <div class="mb-1 small">
+                                教材：{% if exam.exams_file %}<span class="text-success">あり</span>{% else %}<span class="text-danger">未登録</span>{% endif %}
+                            </div>
+                            
+                            <a href="{% url 'enrollments:exam_edit' exam.id %}" class="btn btn-sm btn-outline-primary">編集・教材</a>
+                            
+                            <!-- バッジ編集（リンク先が存在する場合のみ） -->
+                            <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ</a>
+                            
+                            <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">問題管理</a>
+
+
+                            <!-- 個別削除ボタン -->
+                            <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('ゴミ箱へ移動しますか？')">
+                                削除
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">
+                        {% if is_trash_mode %}削除済みは空です。{% else %}検定が登録されていません。{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
 </div>
+
+<!-- 全選択用のJavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.exam-check');
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                checkboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+            });
+        }
+    });
+</script>
+
+<style>
+    /* 削除済みの時に少し見た目を変える */
+    .table-light.text-muted strong {
+        color: #adb5bd;
+    }
+    .btn-sm {
+        margin-bottom: 2px;
+    }
+</style>
 {% endblock %}

@@ -29,6 +29,18 @@ class ExamListView(ListView):
     template_name = "enrollments/all_enrollments.html"  # 名前を変更
     context_object_name = "exams"
 
+    def get_queryset(self):
+        self.is_trash_mode = self.request.GET.get("show") == "deleted"
+        if self.is_trash_mode:
+            return Exam.objects.filter(is_active=False)
+        return Exam.objects.filter(is_active=True)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_trash_mode'] = self.is_trash_mode
+        return context
+    
+
 # 2. 検定作成（タイトル登録）
 class ExamCreateView(CreateView):
     model = Exam
@@ -124,13 +136,40 @@ def edit_question(request, question_id):
         'is_edit': True, # テンプレート側で「編集」と表示を切り替えるためのフラグ
     })
 
-# --- 3. 問題を削除する ---
+# --- 3. 問題を削除する (物理)　---
 def delete_question(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     exam_id = question.exam.id
     if request.method == "POST":
         question.delete()
     return redirect('enrollments:question_list', exam_id=exam_id)
+
+# --- 検定削除　（論理） ---
+def delete_exam(request, exam_id):
+    exam = get_object_or_404(Exam, pk=exam_id)
+    if request.method == "POST":
+        exam.is_active = False  # データは消さずに非表示にするだけ
+        exam.save()
+    return redirect('enrollments:exam_list')
+
+
+# --- 検定削除一括操作：1個でも複数でもOK ---
+def bulk_action_exam(request):
+    if request.method == "POST":
+        exam_ids = request.POST.getlist('selected_exams')
+        action = request.POST.get('action') # "delete" か "restore"
+        
+        if exam_ids:
+            if action == 'delete':
+                # まとめて論理削除
+                Exam.objects.filter(id__in=exam_ids).update(is_active=False)
+                return redirect('enrollments:exam_list')
+            elif action == 'restore':
+                # まとめて復元
+                Exam.objects.filter(id__in=exam_ids).update(is_active=True)
+                return redirect(f"{reverse_lazy('enrollments:exam_list')}?show=deleted")
+                
+    return redirect('enrollments:exam_list')
 
 def add_question_ai(request, exam_id):
     exam = get_object_or_404(Exam, pk=exam_id)
