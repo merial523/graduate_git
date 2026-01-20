@@ -59,15 +59,15 @@ class ExamUpdateView(UpdateView):
 
 # 3. 問題追加（1問ずつ登録）
 def add_question(request, exam_id):
-    # (1) どの検定に問題を追加するか、URLのIDから特定
+    #どの検定に問題を追加するか、URLのIDから特定
     exam = get_object_or_404(Exam, pk=exam_id)
     
     if request.method == "POST":
-        # (2) 送信されたデータ（問題文と複数の選択肢）を受け取る
+        #送信されたデータ（問題文と複数の選択肢）を受け取る
         form = QuestionForm(request.POST)
         formset = ChoiceFormSet(request.POST)
         
-        # (3) 両方の入力内容が正しいかチェック
+        #両方の入力内容が正しいかチェック
         if form.is_valid() and formset.is_valid():
             # --- 問題(Question)の保存 ---
             question = form.save(commit=False) # まだDBに保存しない
@@ -78,7 +78,7 @@ def add_question(request, exam_id):
             formset.instance = question         # この選択肢たちは「この問題」のものだと紐付け
             formset.save()                      # DBに一括保存
             
-            # (4) 保存後の動き
+            #保存後の動き
             # 「続けて登録」ボタンが押された場合は、再度このページを表示
             if "add_another" in request.POST:
                 return redirect('enrollments:add_question', exam_id=exam.id)
@@ -86,7 +86,7 @@ def add_question(request, exam_id):
             # それ以外は一覧画面へ戻る
             return redirect('enrollments:exam_list')
     else:
-        # (5) 最初に画面を開いた時（空のフォームを表示）
+        #最初に画面を開いた時（空のフォームを表示）
         form = QuestionForm()
         formset = ChoiceFormSet()
         
@@ -97,7 +97,7 @@ def add_question(request, exam_id):
         'exam_id': exam_id,
     })
 
-    # --- 1. 問題の一覧を表示する ---
+    # ---問題の一覧を表示する ---
 def question_list(request, exam_id):
     exam = get_object_or_404(Exam, pk=exam_id)
     # 紐付いている問題をすべて取得（related_name='questions' を活用）
@@ -107,14 +107,13 @@ def question_list(request, exam_id):
         'questions': questions,
     })
 
-# --- 2. 既存の問題を編集する ---
+# ---既存の問題を編集する ---
 def edit_question(request, question_id):
     # 修正したい問題を特定
     question = get_object_or_404(Question, pk=question_id)
     exam = question.exam 
 
     if request.method == "POST":
-        # ★ instance=question を渡すことで、新規作成ではなく「このデータを更新」になる
         form = QuestionForm(request.POST, instance=question)
         formset = EditChoiceFormSet(request.POST, instance=question)
         
@@ -124,7 +123,7 @@ def edit_question(request, question_id):
             # 編集が終わったら、その検定の問題一覧画面に戻る
             return redirect('enrollments:question_list', exam_id=exam.id)
     else:
-        # ★ 既存のデータをフォームに初期値として入れる
+        # 既存のデータをフォームに初期値として入れる
         form = QuestionForm(instance=question)
         formset = EditChoiceFormSet(instance=question)
         
@@ -136,7 +135,7 @@ def edit_question(request, question_id):
         'is_edit': True, # テンプレート側で「編集」と表示を切り替えるためのフラグ
     })
 
-# --- 3. 問題を削除する (物理)　---
+# --- 問題を削除する (物理)　---
 def delete_question(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     exam_id = question.exam.id
@@ -175,10 +174,11 @@ def add_question_ai(request, exam_id):
     exam = get_object_or_404(Exam, pk=exam_id)
 
     if not exam.exams_file:
-        return render(request, 'enrollments/error.html', {'error': '教材がありません'})
+        return render(request, 'enrollments/enrollments_error.html', {'error': '教材がありません', 'exam_id': exam_id}) 
+        return render(request, 'enrollments/enrollments_error.html', {'error': '教材がありません'})
 
     if request.method == "POST":
-        # ★ 画面から入力された問題数を取得（送られてこなければ5にする）
+        # 画面から入力された問題数を取得（送られてこなければ5にする）
         num_questions = request.POST.get('count', 5)
         
         try:
@@ -192,14 +192,13 @@ def add_question_ai(request, exam_id):
             # 2. AIの設定
             genai.configure(api_key=settings.GEMINI_API_KEY)
             
-            # --- ここから追記 ---
             for m in genai.list_models():
                 if 'generateContent' in m.supported_generation_methods:
                     print(f"利用可能なモデル: {m.name}")
 
             model = genai.GenerativeModel("gemini-flash-latest")
                         
-            # ★ プロンプトに num_questions を埋め込む
+            # プロンプトに num_questions を埋め込む
             prompt = f"""
             以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
             出力は必ず以下のJSON形式のリストのみで返してください。
@@ -217,7 +216,7 @@ def add_question_ai(request, exam_id):
             教材: {text_content[:8000]}
             """
 
-            # 3. 生成・保存処理（ここは前回と同じ）
+            # 3. 生成・保存処理
             response = model.generate_content(prompt)
             raw_json = response.text.replace('```json', '').replace('```', '').strip()
             quiz_data = json.loads(raw_json)
@@ -230,7 +229,7 @@ def add_question_ai(request, exam_id):
             return redirect('enrollments:question_list', exam_id=exam.id)
 
         except Exception as e:
-            return render(request, 'enrollments/error.html', {'error': str(e)})
+            return render(request, 'enrollments/enrollments_error.html', {'error': str(e)})
 
     return render(request, 'enrollments/exam_ai_add.html', {'exam': exam})
 
