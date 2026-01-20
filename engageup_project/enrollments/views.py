@@ -1,4 +1,5 @@
 import json
+import random
 import fitz  # type: ignore # PyMuPDF
 import os
 import google.generativeai as genai # type: ignore
@@ -175,7 +176,6 @@ def add_question_ai(request, exam_id):
 
     if not exam.exams_file:
         return render(request, 'enrollments/enrollments_error.html', {'error': '教材がありません', 'exam_id': exam_id}) 
-        return render(request, 'enrollments/enrollments_error.html', {'error': '教材がありません'})
 
     if request.method == "POST":
         # 画面から入力された問題数を取得（送られてこなければ5にする）
@@ -191,27 +191,25 @@ def add_question_ai(request, exam_id):
 
             # 2. AIの設定
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            
-            for m in genai.list_models():
-                if 'generateContent' in m.supported_generation_methods:
-                    print(f"利用可能なモデル: {m.name}")
-
             model = genai.GenerativeModel("gemini-flash-latest")
                         
             # プロンプトに num_questions を埋め込む
             prompt = f"""
             以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
-            出力は必ず以下のJSON形式のリストのみで返してください。
+            【重要ルール】
+            1. 出力は必ず以下のJSON形式のリストのみで返してください。
+            2. 正解(is_correct: true)の位置は、1番目〜4番目の中でランダムに配置してください。
+            
             [
-              {{
+            {{
                 "text": "問題文",
                 "choices": [
-                  {{"text": "正解", "is_correct": true}},
-                  {{"text": "間違い1", "is_correct": false}},
-                  {{"text": "間違い2", "is_correct": false}},
-                  {{"text": "間違い3", "is_correct": false}}
+                {{"text": "正解", "is_correct": true}},
+                {{"text": "間違い1", "is_correct": false}},
+                {{"text": "間違い2", "is_correct": false}},
+                {{"text": "間違い3", "is_correct": false}}
                 ]
-              }}
+            }}
             ]
             教材: {text_content[:8000]}
             """
@@ -223,6 +221,8 @@ def add_question_ai(request, exam_id):
 
             for item in quiz_data:
                 q = Question.objects.create(exam=exam, text=item['text'])
+                choices = item['choices']
+                random.shuffle(choices)
                 for c in item['choices']:
                     Choice.objects.create(question=q, text=c['text'], is_correct=c['is_correct'])
 
