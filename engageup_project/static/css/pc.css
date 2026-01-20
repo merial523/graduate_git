@@ -1,99 +1,127 @@
+/* ===== CSS Variables (Themeable) ===== */
 :root {
-  --primary-color: #76b19d; /* セージグリーン */
-  --bg-color: #f8f2f2; /* メイン背景（温かみのある白） */
+  --primary-color: #76b19d; /* デフォルト：ねこねこ薬局グリーン */
+  --bg-color: #f8f2f2;
   --text-color: #444;
-  --sidebar-active-text: #76b19d;
-  --transition: 0.3s ease;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 88px;
+  --transition: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
 }
 
-/* ===== Base ===== */
+/* 各種カラーテーマ定義 */
+body.theme-blue {
+  --primary-color: #4a90e2;
+}
+body.theme-purple {
+  --primary-color: #8e44ad;
+}
+body.theme-red {
+  --primary-color: #e67e22;
+}
+body.theme-dark {
+  --primary-color: #2c3e50;
+  --bg-color: #ecf0f1;
+}
+
 body {
-  background: var(--bg-color);
-  color: var(--text-color);
+  background-color: var(
+    --primary-color
+  ); /* サイドバーと背景を同色にして隙間を消す */
   font-family: "M PLUS Rounded 1c", sans-serif;
   margin: 0;
+  overflow-x: hidden;
 }
 
 /* ===== Layout ===== */
 .admin-layout {
   display: flex;
-  min-height: 100vh;
-  background-color: var(--primary-color); /* サイドバーと同じ色をベースに敷く */
+  transition: var(--transition);
 }
 
-/* ===== Sidebar (全体設定) ===== */
+/* ===== Sidebar ===== */
 .sidebar {
-  width: 260px;
-  background: var(--primary-color);
-  color: #fff;
+  width: var(--sidebar-width);
+  height: 100vh;
   display: flex;
-  flex-direction: column; /* 上下に並べる */
-  padding: 0;
+  flex-direction: column;
+  background-color: var(--primary-color);
+  transition: var(--transition);
   position: sticky;
   top: 0;
-  height: 100vh; /* 画面の高さに固定 */
-  overflow: hidden; /* サイドバー自体からはみ出さないようにする */
+  z-index: 1000;
 }
 
-/* ロゴ部分は固定 */
+.sidebar-collapsed .sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-header {
+  padding: 30px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .sidebar-logo {
-  flex-shrink: 0; /* 縮まないように固定 */
-  font-family: "Libre Baskerville", serif;
-  font-size: 1.6rem;
-  padding: 32px 24px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
   color: #fff;
 }
 
-/* メニュー一覧（ここをスクロール可能にする） */
-.sidebar-menu {
-  flex: 1; /* 残りのスペースをすべて使う */
-  overflow-y: auto; /* 縦方向にスクロールを許可 */
-  padding-left: 16px;
-  padding-right: 8px; /* スクロールバー用の微調整 */
+.logo-text {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  white-space: nowrap;
 }
 
-/* スクロールバーのデザイン（ねこねこ風に目立たなく、かつ綺麗に） */
-.sidebar-menu::-webkit-scrollbar {
-  width: 6px;
+.sidebar-collapsed .logo-text,
+.sidebar-collapsed .menu-text {
+  display: none;
 }
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  padding: 2px;
 }
-.sidebar-menu::-webkit-scrollbar-track {
-  background: transparent;
+
+.sidebar-menu {
+  flex: 1;
+  padding-left: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
   padding: 14px 20px;
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
-  font-weight: 500;
-  transition: none; /* 背景の切り替えは瞬時に、曲線は固定 */
-  border-radius: 30px 0 0 30px; /* 左側だけ丸める */
+  font-weight: 700;
+  border-radius: 30px 0 0 30px;
   position: relative;
-}
-
-.menu-item .material-icons {
-  font-size: 22px;
+  margin-bottom: 4px;
 }
 
 .menu-item:hover {
   color: #fff;
 }
 
-/* ===== Active State (1枚目の画像の再現) ===== */
+/* ===== Active State Curve (接続部分) ===== */
 .menu-item.active {
-  background: var(--bg-color);
-  color: var(--sidebar-active-text);
-  font-weight: 800;
+  background-color: var(--bg-color);
+  color: var(--primary-color);
 }
 
-/* 上の逆角丸 */
+/* 上部の逆角丸 */
 .menu-item.active::before {
   content: "";
   position: absolute;
@@ -103,11 +131,10 @@ body {
   height: 20px;
   background: transparent;
   border-radius: 50%;
-  box-shadow: 10px 10px 0 0 var(--bg-color); /* 背景色と同じ色の影を出す */
-  pointer-events: none;
+  box-shadow: 10px 10px 0 0 var(--bg-color);
 }
 
-/* 下の逆角丸 */
+/* 下部の逆角丸 */
 .menu-item.active::after {
   content: "";
   position: absolute;
@@ -118,49 +145,86 @@ body {
   background: transparent;
   border-radius: 50%;
   box-shadow: 10px -10px 0 0 var(--bg-color);
-  pointer-events: none;
 }
 
 /* ===== Main Content ===== */
 .main-content {
   flex: 1;
-  background: var(--bg-color);
+  background-color: var(--bg-color);
+  min-height: 100vh;
   padding: 40px;
-  /* サイドバーと接する部分に少し大きな角丸をつける場合 */
-  /* border-radius: 30px 0 0 30px; */
+  transition: var(--transition);
 }
 
-/* ===== Sidebar Footer ===== */
-/* ログアウト部分は最下部に固定 */
+/* ===== Header ===== */
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.breadcrumb-item a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.user-role-badge {
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* ===== Theme Dots ===== */
+.theme-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: 0.2s;
+}
+.theme-dot.active {
+  border-color: #ddd;
+  transform: scale(1.2);
+}
+.dot-green {
+  background-color: #76b19d;
+}
+.dot-blue {
+  background-color: #4a90e2;
+}
+.dot-purple {
+  background-color: #8e44ad;
+}
+.dot-red {
+  background-color: #e67e22;
+}
+
+/* ===== Footer ===== */
 .sidebar-footer {
-  flex-shrink: 0; /* 縮まないように固定 */
-  padding: 24px;
-  background: var(--primary-color); /* 背景を敷いてメニューが透けないようにする */
+  padding: 20px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 10;
 }
-
 .logout {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #e86a6a; /* ねこねこ薬局のアクセントカラーに近い赤 */
+  gap: 12px;
+  color: #ff8a80;
   text-decoration: none;
   font-weight: bold;
-  font-size: 0.95rem;
 }
 
-.logout:hover {
-  opacity: 0.8;
-}
-
-/* ===== Dashboard Cards ===== */
+/* ===== Cards ===== */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 24px;
 }
-
 .admin-card {
   background: #fff;
   border-radius: 24px;
@@ -169,34 +233,21 @@ body {
   color: inherit;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
   transition: var(--transition);
-  border: 1px solid rgba(0, 0, 0, 0.02);
 }
-
 .admin-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
 }
-
 .admin-card h2 {
-  font-size: 1.2rem;
-  font-weight: 800;
   color: var(--primary-color);
-  margin-bottom: 8px;
-}
-
-.admin-card p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #777;
-}
-
-/* ===== Theme ===== */
-.bg-custom-theme {
-  background-color: var(--primary-color) !important;
-}
-
-.page-title {
   font-weight: 800;
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+
+/* SP対応 */
+@media (max-width: 991px) {
+  .main-content {
+    padding: 20px;
+  }
 }

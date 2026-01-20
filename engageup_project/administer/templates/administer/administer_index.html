@@ -1,11 +1,27 @@
-{% extends 'administer/administer_base.html' %} 
+{% extends 'administer/administer_base.html' %}
 
-{% block title %}EngageUp{% endblock %}
+{% block title %}Admin Dashboard| EngageUp{% endblock %}
 
-{% block content %}
-<div class="mb-5">
-  <h1 class="page-title text-dark">Admin Dashboard</h1>
-  <p class="text-muted fs-5">システム全体の管理・操作を行います</p>
+{% block breadcrumb %}
+{% endblock %} {% block content %}
+<div class="dashboard-top-section mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title text-dark fw-800 fw-bold">ダッシュボード</h1>
+    <div class="text-end d-none d-md-block">
+      <span
+        class="badge bg-white text-dark border p-2 px-3 rounded-pill shadow-sm"
+      >
+        <span
+          class="material-icons fw-bold small align-middle"
+          style="font-size: 16px"
+          >calendar_today</span
+        >
+        <span id="current-date" class="align-middle ms-1 small fw-bold"
+          >0000.00.00</span
+        >
+      </span>
+    </div>
+  </div>
 </div>
 
 <div class="dashboard-grid">
@@ -13,27 +29,22 @@
     <h2>定数一覧</h2>
     <p>システム設定値の管理</p>
   </a>
-
   <a href="{% url 'administer:user_list' %}" class="admin-card">
     <h2>ユーザー一覧</h2>
     <p>権限・アカウント管理</p>
   </a>
-
   <a href="{% url 'enrollments:exam_list' %}" class="admin-card">
     <h2>検定問題作成</h2>
     <p>試験・設問の管理</p>
   </a>
-
   <a href="{% url 'courses:courses_list' %}" class="admin-card">
     <h2>コース・動画管理</h2>
     <p>教材の登録・更新</p>
   </a>
-
   <a href="{% url 'moderator:moderator_create_user' %}" class="admin-card">
     <h2>アカウント作成</h2>
     <p>アカウントの一括作成</p>
   </a>
-
   <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">
     <h2>バッジ管理</h2>
     <p>評価・称号設定</p>
