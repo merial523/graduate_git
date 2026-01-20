@@ -60,6 +60,13 @@ class ExamCreateView(CreateView):
     template_name = "enrollments/exam_create.html"
     success_url = reverse_lazy("enrollments:exam_list") 
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # prerequisite（前提試験）の選択肢を「仮試験（mock）」かつ「有効なもの」だけに絞る
+        form.fields['prerequisite'].queryset = Exam.objects.filter(exam_type='mock', is_active=True)
+        return form
+    
+
 class ExamUpdateView(UpdateView):
     """検定設定および教材の編集"""
     model = Exam
@@ -68,6 +75,15 @@ class ExamUpdateView(UpdateView):
     
     def get_success_url(self):
         return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # 選択肢を「仮試験」だけに絞る
+        form.fields['prerequisite'].queryset = Exam.objects.filter(
+            exam_type='mock', 
+            is_active=True
+        ).exclude(id=self.object.id)
+        return form
 
 
 # --- 問題管理（手動操作） ---
