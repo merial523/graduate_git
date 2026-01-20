@@ -23,7 +23,6 @@
     <link rel="stylesheet" href="{% static 'css/pc.css' %}" />
   </head>
 
-  <!-- 複数の状態（テーマ・モード）をクラスで管理 -->
   <body class="theme-green mode-light">
     <div class="admin-layout" id="adminLayout">
       <!-- ===== Sidebar ===== -->
@@ -38,52 +37,38 @@
         </div>
 
         <nav class="sidebar-menu">
-          <a
-            class="menu-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}"
-            href="{% url 'index' %}"
-          >
+          <!-- ダッシュボード -->
+          <a class="menu-item {% if request.path == '/' or request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">
             <span class="material-icons">dashboard</span>
             <span class="menu-text">ダッシュボード</span>
           </a>
-          <a
-            class="menu-item {% if 'constant' in request.path %}active{% endif %}"
-            href="{% url 'administer:constant_list' %}"
-          >
+
+          <!-- 定数一覧 -->
+          <a class="menu-item {% if 'constant' in request.path %}active{% endif %}" href="{% url 'administer:constant_list' %}">
             <span class="material-icons">tune</span>
             <span class="menu-text">定数一覧</span>
           </a>
-          <a
-            class="menu-item {% if 'user_list' in request.path %}active{% endif %}"
-            href="{% url 'administer:user_list' %}"
-          >
+
+          <!-- ユーザー管理 (ユーザーリスト・作成・ランク変更すべてをカバー) -->
+          <a class="menu-item {% if 'user' in request.path or 'create_user' in request.path or 'rank' in request.path %}active{% endif %}" href="{% url 'administer:user_list' %}">
             <span class="material-icons">group</span>
             <span class="menu-text">ユーザー管理</span>
           </a>
-          <a
-            class="menu-item {% if 'exam' in request.path %}active{% endif %}"
-            href="{% url 'enrollments:exam_list' %}"
-          >
+
+          <!-- 試験管理 -->
+          <a class="menu-item {% if 'exam' in request.path or 'enrollments' in request.path %}active{% endif %}" href="{% url 'enrollments:exam_list' %}">
             <span class="material-icons">assignment</span>
             <span class="menu-text">試験管理</span>
           </a>
-          <a
-            class="menu-item {% if 'courses' in request.path %}active{% endif %}"
-            href="{% url 'courses:courses_list' %}"
-          >
+
+          <!-- コース・動画管理 -->
+          <a class="menu-item {% if 'courses' in request.path %}active{% endif %}" href="{% url 'courses:courses_list' %}">
             <span class="material-icons">school</span>
             <span class="menu-text">コース・動画管理</span>
           </a>
-          <a
-            class="menu-item {% if 'create_user' in request.path %}active{% endif %}"
-            href="{% url 'moderator:moderator_create_user' %}"
-          >
-            <span class="material-icons">person_add</span>
-            <span class="menu-text">アカウント作成</span>
-          </a>
-          <a
-            class="menu-item {% if 'Badge' in request.path %}active{% endif %}"
-            href="{% url 'moderator:moderatorBadge' %}"
-          >
+
+          <!-- バッジ管理 -->
+          <a class="menu-item {% if 'Badge' in request.path or 'badge' in request.path %}active{% endif %}" href="{% url 'moderator:moderatorBadge' %}">
             <span class="material-icons">military_tech</span>
             <span class="menu-text">バッジ管理</span>
           </a>
@@ -112,7 +97,7 @@
           </div>
 
           <div class="header-right d-flex align-items-center gap-4">
-            <!-- 統合設定メニュー -->
+            <!-- カスタマイズ設定ドロップダウン -->
             <div class="dropdown">
               <button
                 class="btn btn-light rounded-pill p-2 px-3 shadow-sm d-flex align-items-center gap-2"
@@ -126,7 +111,7 @@
                 class="dropdown-menu dropdown-menu-end p-4 shadow-lg border-0 rounded-4"
                 style="min-width: 280px"
               >
-                <!-- カラーテーマ -->
+                <!-- カラー -->
                 <div class="mb-4">
                   <p class="small text-muted fw-bold mb-2">カラーテーマ</p>
                   <div class="d-flex justify-content-between px-2">
@@ -148,8 +133,7 @@
                     ></div>
                   </div>
                 </div>
-
-                <!-- フォントサイズ調節 -->
+                <!-- フォントサイズ -->
                 <div>
                   <p
                     class="small text-muted fw-bold mb-2 d-flex justify-content-between"
@@ -166,15 +150,12 @@
                     id="fontSizeRange"
                     oninput="setFontSize(this.value)"
                   />
-                  <div
-                    class="d-flex justify-content-between small text-muted mt-1"
-                  >
-                    <span>A</span><span class="fs-5">A</span>
-                  </div>
                 </div>
               </div>
             </div>
 
+            <!-- ユーザープロフィール -->
+            <div class="header-right d-flex align-items-center gap-4">
             <div class="user-profile d-flex align-items-center gap-2">
               <div class="user-role-badge">Admin</div>
               <span class="fw-bold small user-name-text"
@@ -183,13 +164,11 @@
             </div>
           </div>
         </header>
-
         {% block content %}{% endblock %}
       </main>
     </div>
 
     <script>
-      // サイドバー開閉
       function toggleSidebar() {
         const layout = document.getElementById("adminLayout");
         const icon = document.getElementById("toggleIcon");
@@ -199,7 +178,6 @@
           : "chevron_left";
       }
 
-      // カラーテーマ
       function setTheme(themeName) {
         const currentMode = document.body.classList.contains("mode-dark")
           ? "mode-dark"
@@ -208,32 +186,13 @@
         localStorage.setItem("selectedTheme", themeName);
       }
 
-      // ライト/ダークモード
-      function setMode(modeName) {
-        const currentTheme =
-          Array.from(document.body.classList).find((c) =>
-            c.startsWith("theme-"),
-          ) || "theme-green";
-        document.body.className = `${currentTheme} ${modeName}`;
-        localStorage.setItem("selectedMode", modeName);
-
-        // ボタンの見た目更新
-        document
-          .querySelectorAll(".mode-btn")
-          .forEach((btn) => btn.classList.remove("active"));
-        document
-          .getElementById(`btn-${modeName.split("-")[1]}`)
-          .classList.add("active");
-      }
-
-      // フォントサイズ
       function setFontSize(size) {
         document.documentElement.style.fontSize = size + "%";
-        document.getElementById("font-size-val").innerText = size + "%";
+        const valLabel = document.getElementById("font-size-val");
+        if (valLabel) valLabel.innerText = size + "%";
         localStorage.setItem("selectedFontSize", size);
       }
 
-      // 日付
       function updateCurrentDate() {
         const dateSpan = document.getElementById("current-date");
         if (dateSpan) {
@@ -242,18 +201,16 @@
         }
       }
 
-      // 初期設定の復元
       document.addEventListener("DOMContentLoaded", () => {
         updateCurrentDate();
         const savedTheme =
           localStorage.getItem("selectedTheme") || "theme-green";
         const savedMode = localStorage.getItem("selectedMode") || "mode-light";
         const savedFontSize = localStorage.getItem("selectedFontSize") || "100";
-
         setTheme(savedTheme);
-        setMode(savedMode);
         setFontSize(savedFontSize);
-        document.getElementById("fontSizeRange").value = savedFontSize;
+        if (document.getElementById("fontSizeRange"))
+          document.getElementById("fontSizeRange").value = savedFontSize;
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

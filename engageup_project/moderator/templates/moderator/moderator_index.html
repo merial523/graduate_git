@@ -1,38 +1,67 @@
 {% extends 'moderator/moderator_base.html' %}
 
-{% block title %}EngageUp{% endblock %}
+{% block title %}ModeratorDashboard | EngageUp{% endblock %}
 
-{% block content %}
-<div class="mb-5">
-  <h1 class="page-title text-dark">Moderator Dashboard</h1>
-  <p class="text-muted fs-5">研修の進行管理、お知らせの運用を行います</p>
-</div>
+{% block breadcrumb %}
+{% endblock %} {% block content %}
+<div class="dashboard-top-section mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title text-dark fw-800 m-0">ダッシュボード</h1>
+    <div class="text-end d-none d-md-block">
+      <span
+        class="badge bg-white text-dark border p-2 px-3 rounded-pill shadow-sm"
+        style="
+          background-color: var(--card-bg) !important;
+          color: var(--text-color) !important;
+        "
+      >
+        <span
+          class="material-icons fw-bold small align-middle"
+          style="font-size: 16px"
+          >calendar_today</span
+        >
+        <span id="current-date" class="align-middle ms-1 small fw-bold"
+          >0000.00.00</span
+        >
+      </span>
+    </div>
+  </div>
 
-<!-- モデレーター用操作カード -->
+<!-- モデレーター用操作カードグリッド -->
 <div class="dashboard-grid">
   <a href="{% url 'courses:courses_list' %}" class="admin-card">
-    <h2>コース一覧</h2>
-    <p>公開中の研修コースを確認</p>
+    <h2 class="text-primary">コース一覧</h2>
+    <p class="text-muted">公開中の研修コースを確認</p>
   </a>
 
-  <a href="{% url 'moderator:moderator_create_user' %}" class="admin-card">
-    <h2>アカウント作成</h2>
-    <p>新規受講者の個別・一括登録</p>
+  <a href="{% url 'administer:user_list' %}" class="admin-card">
+    <h2>ユーザー管理</h2>
+    <p>権限・アカウント管理</p>
   </a>
 
   <a href="{% url 'enrollments:enrollmentsIndex' %}" class="admin-card">
-    <h2>検定管理</h2>
-    <p>受講生の進捗状況・合格判定</p>
+    <h2 class="text-primary">検定管理</h2>
+    <p class="text-muted">受講生の進捗状況・合格判定</p>
   </a>
 
   <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">
-    <h2>バッジ管理</h2>
-    <p>付与されたバッジの統計と管理</p>
+    <h2 class="text-primary">バッジ管理</h2>
+    <p class="text-muted">付与されたバッジの統計と管理</p>
   </a>
 
   <a href="{% url 'moderator:moderatorNews' %}" class="admin-card">
-    <h2>お知らせ投稿</h2>
-    <p>受講生向け通知の作成・配信</p>
+    <h2 class="text-primary">お知らせ投稿</h2>
+    <p class="text-muted">受講生向け通知の作成・配信</p>
   </a>
 </div>
+
+<style>
+  /* モデレーターページ固有の補正 */
+  .text-primary {
+    color: var(--primary-color) !important;
+  }
+  .fw-800 {
+    font-weight: 800;
+  }
+</style>
 {% endblock %}

@@ -1,131 +1,218 @@
-{% extends 'administer/administer_base.html' %}
-{% load static %}
+{% extends base_template %}
 
+{% load static %}
 {% block breadcrumb %}<li class="breadcrumb-item active">ユーザー管理</li>{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h2 class="h5 mb-0">ユーザーリスト</h2>
-        <a href="{% url 'administer:administer_index' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-house"></i> 管理ホームへ戻る
-        </a>
+<div class="user-management-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title text-dark m-0 fw-bold">ユーザー管理</h1>
+
+    {% if request.user.rank == 'administer' %}
+    <div class="display-toggle">
+      {% if show_all %}
+      <a href="{% url 'administer:user_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        有効ユーザーのみ
+      </a>
+      {% else %}
+      <a href="{% url 'administer:user_list' %}?show=all" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+        <span class="material-icons fw-bold small align-middle">visibility_off</span> 全ユーザー表示
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- 検索バー -->
+  <div class="row g-3 mb-4 align-items-center">
+    <div class="col-md-5">
+      <form method="get" action="{% url 'administer:user_list' %}" class="search-input-group shadow-sm">
+        <span class="material-icons text-muted">search</span>
+        <input type="text" name="q" placeholder="名前やメールアドレスで検索..." value="{{ request.GET.q }}" />
+        {% if request.GET.q %}
+        <a href="{% url 'administer:user_list' %}" class="text-muted"><span class="material-icons small">cancel</span></a>
+        {% endif %}
+      </form>
     </div>
 
-    <div class="card-body">
-        <form method="post" id="user-bulk-form">
-            {% csrf_token %}
-            <div class="table-responsive">
-                <table class="table table-hover border">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center">選択</th>
-                            <th>ランク</th>
-                            <th>ユーザー名</th>
-                            <th>メール</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        {# ★修正ポイント：is_activeがFalse（削除済み）なら背景を暗くし、少し透けさせる #}
-                        <tr class="{% if not user.is_active %}table-secondary text-muted opacity-75{% endif %} {% if user == request.user %}table-light{% endif %}">
-                            <td class="text-center">
-                                {% if user == request.user %}
-                                    <input type="checkbox" class="form-check-input" disabled>
-                                {% else %}
-                                    <input type="checkbox" name="selected_user" value="{{ user.pk }}" class="form-check-input">
-                                {% endif %}
-                            </td>
-                            <td>
-                                {# ★削除済みならバッジの色も変える #}
-                                <span class="badge {% if user.is_active %}bg-secondary{% else %}bg-dark{% endif %}">
-                                    {{ user.rank }}
-                                </span>
-                            </td>
-                            <td>
-                                {{ user.username }}
-                                {% if user == request.user %} <span class="small">(あなた)</span>{% endif %}
-                                {# ★削除済みラベルの追加 #}
-                                {% if not user.is_active %} <span class="badge rounded-pill bg-danger" style="font-size: 0.7em;">削除済み</span>{% endif %}
-                            </td>
-                            <td>{{ user.email }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">該当するユーザーはいません。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- アクションボタンエリア -->
+    <div class="col-md-7 text-md-end">
+      <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+        <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary shadow-sm">
+          ユーザー作成
+        </a>
+        
+        {% if request.user.rank == 'administer' %}
+        <a href="{% url 'administer:select_rank'%}" class="btn btn-success shadow-sm">
+          権限変更
+        </a>
 
-            {% if is_paginated %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination pagination-sm justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if show_all %}&show=all{% endif %}" aria-label="First">
-                                <span aria-hidden="true">&laquo; 最初</span>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if show_all %}&show=all{% endif %}">前へ</a>
-                        </li>
-                    {% endif %}
+        {% if show_all %}
+        <button type="submit" form="user-bulk-form" name="action" value="restore" class="btn btn-warning shadow-sm" onclick="return confirm('復元しますか？');">
+          一括復元
+        </button>
+        {% else %}
+        <button type="submit" form="user-bulk-form" name="action" value="soft_delete" class="btn btn-danger shadow-sm" onclick="return confirm('削除しますか？');">
+          一括削除
+        </button>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
-                    <li class="page-item disabled">
-                        <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if show_all %}&show=all{% endif %}">次へ</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ paginator.num_pages }}{% if show_all %}&show=all{% endif %}" aria-label="Last">
-                                <span aria-hidden="true">最後 &raquo;</span>
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
+  <!-- テーブル部分 -->
+  <form method="post" id="user-bulk-form">
+    {% csrf_token %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            {% if request.user.rank == 'administer' %}
+            <th class="text-center" style="width: 80px">選択</th>
+            {% endif %}
+            <th style="width: 150px">権限</th>
+            <th>ユーザー名</th>
+            <th>メールアドレス</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user_item in users %}
+          <!-- 管理者の場合は user-row クラスを付与してクリック可能にする -->
+          <tr class="{% if request.user.rank == 'administer' and user_item != request.user %}user-row{% endif %} {% if not user_item.is_active %}opacity-50{% endif %}">
+            {% if request.user.rank == 'administer' %}
+            <td class="text-center">
+              {% if user_item == request.user %}
+              <span class="material-icons text-muted small" title="自分自身は操作できません">lock</span>
+              {% else %}
+              <input type="checkbox" name="selected_user" value="{{ user_item.pk }}" class="form-check-input row-checkbox" />
+              {% endif %}
+            </td>
             {% endif %}
 
-            <div class="d-flex justify-content-between gap-2 mt-4 pt-3 border-top">
-                <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary flex-fill shadow-sm py-2">
-                    <i class="bi bi-person-plus"></i> <span class="d-none d-lg-inline">ユーザー</span>作成
-                </a>
-
-                <a href="{% url 'administer:select_rank' %}" class="btn btn-success flex-fill shadow-sm py-2">
-                    <i class="bi bi-pencil-square"></i> <span class="d-none d-lg-inline">ランク</span>変更
-                </a>
-
-                {# ★修正ポイント：削除済み表示中ならボタンを「復元」に変更するようにすると親切です #}
-                {% if show_all %}
-                <button type="submit" name="action" value="restore" class="btn btn-warning flex-fill shadow-sm py-2" 
-                        onclick="return confirm('選択したユーザーを復元（有効化）しますか？')">
-                    <i class="bi bi-arrow-counterclockwise"></i> <span class="d-none d-lg-inline">ユーザー</span>復元
-                </button>
-                {% else %}
-                <button type="submit" name="action" value="soft_delete" class="btn btn-danger flex-fill shadow-sm py-2" 
-                        onclick="return confirm('選択したユーザーを削除（非表示化）しますか？')">
-                    <i class="bi bi-trash"></i> <span class="d-none d-lg-inline">ユーザー</span>削除
-                </button>
+            <td>
+              <span class="user-role-badge {% if not user_item.is_active %}bg-secondary{% endif %}">
+                {{ user_item.rank }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold text-dark">{{ user_item.username }}</span>
+                {% if user_item == request.user %}
+                <span class="badge bg-light text-primary border small" style="font-size: 0.7rem">あなた</span>
+                {% endif %} 
+                {% if not user_item.is_active %}
+                <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem">削除済み</span>
                 {% endif %}
-
-                {% if show_all %}
-                <a href="{% url 'administer:user_list' %}"
-                    class="btn btn-outline-secondary flex-fill shadow-sm py-2">
-                    有効のみ表示
-                </a>
-                {% else %}
-                <a href="{% url 'administer:user_list' %}?show=all"
-                    class="btn btn-outline-dark flex-fill shadow-sm py-2">
-                    削除済み表示
-                </a>
-                {% endif %}
-            </div>
-        </form>
+              </div>
+            </td>
+            <td class="text-muted small">{{ user_item.email }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="{% if request.user.rank == 'administer' %}4{% else %}3{% endif %}" class="text-center py-5">
+              <span class="material-icons fs-1 text-muted d-block mb-2">person_off</span>
+              <p class="text-muted">該当するユーザーは見つかりませんでした。</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </form>
+
+  <!-- ページネーション -->
+  {% if is_paginated %}
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link border-0 rounded-circle mx-1 shadow-sm" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+            <span class="material-icons">chevron_left</span>
+        </a>
+      </li>
+      {% endif %}
+      <li class="page-item active">
+        <span class="page-link border-0 rounded-circle mx-1 shadow-sm bg-primary text-white">{{ page_obj.number }}</span>
+      </li>
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link border-0 rounded-circle mx-1 shadow-sm" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+            <span class="material-icons">chevron_right</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
+
+<!-- 行選択のJavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.user-row');
+    
+    rows.forEach(row => {
+        row.style.cursor = 'pointer'; // カーソルを指マークに
+        
+        row.addEventListener('click', function(e) {
+            // チェックボックス自体、またはリンクをクリックした場合は何もしない
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+
+            const checkbox = this.querySelector('.row-checkbox');
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = !checkbox.checked;
+                // ハイライト状態を更新
+                if (checkbox.checked) {
+                    this.classList.add('table-selected');
+                } else {
+                    this.classList.remove('table-selected');
+                }
+            }
+        });
+    });
+
+    // チェックボックスを直接クリックした時のハイライト制御
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const row = this.closest('tr');
+            if (this.checked) {
+                row.classList.add('table-selected');
+            } else {
+                row.classList.remove('table-selected');
+            }
+        });
+    });
+});
+</script>
+
+<style>
+  /* 行選択時のハイライト（ねこねこグリーン） */
+  .table-selected {
+      background-color: rgba(118, 177, 157, 0.1) !important;
+  }
+  
+  .pagination .page-link { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); }
+  .user-management-container { animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* 検索バーの微調整 */
+  .search-input-group {
+      background: var(--card-bg);
+      border-radius: 50px;
+      padding: 6px 15px;
+      display: flex;
+      align-items: center;
+      border: 1px solid rgba(0,0,0,0.05);
+  }
+  .search-input-group input {
+      border: none;
+      outline: none;
+      background: transparent;
+      margin-left: 8px;
+      width: 100%;
+      color: var(--text-color);
+  }
+</style>
 {% endblock %}
