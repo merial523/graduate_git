@@ -83,7 +83,7 @@
         </nav>
         {% endif %}
 
-        <!-- 【新デザイン】ボトム・アクション・バー -->
+        <!-- ボトム・アクション・バー -->
         <div class="action-bar-container">
             <div class="action-bar-inner shadow-lg">
                 <div class="container">
@@ -109,8 +109,9 @@
                             </div>
                         </div>
                         <div class="col-md-auto">
-                            <button type="submit" class="btn btn-success btn-lg shadow-sm fw-800 px-5">
-                                <span class="material-icons me-2">check_circle</span> 権限を更新する
+                            <!-- type="button" にして JS で制御 -->
+                            <button type="button" id="submit-trigger" class="btn btn-success btn-lg shadow-sm fw-800 px-5">
+                                 権限を更新する
                             </button>
                         </div>
                     </div>
@@ -120,18 +121,43 @@
     </form>
 </div>
 
+<!-- 処理中/完了ポップアップモーダル -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <!-- ローディング状態 -->
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">権限を更新しています...</h5>
+                    <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+                </div>
+                <!-- 完了状態 (最初は非表示) -->
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">更新が完了しました！</h5>
+                    <p class="text-muted small mb-0">リストを更新しています...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const rows = document.querySelectorAll('.user-row');
         const checkboxes = document.querySelectorAll('.row-checkbox');
         const countDisplay = document.getElementById('selected-count-display');
+        const submitBtn = document.getElementById('submit-trigger');
+        const form = document.getElementById('rank-update-form');
+        const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
 
-        // 1. 行クリックでチェックボックスをトグル
+        // 1. 行クリック/チェックボックス操作 (既存機能)
         rows.forEach(row => {
             row.addEventListener('click', function(e) {
-                // 自分自身の行、または既にチェックボックス自体をクリックした場合は何もしない（二重動作防止）
                 if (this.classList.contains('is-self') || e.target.type === 'checkbox') return;
-
                 const checkbox = this.querySelector('.row-checkbox');
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
@@ -141,7 +167,6 @@
             });
         });
 
-        // 2. チェックボックスを直接クリックした時の処理
         checkboxes.forEach(cb => {
             cb.addEventListener('change', function() {
                 updateRowHighlight(this.closest('.user-row'), this.checked);
@@ -149,83 +174,95 @@
             });
         });
 
-        // 行のハイライト更新
         function updateRowHighlight(row, isChecked) {
-            if (isChecked) {
-                row.classList.add('table-primary-soft');
-            } else {
-                row.classList.remove('table-primary-soft');
-            }
+            isChecked ? row.classList.add('table-primary-soft') : row.classList.remove('table-primary-soft');
         }
 
-        // 選択人数の更新
         function updateCount() {
-            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-            countDisplay.innerText = checkedCount;
-            // 0名以上の時はアクションバーを目立たせる等の演出も可能
+            countDisplay.innerText = document.querySelectorAll('.row-checkbox:checked').length;
         }
+
+        // 2. ローディング ＆ 完了ポップアップ演出
+        submitBtn.addEventListener('click', function() {
+            // バリデーション：選択されているかチェック
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            const rankSelected = document.querySelector('input[name="rank"]:checked');
+
+            if (checkedCount === 0) {
+                alert("変更対象のユーザーを選択してください。");
+                return;
+            }
+            if (!rankSelected) {
+                alert("変更後のランクを選択してください。");
+                return;
+            }
+
+            // モーダルを表示
+            statusModal.show();
+
+            // 擬似的な演出時間（1.5秒後に完了へ切り替え、その後送信）
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+
+                // さらに1秒後にフォームを送信
+                setTimeout(() => {
+                    form.submit();
+                }, 1000);
+            }, 1500);
+        });
     });
 </script>
 
 <style>
     .fw-800 { font-weight: 800; }
-    .bg-soft-blue { background-color: rgba(93, 169, 233, 0.1); }
+    
+    /* ローディングアニメーション（ねこねこ風グリーン） */
+    .custom-loader {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid var(--primary-color);
+        border-radius: 50%;
+        display: inline-block;
+        animation: spin 1s linear infinite;
+    }
 
-    /* 検索・テーブル周り */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* 完了アイコンの演出 */
+    .success-icon-wrapper span {
+        font-size: 80px;
+        animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes scaleUp {
+        from { transform: scale(0); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    /* 以下、既存のスタイル維持 */
+    .bg-soft-blue { background-color: rgba(93, 169, 233, 0.1); }
     .search-input-group { background: var(--card-bg); border-radius: 16px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(0,0,0,0.05); }
     .search-input-group input { border: none; outline: none; background: transparent; width: 100%; color: var(--text-color); }
-    
-    /* 行選択時のスタイル */
     .user-row { cursor: pointer; transition: 0.2s; }
-    .user-row.is-self { cursor: default; }
     .table-primary-soft { background-color: rgba(118, 177, 157, 0.1) !important; }
 
-    /* 【新デザイン】ボトム・アクション・バー */
-    .action-bar-container {
-        position: fixed;
-        bottom: 0;
-        left: 0; /* サイドバーがあるため、base.htmlの構成によっては調整が必要 */
-        width: 100%;
-        padding: 0 0 0 var(--sidebar-width, 260px); /* サイドバー幅を避ける（JSで動的に変わる場合は下記参照） */
-        z-index: 1050;
-        transition: padding 0.4s ease;
-    }
-    /* サイドバーが閉じている時 */
+    .action-bar-container { position: fixed; bottom: 0; left: 0; width: 100%; padding: 0 0 0 var(--sidebar-width, 260px); z-index: 1050; transition: padding 0.4s ease; }
     .sidebar-collapsed .action-bar-container { padding-left: var(--sidebar-collapsed-width, 88px); }
-
-    .action-bar-inner {
-        background: var(--card-bg);
-        border-top: 2px solid var(--primary-color);
-        padding: 15px 0;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.08);
-    }
-
+    .action-bar-inner { background: var(--card-bg); border-top: 2px solid var(--primary-color); padding: 15px 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.08); }
     .selection-count { font-weight: 800; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
-
-    /* ラジオボタン（チップ形式）の再調整 */
     .custom-radio-group ul { list-style: none; padding: 0; margin: 0; gap: 8px; }
-    .custom-radio-group label {
-        background: var(--bg-color);
-        padding: 8px 16px; border-radius: 12px;
-        cursor: pointer; transition: 0.2s;
-        border: 2px solid transparent;
-        font-weight: bold; font-size: 0.85rem;
-        display: flex; align-items: center; color: var(--text-color);
-    }
+    .custom-radio-group label { background: var(--bg-color); padding: 8px 16px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; color: var(--text-color); }
     .custom-radio-group input[type="radio"] { margin-right: 8px; accent-color: var(--primary-color); }
+    .custom-radio-group li:has(input:checked) label { background: #fff; border-color: var(--primary-color); color: var(--primary-color); box-shadow: 0 4px 10px rgba(118, 177, 157, 0.15); }
     
-    .custom-radio-group li:has(input:checked) label {
-        background: #fff;
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-        box-shadow: 0 4px 10px rgba(118, 177, 157, 0.15);
-    }
-
-    /* モバイル対応：アクションバーを縦並びに */
     @media (max-width: 767px) {
         .action-bar-container { padding-left: 0 !important; }
         .action-bar-inner { padding: 10px; }
-        .custom-radio-group ul { margin-bottom: 10px; }
         .action-bar-inner .btn { width: 100%; }
     }
 </style>
