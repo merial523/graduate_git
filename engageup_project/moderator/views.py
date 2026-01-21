@@ -6,6 +6,7 @@ from django.utils.crypto import get_random_string
 from main.models import User
 from .forms import SequentialUserCreateForm
 from main.models import Badge
+from common.views import BaseCreateView
 
 # Create your views here.
 
@@ -109,7 +110,7 @@ class BadgeUpdateView(UpdateView):
 class NewsListView(ListView):
     model = News
     template_name = "moderator/mo_news_list.html"
-    context_object_name = "news"
+    context_object_name = "news_"
     paginate_by = 10
 
     def get_queryset(self):
@@ -134,11 +135,11 @@ class NewsListView(ListView):
         return redirect(request.get_full_path())
 
 
-class NewsCreateView(UpdateView):
+class NewsCreateView(BaseCreateView):
     model = News
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
-    success_url = reverse_lazy("moderator:mo_news_list")
+    success_url = reverse_lazy("moderator:news_list")
 
     def form_valid(self, form):
         form.instance.is_active = True
@@ -148,7 +149,7 @@ class NewsUpdateView(UpdateView):
     model = News
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
-    success_url = reverse_lazy("moderator:mo_news_list")
+    success_url = reverse_lazy("moderator:news_list")
 
     def get_queryset(self):
         return News.objects.filter(is_active=True)

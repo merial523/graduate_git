@@ -5,9 +5,9 @@ import fitz  # type: ignore
 import google.generativeai as genai  # type: ignore
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, UpdateView
 from django.urls import reverse_lazy
-
+from common.views import BaseCreateView
 from main.models import Exam, Question, Badge, Choice, UserExamStatus
 from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet
 
@@ -53,7 +53,7 @@ class ExamListView(ListView):
         context['current_sort'] = self.request.GET.get('sort', 'newest')
         return context
 
-class ExamCreateView(CreateView):
+class ExamCreateView(BaseCreateView):
     """新規検定作成"""
     model = Exam
     fields = ["title", "description", "passing_score", "exams_file", "exam_type", "prerequisite"]

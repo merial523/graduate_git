@@ -81,7 +81,7 @@
 
           <!-- お知らせ投稿: URLに 'News' または 'news' が含まれるとき -->
           <a class="menu-item {% if 'News' in request.path or 'news' in request.path %}active{% endif %}" 
-             href="{% url 'moderator:moderatorNews' %}">
+             href="{% url 'moderator:news_list' %}">
             <span class="material-icons">campaign</span>
             <span class="menu-text">お知らせ投稿</span>
           </a>

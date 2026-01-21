@@ -1,0 +1,9 @@
+createviewを作成するときは
+続けて保存の場合は
+is_continue=trueを入力すると同時に
+is_continue_url =""現在のURLの名前を入力
+
+例:)
+class NewsCreateView(BaseCreateView):
+    is_continue = true
+    is_continue_url = "news_list"

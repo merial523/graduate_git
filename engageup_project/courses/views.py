@@ -1,8 +1,9 @@
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView,  UpdateView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from common.views import BaseCreateView
 
 from main.models import Course
 from .forms import CourseForm
@@ -43,7 +44,7 @@ class CourseListView(ListView):
         return redirect(request.get_full_path())
 
 @method_decorator(login_required, name="dispatch")
-class CourseCreateView(CreateView):
+class CourseCreateView(BaseCreateView):
     model = Course
     form_class = CourseForm
     template_name = "courses/mo_courses_form.html"
