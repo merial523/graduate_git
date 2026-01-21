@@ -43,74 +43,6 @@
           </button>
         </div>
 
-<<<<<<< HEAD
-    <div
-      class="offcanvas offcanvas-start w-25 bg-custom-theme"
-      tabindex="-1"
-      id="offcanvasMenu"
-    >
-      <div
-        class="offcanvas-header text-white border-bottom border-white border-opacity-10"
-      >
-        <h5 class="offcanvas-title font-serif" id="offcanvasMenuLabel">
-          Moderator Menu
-        </h5>
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          data-bs-dismiss="offcanvas"
-        ></button>
-      </div>
-      <div class="offcanvas-body text-white">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{% url 'courses:courses_list' %}"
-              >コース一覧</a
-            >
-          </li>
-          <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{% url 'moderator:moderator_create_user' %}"
-              >アカウント作成</a
-            >
-          </li>
-          <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{% url 'enrollments:enrollmentsIndex' %}"
-              >検定管理</a
-            >
-          </li>
-          <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{% url 'moderator:moderatorBadge' %}"
-              >バッジ管理</a
-            >
-          </li>
-          <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{% url 'moderator:news_list' %}"
-              >お知らせ一覧</a
-            >
-          </li>
-          <li
-            class="nav-item mt-4 pt-4 border-top border-white border-opacity-25"
-          >
-            <a
-              class="nav-link fw-bold"
-              style="color: #e86a6a"
-              href="{% url 'accounts:logout' %}"
-              >ログアウト</a
-            >
-          </li>
-        </ul>
-      </div>
-=======
         <nav class="sidebar-menu">
           <!-- ダッシュボード: パスが完全一致、または名前が index のとき -->
           <a class="menu-item {% if request.path == '/' or request.resolver_match.url_name == 'index' %}active{% endif %}" 
@@ -249,7 +181,6 @@
         </header>
         {% block content %}{% endblock %}
       </main>
->>>>>>> ef6747ff4cc7d81e7e6ab5df263cc2726c07e881
     </div>
 
     <script>
