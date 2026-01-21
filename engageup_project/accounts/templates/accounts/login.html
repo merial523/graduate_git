@@ -1,86 +1,290 @@
-<!DOCTYPE html>
+{% load static %}
+<!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ログイン | EngageUp</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  
-  <style>
-    body {
-      background-color: #f8f9fa; /* 薄いグレーの背景 */
-    }
-    .login-card {
-      border: none;
-      border-radius: 1rem;
-    }
-    /* Djangoフォームのinput要素にBootstrapのスタイルを適用 */
-    .form-group-custom input {
-      display: block;
-      width: 100%;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #dee2e6;
-      border-radius: 0.5rem;
-      transition: border-color 0.2s;
-    }
-    .form-group-custom input:focus {
-      border-color: #76b19d;
-      outline: 0;
-      box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
-    }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ログイン | EngageUp</title>
 
-<div class="container">
-  <div class="row justify-content-center align-items-center vh-100">
-    <div class="col-md-5 col-lg-4">
-      
-      <div class="text-center mb-4">
-        <h1 class="h3 fw-bold" style="color: #76b19d;">EngageUp</h1>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --primary-color: #76b19d;
+        --bg-color: #f8f2f2;
+        --text-color: #333;
+      }
+
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+        font-family: "M PLUS Rounded 1c", sans-serif;
+        background-color: #fff;
+        color: var(--text-color);
+        overflow: hidden;
+      }
+
+      .split-container {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+      }
+
+      /* --- 左側：ビジュアルセクション --- */
+      .visual-side {
+        flex: 1.2;
+        position: relative;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+          url("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=2073");
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        padding: 40px;
+      }
+
+      .brand-logo-large {
+        font-family: "Libre Baskerville", serif;
+        font-size: 4rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        letter-spacing: -2px;
+        animation: fadeInUp 1s ease;
+      }
+
+      .brand-tagline {
+        font-size: 1.2rem;
+        font-weight: 400;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        opacity: 0.9;
+        animation: fadeInUp 1.2s ease;
+      }
+
+      /* --- 右側：フォームセクション --- */
+      .form-side {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 60px;
+        background-color: #fff;
+      }
+
+      .form-wrapper {
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .login-tabs {
+        display: flex;
+        border-bottom: 2px solid #eee;
+        margin-bottom: 40px;
+      }
+      .tab-item {
+        flex: 1;
+        text-align: center;
+        padding-bottom: 15px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #ccc;
+      }
+      .tab-item.active {
+        color: var(--text-color);
+        border-bottom: 3px solid var(--text-color);
+      }
+
+      /* 入力エリア */
+      .form-group-custom {
+        margin-bottom: 25px;
+        position: relative; /* アイコン配置用 */
+      }
+      .form-group-custom label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #888;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+      .form-group-custom input {
+        width: 100%;
+        padding: 12px 0;
+        border: none;
+        border-bottom: 1px solid #ddd;
+        border-radius: 0;
+        font-size: 1rem;
+        transition: 0.3s;
+        outline: none;
+        background: transparent;
+      }
+      .form-group-custom input:focus {
+        border-bottom: 2px solid var(--primary-color);
+      }
+
+      /* ★パスワード表示・非表示ボタン */
+      .password-toggle {
+        position: absolute;
+        right: 0;
+        bottom: 12px;
+        cursor: pointer;
+        color: #ccc;
+        transition: 0.3s;
+        user-select: none;
+      }
+      .password-toggle:hover {
+        color: var(--primary-color);
+      }
+
+      .login-btn {
+        background-color: #222;
+        color: #fff;
+        width: 100%;
+        padding: 16px;
+        border: none;
+        font-weight: 800;
+        font-size: 1rem;
+        margin-top: 20px;
+        transition: 0.3s;
+        letter-spacing: 2px;
+      }
+      .login-btn:hover {
+        background-color: var(--primary-color);
+        transform: translateY(-2px);
+      }
+
+      .forgot-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.8rem;
+        color: #888;
+        text-decoration: none;
+        transition: 0.3s;
+      }
+      .forgot-link:hover {
+        color: var(--primary-color);
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 991px) {
+        .visual-side {
+          display: none;
+        }
+        .form-side {
+          flex: 1;
+          padding: 30px;
+        }
+        body {
+          overflow: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="split-container">
+      <div class="visual-side">
+        <div class="brand-logo-large">EngageUp</div>
+        <div class="brand-tagline">Step Up Your Growth</div>
       </div>
 
-      <div class="card login-card shadow">
-        <div class="card-body p-4 p-md-5">
-          <h2 class="h5 fw-bold text-center mb-4">ログイン</h2>
+      <div class="form-side">
+        <div class="form-wrapper">
+          <div class="login-tabs">
+            <div class="tab-item active">ログイン</div>
+          </div>
 
           {% if form.errors %}
-            <div class="alert alert-danger small py-2">
-              <i class="bi bi-exclamation-circle-fill me-2"></i>ユーザー名またはパスワードが違います。
-            </div>
+          <div
+            class="alert alert-danger border-0 rounded-4 small mb-4 shadow-sm"
+          >
+            <i class="material-icons align-middle me-1" style="font-size: 18px"
+              >error</i
+            >
+            資格情報が正しくありません。
+          </div>
           {% endif %}
 
           <form method="post">
             {% csrf_token %}
-            
-            <div class="mb-3 form-group-custom">
-              <label class="form-label small fw-bold text-secondary">メールアドレス</label>
+
+            <div class="form-group-custom">
+              <label>メールアドレス</label>
               {{ form.username }}
             </div>
 
-            <div class="mb-4 form-group-custom">
-              <label class="form-label small fw-bold text-secondary">パスワード</label>
+            <div class="form-group-custom">
+              <label>パスワード</label>
               {{ form.password }}
+              <span class="material-icons password-toggle" id="togglePassword"
+                >visibility_off</span
+              >
             </div>
 
-            <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm" style="background-color: #76b19d;">
-              ログイン
-            </button>
+            <button type="submit" class="login-btn">ログインする</button>
           </form>
 
+          <div class="mt-5 text-center pt-5 border-top">
+            <p class="small text-muted">&copy; GroupG | EngageUp Service</p>
+          </div>
         </div>
       </div>
-      
-      <div class="text-center mt-4">
-        <p class="small text-muted">&copy; GroupG</p>
-      </div>
-
     </div>
-  </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+    <script>
+      // ★パスワード表示・非表示の切り替えスクリプト
+      document.addEventListener("DOMContentLoaded", function () {
+        const togglePassword = document.querySelector("#togglePassword");
+        // Djangoが生成するpassword入力欄のid（通常は id_password）
+        const password = document.querySelector('input[type="password"]');
+
+        togglePassword.addEventListener("click", function () {
+          // タイプの切り替え
+          const type =
+            password.getAttribute("type") === "password" ? "text" : "password";
+          password.setAttribute("type", type);
+
+          // アイコンの切り替え
+          this.innerText =
+            type === "password" ? "visibility_off" : "visibility";
+
+          // フォーカスを戻す（親切設計）
+          password.focus();
+        });
+      });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>
