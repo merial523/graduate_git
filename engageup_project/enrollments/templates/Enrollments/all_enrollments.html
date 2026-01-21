@@ -97,13 +97,18 @@
                                     復元
                                 </button>
                             {% else %}
-                                <!-- 通常モード時：管理メニュー一式 -->
+                                <!-- 通常モード時：管理メニュー -->
                                 <div class="mb-1 small">
                                     教材：{% if exam.exams_file %}<span class="text-success">あり</span>{% else %}<span class="text-danger">未登録</span>{% endif %}
                                 </div>
                                 
                                 <a href="{% url 'enrollments:exam_edit' exam.id %}" class="btn btn-sm btn-outline-primary">編集・教材</a>
-                                <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ</a>
+
+                                <!-- ★ 修正：バッジが存在する場合のみ編集リンクを表示 -->
+                                {% if exam.badge %}
+                                    <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ</a>
+                                {% endif %}
+                                
                                 <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">問題管理</a>
 
                                 <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('削除済みへ移動しますか？')">
@@ -113,7 +118,6 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <!-- データがない場合の表示 -->
                     <tr>
                         <td colspan="4" class="text-center py-4 text-muted">
                             {% if is_trash_mode %}削除済みは空です。{% else %}検定が登録されていません。{% endif %}
@@ -142,9 +146,7 @@
 </script>
 
 <style>
-    /* 削除済みの時にタイトルを少し薄くする */
     .table-light.text-muted strong { color: #adb5bd; }
-    /* ボタンの余白調整 */
     .btn-sm { margin-bottom: 2px; }
     .gap-2 { gap: 0.5rem !important; }
 </style>

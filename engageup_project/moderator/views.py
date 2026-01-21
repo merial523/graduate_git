@@ -97,6 +97,9 @@ class BadgeManageView(ListView):
         if query:
             return Badge.objects.filter(name__icontains=query)
         return Badge.objects.all()
+    
+    def get_queryset(self):
+        return Badge.objects.filter(is_active=True)
 
 
 class BadgeUpdateView(UpdateView):

@@ -190,8 +190,10 @@ def bulk_action_exam(request):
         if exam_ids:
             if action == 'delete':
                 Exam.objects.filter(id__in=exam_ids).update(is_active=False)
+                Badge.objects.filter(exam_id__in=exam_ids).update(is_active=False)
             elif action == 'restore':
                 Exam.objects.filter(id__in=exam_ids).update(is_active=True)
+                Badge.objects.filter(exam_id__in=exam_ids).update(is_active=True)
                 return redirect(f"{reverse_lazy('enrollments:exam_list')}?show=deleted")
     return redirect('enrollments:exam_list')
 
