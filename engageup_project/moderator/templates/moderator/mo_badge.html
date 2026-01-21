@@ -1,68 +1,152 @@
-{% extends "moderator/moderator_base.html" %}
+{% extends 'moderator/moderator_base.html' %}
+{% load static %}
+
+{% block title %}バッジ管理 | EngageUp{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">Badge Management</li>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>バッジ管理一覧</h2>
+<div class="badge-management-container">
+    <div class="mb-4">
+        <h1 class="page-title text-dark m-0 fw-800">バッジ管理</h1>
+        <p class="text-muted small">検定合格者に付与される称号（バッジ）を管理・編集します。</p>
     </div>
 
-    <!-- 検索フォーム -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-body">
-            <form method="GET" action="" class="row g-3">
-                <div class="col-auto">
-                    <input type="text" name="q" class="form-control" placeholder="バッジ名で検索..." value="{{ request.GET.q }}">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">検索</button>
-                    {% if request.GET.q %}
-                        <a href="{% url 'moderator:moderatorBadge' %}" class="btn btn-outline-secondary">クリア</a>
-                    {% endif %}
-                </div>
+    <!-- 検索バー ＆ フィルタエリア -->
+    <div class="row g-3 mb-4 align-items-center">
+        <div class="col-lg-5">
+            <form method="get" action="" class="search-input-group shadow-sm">
+                <span class="material-icons text-muted">search</span>
+                <input type="text" name="q" placeholder="バッジ名で検索..." value="{{ request.GET.q }}">
+                {% if request.GET.q %}
+                    <a href="{% url 'moderator:moderatorBadge' %}" class="text-muted text-decoration-none">
+                        <span class="material-icons small">cancel</span>
+                    </a>
+                {% endif %}
             </form>
+        </div>
+        <div class="col-lg-7 text-md-end">
+            <!-- 必要に応じて「新規バッジ作成」などをここに追加できます -->
         </div>
     </div>
 
-    <!-- バッジ一覧テーブル -->
-    <div class="table-responsive shadow-sm">
-        <table class="table table-hover align-middle border">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 100px;">画像</th>
-                    <th>バッジ名</th>
-                    <th>紐付いている検定</th>
-                    <th style="width: 120px;">操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for badge in badges %}
-                <tr>
-                    <td>
-                        {% if badge.icon %}
-                            <img src="{{ badge.icon.url }}" alt="{{ badge.name }}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: contain;">
-                        {% else %}
-                            <span class="text-muted" style="font-size: 0.8rem;">なし</span>
-                        {% endif %}
-                    </td>
-                    <td><strong>{{ badge.name }}</strong></td>
-                    <td>{{ badge.exam.title }}</td>
-                    <td>
-                        <a href="{% url 'moderator:badge_edit' badge.pk %}" class="btn btn-sm btn-outline-info">
-                            編集する
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center py-4 text-muted">バッジが見つかりません。</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-4">
-        <a href="/" class="btn btn-link text-secondary">← ホームへ戻る</a>
+    <!-- バッジリスト表示 -->
+    <div class="admin-card border-0 shadow-sm overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="text-center" style="width: 100px;">アイコン</th>
+                        <th>バッジ名</th>
+                        <th>紐付け検定</th>
+                        <th class="text-center" style="width: 150px;">アクション</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for badge in badges %}
+                    <tr class="badge-row">
+                        <td class="text-center">
+                            {% if badge.icon %}
+                                <div class="badge-icon-preview shadow-sm">
+                                    <img src="{{ badge.icon.url }}" alt="{{ badge.name }}">
+                                </div>
+                            {% else %}
+                                <div class="badge-icon-none shadow-sm">
+                                    <span class="material-icons text-muted">image_not_supported</span>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark fs-6">{{ badge.name }}</div>
+                            <div class="text-muted extra-small">ID: #{{ badge.pk }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="material-icons text-primary" style="font-size: 18px;">assignment_turned_in</span>
+                                <span class="text-muted small fw-bold">{{ badge.exam.title }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'moderator:badge_edit' badge.pk %}" class="btn btn-success btn-sm shadow-sm px-3">
+                                <span class="material-icons">edit</span> 編集
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <span class="material-icons fs-1 d-block mb-2">workspace_premium</span>
+                            該当するバッジは見つかりませんでした。
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    .extra-small { font-size: 0.75rem; }
+
+    /* バッジプレビューの丸み */
+    .badge-icon-preview, .badge-icon-none {
+        width: 54px;
+        height: 54px;
+        background-color: #fff;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 2px solid #f8fcfb;
+    }
+    .badge-icon-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 5px;
+    }
+
+    /* テーブル行の装飾 */
+    .badge-row {
+        transition: var(--transition, 0.3s ease);
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(118, 177, 157, 0.04) !important;
+        transform: scale(1.002);
+    }
+
+    /* 検索バー */
+    .search-input-group {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .search-input-group input {
+        border: none;
+        outline: none;
+        background: transparent;
+        width: 100%;
+        color: var(--text-color);
+        font-size: 0.95rem;
+    }
+
+    /* 役割バッジ等の共通スタイル補完 */
+    .user-role-badge {
+        background: var(--primary-color);
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+</style>
 {% endblock %}
