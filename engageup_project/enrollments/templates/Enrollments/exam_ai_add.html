@@ -4,9 +4,11 @@
 <p>検定：<strong>{{ exam.title }}</strong></p>
 
 <div style="background-color: #f9f9f9; padding: 20px; border-radius: 10px; border: 1px solid #ddd;">
-    <form method="post">
+    <!-- id="ai-form" を追加 -->
+    <form method="post" id="ai-form">
         {% csrf_token %}
         
+        <!-- 1. 問題数 -->
         <div style="margin-bottom: 20px;">
             <label for="count" style="font-weight: bold; display: block; margin-bottom: 5px;">
                 作成する問題数を選択してください（1〜20問）:
@@ -16,7 +18,21 @@
                    style="width: 80px; padding: 8px; font-size: 1.1em; border-radius: 5px; border: 1px solid #ccc;">
         </div>
 
-        <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em;">
+        <!-- ★ 2. 難易度の選択（追加） -->
+        <div style="margin-bottom: 20px;">
+            <label for="difficulty" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                問題の難易度を選択してください:
+            </label>
+            <select name="difficulty" id="difficulty" 
+                    style="width: 100%; max-width: 400px; padding: 8px; font-size: 1em; border-radius: 5px; border: 1px solid #ccc;">
+                <option value="初級（基本的な用語や概要を問う、易しいレベル）">初級(基本的な用語や概要を問う)</option>
+                <option value="中級（内容の理解度を問う、標準的なレベル）" selected>中級(内容の理解度を問う)</option>
+                <option value="上級（細かい数値や複雑な背景を問う、難しいレベル）">上級(細かい数値や複雑な背景を問う)</option>
+            </select>
+        </div>
+
+        <!-- id="submit-btn" を追加 -->
+        <button type="submit" id="submit-btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em;">
             生成を開始する
         </button>
         <a href="{% url 'enrollments:add_question' exam.id %}" style="margin-left: 20px; color: #666;">キャンセル</a>
@@ -24,12 +40,13 @@
 </div>
 
 <script>
+    // フォームが送信された時の処理
     document.getElementById('ai-form').addEventListener('submit', function() {
         const btn = document.getElementById('submit-btn');
         // ボタンを無効化（連打防止）
         btn.disabled = true;
         // メッセージを変更
-        btn.innerText = '✨ AIが問題を生成中... ';
+        btn.innerText = '✨ AIがこだわり条件で生成中... ';
         // 少し見た目を薄くする
         btn.style.backgroundColor = '#8bc34a';
         btn.style.cursor = 'not-allowed';

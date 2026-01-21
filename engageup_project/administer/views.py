@@ -173,14 +173,57 @@ class UserListView(ListView):
 # ==========================================================
 
 
+# class UserRankListView(ListView):
+#     model = User
+#     context_object_name = 'users'
+#     template_name = 'administer/ad_select_rank.html'
+#     paginate_by = 10
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['form'] = UserRankForm()
+#         return context
+# administer/views.py
+
 class UserRankListView(ListView):
     model = User
     context_object_name = 'users'
     template_name = 'administer/ad_select_rank.html'
     paginate_by = 10
 
+    def get_queryset(self):
+        # 権限変更画面なので、削除済みも含めて全て表示できるように調整
+        # (削除済みを隠したい場合は .filter(is_active=True) にしてください)
+        queryset = User.objects.all()
+
+        # 1. 検索キーワードでの絞り込み
+        query = self.request.GET.get('q')
+        if query:
+            queryset = queryset.filter(
+                Q(username__icontains=query) | 
+                Q(email__icontains=query)
+            )
+
+        # 2. 権限（ランク）フィルタでの絞り込み
+        rank_filter = self.request.GET.get('rank_filter')
+        if rank_filter and rank_filter != 'all':
+            queryset = queryset.filter(rank=rank_filter)
+            
+        return queryset.order_by('-pk')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # テンプレート切り替えロジック
+        if self.request.user.rank == 'administer':
+            context['base_template'] = "administer/administer_base.html"
+        else:
+            context['base_template'] = "moderator/moderator_base.html"
+
+        # フィルタ用データ
+        context['rank_choices'] = ['administer', 'moderator', 'staff', 'visitor'] 
+        context['current_rank'] = self.request.GET.get('rank_filter', 'all')
+        
         context['form'] = UserRankForm()
         return context
 
@@ -206,11 +249,14 @@ class ConstantListView(ListView):
     template_name = 'administer/ad_constant_list.html'
     paginate_by = 10
 
+# administer/views.py
+
 class ConstantUpdateView(UpdateView):
     model = Constant
     form_class = ConstantForm
     template_name = 'administer/ad_constant_update.html'
-    success_url = reverse_lazy('constant_list')
+    
+    success_url = reverse_lazy('administer:constant_list')
 
     def get_object(self, queryset=None):
         return Constant.objects.first()

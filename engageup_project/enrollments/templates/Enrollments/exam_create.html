@@ -32,11 +32,22 @@
                 </div>
 
                 <!-- 教材ファイルのアップロード欄 -->
-                <div class="mb-3">
-                    <label class="form-label">教材ファイル (PDF) <span class="badge bg-info text-dark">推奨</span></label>
-                    {{ form.exams_file }}
-                    <div class="form-text">AIで問題を生成するために必要です。</div>
+                <div style="background-color: #f1f1f1; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                        <p><strong>教材の設定</strong></p>
+                        
+                        <div class="mb-2">
+                            <label>新しくアップロードする:</label>
+                            {{ form.exams_file }}
+                        </div>
+
+                        <div class="text-center my-2"><small>― または ―</small></div>
+
+                        <div class="mb-2">
+                            <label>過去のファイルから選ぶ:</label>
+                            {{ form.exam_file }}
+                        </div>
                 </div>
+
 
                 <!-- 説明文 -->
                 <div class="mb-3">

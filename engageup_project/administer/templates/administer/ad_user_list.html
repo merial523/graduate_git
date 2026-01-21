@@ -25,7 +25,6 @@
 
   <!-- 検索 -->
   <div class="row g-3 mb-4 align-items-center">
-    <!-- 検索  -->
     <div class="col-xl-4 col-lg-5">
       <form method="get" action="{% url 'administer:user_list' %}" class="d-flex gap-2">
         <div class="search-input-group shadow-sm flex-grow-1">
@@ -36,26 +35,24 @@
       </form>
     </div>
 
-    <!-- 右側：ボタンエリア（幅を広げて col-lg-8 にし、横並びを強制） -->
     <div class="col-xl-8 col-lg-7 text-end">
-      <!-- flex-nowrap を追加し、justify-content-end で右寄せ -->
       <div class="d-flex gap-2 justify-content-end align-items-center flex-nowrap">
         <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary shadow-sm text-nowrap">
-          ユーザー作成
+          <span class="material-icons">person_add</span> ユーザー作成
         </a>
         
         {% if request.user.rank == 'administer' %}
         <a href="{% url 'administer:select_rank'%}" class="btn btn-success shadow-sm text-nowrap">
-          権限変更
+          <span class="material-icons">published_with_changes</span> 権限変更
         </a>
 
         {% if show_all %}
         <button type="button" class="btn btn-warning shadow-sm action-trigger text-nowrap" data-action="restore" data-msg="ユーザーを復元しています...">
-          一括復元
+          <span class="material-icons">settings_backup_restore</span> 一括復元
         </button>
         {% else %}
         <button type="button" class="btn btn-danger shadow-sm action-trigger text-nowrap" data-action="soft_delete" data-msg="ユーザーを削除しています...">
-          一括削除
+          <span class="material-icons">delete_outline</span> 一括削除
         </button>
         {% endif %}
         {% endif %}
@@ -63,7 +60,6 @@
     </div>
   </div>
 
-  <!-- フォーム本体 -->
   <form method="post" id="user-bulk-form">
     {% csrf_token %}
     <input type="hidden" name="action" id="bulk-action-input" value="">
@@ -92,55 +88,28 @@
               {% endif %}
             </td>
             {% endif %}
-
-            <td>
-              <span class="user-role-badge {% if not user_item.is_active %}bg-secondary{% endif %}">
-                {{ user_item.rank }}
-              </span>
-            </td>
+            <td><span class="user-role-badge {% if not user_item.is_active %}bg-secondary{% endif %}">{{ user_item.rank }}</span></td>
             <td>
               <div class="d-flex align-items-center gap-2">
                 <span class="fw-bold text-dark">{{ user_item.username }}</span>
-                {% if user_item == request.user %}
-                <span class="badge bg-light text-primary border small" style="font-size: 0.7rem">あなた</span>
-                {% endif %} 
-                {% if not user_item.is_active %}
-                <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem">削除済み</span>
-                {% endif %}
+                {% if user_item == request.user %}<span class="badge bg-light text-primary border small" style="font-size: 0.7rem">あなた</span>{% endif %}
+                {% if not user_item.is_active %}<span class="badge rounded-pill bg-danger" style="font-size: 0.65rem">削除済み</span>{% endif %}
               </div>
             </td>
             <td class="text-muted small">{{ user_item.email }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="{% if request.user.rank == 'administer' %}4{% else %}3{% endif %}" class="text-center py-5 text-muted">
-              <span class="material-icons fs-1 d-block mb-2">person_off</span>
-              <p class="mb-0">該当するユーザーは見つかりませんでした。</p>
-            </td>
+            <td colspan="{% if request.user.rank == 'administer' %}4{% else %}3{% endif %}" class="text-center py-5 text-muted">該当するユーザーはいません</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </form>
-
-  <!-- ページネーション -->
-  {% if is_paginated %}
-  <nav class="mt-4">
-    <ul class="pagination justify-content-center">
-      {% if page_obj.has_previous %}
-      <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_left</span></a></li>
-      {% endif %}
-      <li class="page-item active"><span class="page-link shadow-sm rounded-circle mx-1">{{ page_obj.number }}</span></li>
-      {% if page_obj.has_next %}
-      <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_right</span></a></li>
-      {% endif %}
-    </ul>
-  </nav>
-  {% endif %}
 </div>
 
-<!-- モーダル・スクリプト（変更なし） -->
+<!-- 【重要】1. 処理中/完了ポップアップモーダル (ここが漏れていました) -->
 <div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-5">
@@ -152,11 +121,27 @@
                 </div>
                 <div id="modal-success" style="display: none;">
                     <div class="success-icon-wrapper mb-4">
-                        <span class="material-icons text-success">check_circle</span>
+                        <span class="material-icons text-success" style="font-size: 80px;">check_circle</span>
                     </div>
                     <h5 class="fw-800 text-dark">完了しました！</h5>
                     <p class="text-muted small mb-0">リストを更新しています...</p>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. 警告用ポップアップモーダル -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <span class="material-icons text-warning" style="font-size: 64px;">warning_amber</span>
+                </div>
+                <h5 class="fw-800 text-dark mb-3">確認が必要です</h5>
+                <p class="text-muted small mb-4" id="alert-modal-msg">対象を選択してください</p>
+                <button type="button" class="btn rounded-pill px-5 shadow-sm" data-bs-dismiss="modal">了解</button>
             </div>
         </div>
     </div>
@@ -167,9 +152,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const rows = document.querySelectorAll('.user-row');
     const bulkForm = document.getElementById('user-bulk-form');
     const actionInput = document.getElementById('bulk-action-input');
-    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    
+    // モーダルの初期化
+    const statusModalEl = document.getElementById('statusModal');
+    const alertModalEl = document.getElementById('alertModal');
+    const statusModal = statusModalEl ? new bootstrap.Modal(statusModalEl) : null;
+    const alertModal = alertModalEl ? new bootstrap.Modal(alertModalEl) : null;
+    
     const loadingText = document.getElementById('loading-text');
+    const alertModalMsg = document.getElementById('alert-modal-msg');
 
+    // 行選択機能
     rows.forEach(row => {
         row.addEventListener('click', function(e) {
             if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
@@ -181,23 +174,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // ボタンのクリックイベント（削除・復元）
     document.querySelectorAll('.action-trigger').forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
             const msg = this.dataset.msg;
             const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-            if (checkedCount === 0) { alert("対象のユーザーを選択してください。"); return; }
-            loadingText.innerText = msg;
-            actionInput.value = action;
-            statusModal.show();
-            setTimeout(() => {
-                document.getElementById('modal-loading').style.display = 'none';
-                document.getElementById('modal-success').style.display = 'block';
-                setTimeout(() => { bulkForm.submit(); }, 800);
-            }, 1200);
+
+            if (checkedCount === 0) {
+                if (alertModal) {
+                    alertModalMsg.innerText = "操作するユーザーを一人以上選択してください。";
+                    alertModal.show();
+                }
+                return;
+            }
+
+            if (statusModal) {
+                loadingText.innerText = msg;
+                actionInput.value = action;
+                statusModal.show();
+
+                setTimeout(() => {
+                    document.getElementById('modal-loading').style.display = 'none';
+                    document.getElementById('modal-success').style.display = 'block';
+                    setTimeout(() => { bulkForm.submit(); }, 800);
+                }, 1200);
+            }
         });
     });
 
+    // チェックボックス直接操作のハイライト
     document.querySelectorAll('.row-checkbox').forEach(cb => {
         cb.addEventListener('change', function() {
             const row = this.closest('tr');
@@ -210,11 +216,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
   .fw-800 { font-weight: 800; }
   .table-selected { background-color: rgba(118, 177, 157, 0.08) !important; }
-  .text-nowrap { white-space: nowrap !important; } /* ボタン改行禁止 */
+  .text-nowrap { white-space: nowrap !important; }
 
+  /* ローディングアニメーション */
   .custom-loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  .success-icon-wrapper span { font-size: 80px; animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  
+  .success-icon-wrapper span { animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
   .pagination .page-link { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); }

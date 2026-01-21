@@ -9,7 +9,7 @@ from django.views.generic import ListView, UpdateView
 from django.urls import reverse_lazy
 from common.views import BaseCreateView
 from main.models import Exam, Question, Badge, Choice, UserExamStatus
-from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet
+from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet, ExamForm
 
 # --- 基本表示 ---
 
@@ -56,9 +56,9 @@ class ExamListView(ListView):
 class ExamCreateView(BaseCreateView):
     """新規検定作成"""
     model = Exam
-    fields = ["title", "description", "passing_score", "exams_file", "exam_type", "prerequisite"]
     template_name = "enrollments/exam_create.html"
     success_url = reverse_lazy("enrollments:exam_list") 
+    form_class = ExamForm
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -66,13 +66,21 @@ class ExamCreateView(BaseCreateView):
         form.fields['prerequisite'].queryset = Exam.objects.filter(exam_type='mock', is_active=True)
         return form
     
+    def form_valid(self, form):
+        # 選択された保存済み教材ファイルがあれば設定
+        exam_file = form.cleaned_data.get('exam_file')
+        if exam_file:
+            form.instance.exams_file.name = os.path.join('exams_files', exam_file)
+        return super().form_valid(form)
+    
+    
 
 class ExamUpdateView(UpdateView):
     """検定設定および教材の編集"""
     model = Exam
-    fields = ["title", "description", "passing_score", "exams_file", "exam_type", "prerequisite"]
     template_name = "enrollments/exam_create.html"
-    
+    form_class = ExamForm
+
     def get_success_url(self):
         return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
     
@@ -84,6 +92,13 @@ class ExamUpdateView(UpdateView):
             is_active=True
         ).exclude(id=self.object.id)
         return form
+    
+    def form_valid(self, form):
+        # 選択された保存済み教材ファイルがあれば設定
+        exam_file = form.cleaned_data.get('exam_file')
+        if exam_file:
+            form.instance.exams_file.name = os.path.join('exams_files', exam_file)
+        return super().form_valid(form)
 
 
 # --- 問題管理（手動操作） ---
@@ -181,14 +196,19 @@ def bulk_action_exam(request):
 
 # --- AI問題自動生成 ---
 
+# --- AI問題自動生成（難易度指定対応版） ---
+
 def add_question_ai(request, exam_id):
-    """Gemini APIを使用して教材から問題を自動生成"""
+    """Gemini APIを使用して教材から問題を自動生成（難易度・問題数指定対応）"""
     exam = get_object_or_404(Exam, pk=exam_id)
     if not exam.exams_file:
         return render(request, 'enrollments/enrollments_error.html', {'error': '教材が登録されていません', 'exam_id': exam_id}) 
 
     if request.method == "POST":
+        # フォームから問題数と難易度を取得
         num_questions = request.POST.get('count', 5)
+        difficulty = request.POST.get('difficulty', '中級（標準的なレベル）') 
+
         try:
             # 教材データの読み込み
             with exam.exams_file.open('rb') as f:
@@ -197,10 +217,16 @@ def add_question_ai(request, exam_id):
             genai.configure(api_key=settings.GEMINI_API_KEY)
             model = genai.GenerativeModel("gemini-flash-latest")
             
+            # AIへの指示文（プロンプト）を構築
             prompt = f"""
             以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
-            出力は必ず以下のJSON形式のリストのみで返してください。余計な文章は含めないでください。
-            正解(is_correct: true)の位置は、1番目〜4番目の中でランダムに配置してください。
+            
+            【指定の難易度】
+            {difficulty}
+            
+            【基本ルール】
+            1. 出力は必ず以下のJSON形式のリストのみで返してください。余計な文章は含めないでください。
+            2. 正解(is_correct: true)の位置は、1番目〜4番目の中でランダムに配置してください。
 
             [
               {{
@@ -214,6 +240,7 @@ def add_question_ai(request, exam_id):
               }}
             ]
             """
+            
             # AIへのリクエスト実行（教材とプロンプトを同時送信）
             response = model.generate_content([prompt, {'mime_type': 'application/pdf', 'data': file_data}])
             
@@ -225,7 +252,7 @@ def add_question_ai(request, exam_id):
             for item in quiz_data:
                 q = Question.objects.create(exam=exam, text=item['text'])
                 choices = item['choices']
-                random.shuffle(choices) # 保存時にさらにランダム化
+                random.shuffle(choices) # 保存前にさらにランダム化
                 for c in choices:
                     Choice.objects.create(question=q, text=c['text'], is_correct=c['is_correct'])
             

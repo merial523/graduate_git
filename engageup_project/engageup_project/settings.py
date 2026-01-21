@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "moderator",
     "visitor",
     "staff",
-    "ai_question",
 ]
 
 MIDDLEWARE = [
