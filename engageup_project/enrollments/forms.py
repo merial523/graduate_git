@@ -1,6 +1,8 @@
 from django import forms
-from main.models import Question, Choice
+from main.models import Question, Choice, Exam
 from django.forms import inlineformset_factory, BaseInlineFormSet
+import os
+from django.conf import settings
 
 class QuestionForm(forms.ModelForm):
     class Meta:
@@ -47,4 +49,29 @@ EditChoiceFormSet = inlineformset_factory(
     can_delete=True,
     formset=BaseChoiceFormSet
 )
+
+class ExamForm(forms.ModelForm):
+    exam_file = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="保存済みから選ぶ")
+
+    class Meta:
+        model = Exam
+        fields = ["title", "description", "passing_score", "exams_file", "exam_type", "prerequisite"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 保存済みファイルのリストを取得
+        files_dir = os.path.join(settings.MEDIA_ROOT, 'exams_files')
+        if os.path.exists(files_dir):
+            files = os.listdir(files_dir)
+        else:
+            files = []
+
+        file_choices = [('', '--- 選択してください ---')] + [(f, f) for f in files]
+        self.fields['exam_file'].choices = file_choices
+
+    
 

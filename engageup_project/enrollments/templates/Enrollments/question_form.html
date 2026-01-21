@@ -80,31 +80,32 @@ document.addEventListener("DOMContentLoaded", function () {
     const choicesDiv = document.getElementById("choices");
     const addButton = document.getElementById("add-choice");
     const totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    const prefix = totalForms.name.replace("-TOTAL_FORMS", "");
 
     addButton.addEventListener("click", function () {
-        const index = totalForms.value;
+        const index = parseInt(totalForms.value);
 
         const html = `
         <div class="choice-form">
-            <input type="hidden" name="choice_set-${index}-id" id="id_choice_set-${index}-id">
+            <input type="hidden" name="${prefix}-${index}-id" id="${prefix}-${index}-id">
 
             <div>
                 <label>選択肢</label>
                 <input type="text"
-                       name="choice_set-${index}-text"
-                       id="id_choice_set-${index}-text">
+                       name="${prefix}-${index}-text"
+                       id="id_${prefix}-${index}-text">
             </div>
 
             <div>
                 <label>正解</label>
                 <input type="checkbox"
-                       name="choice_set-${index}-is_correct"
-                       id="id_choice_set-${index}-is_correct">
+                       name="${prefix}-${index}-is_correct"
+                       id="id_${prefix}-${index}-is_correct">
             </div>
 
             <input type="hidden"
-                   name="choice_set-${index}-DELETE"
-                   id="id_choice_set-${index}-DELETE">
+                   name="${prefix}-${index}-DELETE"
+                   id="id_${prefix}-${index}-DELETE">
 
             <button type="button" class="remove-choice">削除</button>
             <hr>
