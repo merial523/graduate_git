@@ -18,4 +18,9 @@ urlpatterns = [
     path(
         "moderator_news/", views.moderator_news, name="moderatorNews"
     ),  # お知らせ投稿ページ
+
+    path("news-list",views.NewsListView.as_view(),name ="news_list"),
+    path("news-create",views.NewsCreateView.as_view(),name = "news_create"),
+    path("news-update",views.NewsUpdateView.as_view(),name = "news_update"),
+
 ]

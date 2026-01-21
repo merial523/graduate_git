@@ -168,6 +168,12 @@ class Badge(models.Model):  # バッジ
 
     def __str__(self):
         return self.name
+
+
+class News(models.Model):
+    title = models.CharField(verbose_name="お知らせ名",max_length=100)
+    content = models.TextField(verbose_name="内容")
+    is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
     
 
 # ★新規追加：ユーザーがどの試験に合格したかを記録する

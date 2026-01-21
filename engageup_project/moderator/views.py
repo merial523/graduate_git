@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.generic import FormView, ListView, UpdateView
 from django.urls import reverse_lazy
 from django.db import transaction
@@ -32,8 +32,9 @@ from django.views.generic import FormView
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.utils.crypto import get_random_string
-from main.models import User, Constant
-from .forms import SequentialUserCreateForm
+from main.models import User, Constant,News
+from .forms import SequentialUserCreateForm,NewsForm
+from accounts.authority import AuthoritySet
 
 
 class SequentialUserCreateView(FormView):
@@ -46,16 +47,7 @@ class SequentialUserCreateView(FormView):
     )
 
     def get_success_url(self):
-        rank = self.request.user.rank
-
-        if rank == "administer":
-            return reverse_lazy("administer:administer_index")
-        elif rank == "moderator":
-            return reverse_lazy("moderator:moderator_index")
-        elif rank == "staff":
-            return reverse_lazy("staff:staff_index")
-
-        return reverse_lazy("accounts:home")
+        return AuthoritySet.authority_two("administer","administer_index","moderator","moderator_index",self.request.user.rank)
 
     def generate_password(self):
         return get_random_string(
@@ -111,3 +103,52 @@ class BadgeUpdateView(UpdateView):
     fields = ["name", "icon", "exam"]
     template_name = "moderator/mo_badge_update.html"
     success_url = reverse_lazy("moderator:moderatorBadge")
+
+#管理者HTMLで入力したテキストを一般会員HTMLで見れるようにする
+
+class NewsListView(ListView):
+    model = News
+    template_name = "moderator/mo_news_list.html"
+    context_object_name = "news"
+    paginate_by = 10
+
+    def get_queryset(self):
+        show = self.request.GET.get("show")
+
+        if show == "deleted":
+            return News.objects.filter(is_active=False).order_by("id")
+
+        return News.objects.filter(is_active=True).order_by("id")
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        ids = request.POST.getlist("news_ids")
+
+        if ids:
+            if action == "delete":
+                News.objects.filter(id__in=ids).update(is_active=False)
+
+            elif action == "restore":
+                News.objects.filter(id__in=ids).update(is_active=True)
+
+        return redirect(request.get_full_path())
+
+
+class NewsCreateView(UpdateView):
+    model = News
+    form_class = NewsForm
+    template_name = "moderator/mo_news_form.html"
+    success_url = reverse_lazy("moderator:mo_news_list")
+
+    def form_valid(self, form):
+        form.instance.is_active = True
+        return super().form_valid(form)
+
+class NewsUpdateView(UpdateView):
+    model = News
+    form_class = NewsForm
+    template_name = "moderator/mo_news_form.html"
+    success_url = reverse_lazy("moderator:mo_news_list")
+
+    def get_queryset(self):
+        return News.objects.filter(is_active=True)
