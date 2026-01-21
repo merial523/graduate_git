@@ -59,6 +59,8 @@ class ExamCreateView(BaseCreateView):
     template_name = "enrollments/exam_create.html"
     success_url = reverse_lazy("enrollments:exam_list") 
     form_class = ExamForm
+    is_continue_url = "enrollments:exam_list"
+    is_continue = True
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
