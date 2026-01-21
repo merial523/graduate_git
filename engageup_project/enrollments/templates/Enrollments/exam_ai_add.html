@@ -1,0 +1,38 @@
+{% extends 'administer/administer_base.html' %}
+{% block content %}
+<h2>AIで問題を自動生成</h2>
+<p>検定：<strong>{{ exam.title }}</strong></p>
+
+<div style="background-color: #f9f9f9; padding: 20px; border-radius: 10px; border: 1px solid #ddd;">
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label for="count" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                作成する問題数を選択してください（1〜20問）:
+            </label>
+            <input type="number" id="count" name="count" 
+                   value="5" min="1" max="20" 
+                   style="width: 80px; padding: 8px; font-size: 1.1em; border-radius: 5px; border: 1px solid #ccc;">
+        </div>
+
+        <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em;">
+            生成を開始する
+        </button>
+        <a href="{% url 'enrollments:add_question' exam.id %}" style="margin-left: 20px; color: #666;">キャンセル</a>
+    </form>
+</div>
+
+<script>
+    document.getElementById('ai-form').addEventListener('submit', function() {
+        const btn = document.getElementById('submit-btn');
+        // ボタンを無効化（連打防止）
+        btn.disabled = true;
+        // メッセージを変更
+        btn.innerText = '✨ AIが問題を生成中... ';
+        // 少し見た目を薄くする
+        btn.style.backgroundColor = '#8bc34a';
+        btn.style.cursor = 'not-allowed';
+    });
+</script>
+{% endblock %}

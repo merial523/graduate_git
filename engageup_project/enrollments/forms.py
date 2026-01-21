@@ -1,4 +1,3 @@
-# exams/forms.py
 from django import forms
 from main.models import Question, Choice
 from django.forms import inlineformset_factory, BaseInlineFormSet

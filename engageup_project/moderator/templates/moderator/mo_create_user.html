@@ -1,100 +1,148 @@
-{% extends 'moderator/moderator_base.html' %}
+{% extends user.is_superuser|yesno:"administer/administer_base.html,moderator/moderator_base.html" %}
 {% load static %}
 
+{% block title %}アカウント一括作成 | EngageUp{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'administer:user_list' %}">ユーザー管理</a></li>
+    <li class="breadcrumb-item active" aria-current="page">一括作成</li>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h2 class="h5 mb-0 text-dark">
-                    <i class="bi bi-person-plus-fill me-2 text-success"></i>アカウント一括作成
-                </h2>
-                <a href="{% url 'administer:user_list' %}" class="btn btn-outline-secondary btn-sm">
-                    戻る
-                </a>
-            </div>
+<div class="user-management-container">
+    <div class="mb-4">
+        <h1 class="page-title text-dark m-0 fw-800">アカウント一括作成</h1>
+        <p class="text-muted small">必要な情報を入力し、一括でアカウントを発行します。</p>
+    </div>
 
-            <div class="card-body p-4">
-                <form method="post">
-                    {% csrf_token %}
+    <div class="admin-card border-0 shadow-sm overflow-visible">
+        <div class="card-body p-4">
+            <form method="post" id="create-user-form">
+                {% csrf_token %}
 
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger shadow-sm">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 shadow-sm mb-4">{{ form.non_field_errors }}</div>
+                {% endif %}
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">{{ form.company_code.label }}</label>
-                        {{ form.company_code }}
-                        {% if form.company_code.errors %}
-                            <div class="text-danger small mt-1">{{ form.company_code.errors }}</div>
-                        {% endif %}
-                    </div>
+                <!-- 入力項目を横並びに配置 -->
+                <div class="row g-4 align-items-start">
+                    <!-- 左側：入力フィールド群 -->
+                    <div class="col-lg-8">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2">
+                                    <span class="material-icons text-primary">format_list_numbered</span>
+                                    {{ form.start_number.label }}
+                                </label>
+                                <div class="custom-input-group">{{ form.start_number }}</div>
+                                <div class="small text-danger mt-1">{{ form.start_number.errors }}</div>
+                            </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">{{ form.start_number.label }}</label>
-                            {{ form.start_number }}
-                            {% if form.start_number.errors %}
-                                <div class="text-danger small mt-1">{{ form.start_number.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">{{ form.count.label }}</label>
-                            {{ form.count }}
-                            {% if form.count.errors %}
-                                <div class="text-danger small mt-1">{{ form.count.errors }}</div>
-                            {% endif %}
+                            <div class="col-md-4">
+                                <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2">
+                                    <span class="material-icons text-primary">group_add</span>
+                                    {{ form.count.label }}
+                                </label>
+                                <div class="custom-input-group">{{ form.count }}</div>
+                                <div class="small text-danger mt-1">{{ form.count.errors }}</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">{{ form.rank.label }}</label>
-                        {{ form.rank }}
-                        {% if form.rank.errors %}
-                            <div class="text-danger small mt-1">{{ form.rank.errors }}</div>
-                        {% endif %}
+                    <!-- 右側：ランク選択（ラジオボタン） -->
+                    <div class="col-lg-4">
+                        <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2">
+                            <span class="material-icons text-primary">stars</span>
+                            {{ form.rank.label }}
+                        </label>
+                        <div class="custom-radio-group">
+                            {{ form.rank }}
+                        </div>
+                        <div class="small text-danger mt-1">{{ form.rank.errors }}</div>
                     </div>
+                </div>
 
-                    <hr class="my-4">
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg shadow-sm py-2 fw-bold">
-                            <i class="bi bi-check-circle me-2"></i>ユーザーを作成する
+                <!-- 下部アクションバー -->
+                <div class="mt-5 pt-4 border-top d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-3">
+                    <span class="material-icons text-green">info</span>
+                    <div class="text-green small">
+                        <strong>ヒント:</strong> 生成されるユーザーIDの例：<br>
+                        企業コードが「ENG」、開始番号が「101」の場合 → <br>
+                        <strong>ENG101, ENG102...</strong> となります。
+                    </div>
+                </div>
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'administer:user_list' %}" class="btn btn-light px-4 border">キャンセル</a>
+                        <button type="submit" class="btn btn-primary px-5 fw-800 shadow-sm">
+                            作成する
                         </button>
                     </div>
-                </form>
-            </div>
-            
-            <div class="card-footer bg-light text-muted small py-3">
-                ※ 企業コードと開始番号を組み合わせたIDで、指定した数分のアカウントが生成されます。
-            </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
+<script>
+    const codeInp = document.querySelector('input[name="company_code"]');
+    const numInp = document.querySelector('input[name="start_number"]');
+    const preview = document.getElementById('id-preview');
+    function updatePreview() {
+        preview.innerText = (codeInp.value || "---") + (numInp.value || "000");
+    }
+    if(codeInp && numInp) {
+        codeInp.addEventListener('input', updatePreview);
+        numInp.addEventListener('input', updatePreview);
+    }
+</script>
+
 <style>
-    /* DjangoのForm入力項目にBootstrapのスタイルを強制適用 */
-    input[type="text"], 
-    input[type="number"], 
-    select {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
+    .fw-800 { font-weight: 800; }
+    /* 入力欄の共通スタイル */
+    .custom-input-group input {
+        display: block; width: 100%;
+        padding: 0.75rem 1rem;
         font-size: 1rem;
-        line-height: 1.5;
-        color: #212529;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .custom-input-group input:focus {
         background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    }
-    input:focus, select:focus {
-        border-color: #28a745;
+        border-color: var(--primary-color);
         outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+        box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.15);
     }
+
+    /* ラジオボタン（ランク）の横並び・美化設定 */
+    .custom-radio-group ul {
+        list-style: none; padding: 0; margin: 0;
+        display: flex; flex-wrap: wrap; gap: 10px;
+    }
+    .custom-radio-group li {
+        background: var(--bg-color);
+        padding: 8px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.2s;
+        border: 2px solid transparent;
+    }
+    .custom-radio-group li:has(input:checked) {
+        background: #fff;
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        font-weight: bold;
+    }
+    .custom-radio-group label {
+        cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;
+    }
+    .custom-radio-group input[type="radio"] {
+        margin: 0; accent-color: var(--primary-color);
+    }
+
+    .text-green { color: #5a8a7a; }
 </style>
 {% endblock %}

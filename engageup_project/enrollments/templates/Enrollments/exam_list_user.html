@@ -1,0 +1,27 @@
+{% extends 'administer/administer_base.html' %}
+{% block content %}
+<h2>検定一覧（利用者用）</h2>
+
+<ul>
+    {% for exam in exams %}
+    <li style="margin-bottom: 20px;">
+        <strong>{{ exam.title }}</strong> [{{ exam.get_exam_type_display }}]
+        
+        {% if exam.id in passed_exam_ids %}
+            <span style="color: green;">(合格済み)</span>
+        {% endif %}
+
+        <br>
+        
+        <!-- ロック判定 -->
+        {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
+            <span style="color: gray;">🔒 ロック中（{{ exam.prerequisite.title }}の合格が必要です）</span>
+        {% else %}
+            <a href="{% url 'enrollments:exam_take' exam.id %}">受験する</a>
+        {% endif %}
+    </li>
+    {% empty %}
+    <li>検定はありません。</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'administer/administer_base.html' %}
+{% block content %}
+<h2>結果発表</h2>
+<hr>
+
+<h3>検定名: {{ exam.title }}</h3>
+<p style="font-size: 24px; font-weight: bold;">
+    スコア: {{ score }} 点 / 100 点
+</p>
+
+<p style="font-size: 20px;">
+    結果: 
+    {% if is_passed %}
+        <span style="color: green; font-weight: bold;">合格！</span>
+    {% else %}
+        <span style="color: red; font-weight: bold;">不合格</span>
+    {% endif %}
+</p>
+
+{% if is_passed and exam.badge %}
+    <p>獲得したバッジ: <strong>{{ exam.badge.name }}</strong></p>
+{% endif %}
+
+<hr>
+<p>（{{ total }} 問中 {{ correct_count }} 問正解）</p>
+
+<br>
+<a href="{% url 'enrollments:exam_list_user' %}" style="padding: 10px; background: #eee; text-decoration: none; border: 1px solid #ccc;">一覧に戻る</a>
+{% endblock %}

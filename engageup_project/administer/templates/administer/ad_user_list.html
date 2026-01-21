@@ -1,129 +1,224 @@
-{% extends 'administer/administer_base.html' %}
+{% extends base_template %}
+
 {% load static %}
+{% block breadcrumb %}<li class="breadcrumb-item active">ユーザー管理</li>{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h2 class="h5 mb-0">ユーザーリスト</h2>
-        <a href="{% url 'administer:administer_index' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-house"></i> 管理ホームへ戻る
-        </a>
+<div class="user-management-container pb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title text-dark m-0 fw-bold">ユーザー管理</h1>
+
+    {% if request.user.rank == 'administer' %}
+    <div class="display-toggle">
+      {% if show_all %}
+      <a href="{% url 'administer:user_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        有効ユーザーのみ
+      </a>
+      {% else %}
+      <a href="{% url 'administer:user_list' %}?show=all" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+        <span class="material-icons fw-bold small align-middle">visibility_off</span> 全ユーザー表示
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- 検索 -->
+  <div class="row g-3 mb-4 align-items-center">
+    <!-- 検索  -->
+    <div class="col-xl-4 col-lg-5">
+      <form method="get" action="{% url 'administer:user_list' %}" class="d-flex gap-2">
+        <div class="search-input-group shadow-sm flex-grow-1">
+          <span class="material-icons text-muted">search</span>
+          <input type="text" name="q" placeholder="名前やメールで検索..." value="{{ request.GET.q }}" />
+        </div>
+        {% if show_all %}<input type="hidden" name="show" value="all" />{% endif %}
+      </form>
     </div>
 
-    <div class="card-body">
-        <form method="post" id="user-bulk-form">
-            {% csrf_token %}
-            <div class="table-responsive">
-                <table class="table table-hover border">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center">選択</th>
-                            <th>ランク</th>
-                            <th>ユーザー名</th>
-                            <th>メール</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        {# ★修正ポイント：is_activeがFalse（削除済み）なら背景を暗くし、少し透けさせる #}
-                        <tr class="{% if not user.is_active %}table-secondary text-muted opacity-75{% endif %} {% if user == request.user %}table-light{% endif %}">
-                            <td class="text-center">
-                                {% if user == request.user %}
-                                    <input type="checkbox" class="form-check-input" disabled>
-                                {% else %}
-                                    <input type="checkbox" name="selected_user" value="{{ user.pk }}" class="form-check-input">
-                                {% endif %}
-                            </td>
-                            <td>
-                                {# ★削除済みならバッジの色も変える #}
-                                <span class="badge {% if user.is_active %}bg-secondary{% else %}bg-dark{% endif %}">
-                                    {{ user.rank }}
-                                </span>
-                            </td>
-                            <td>
-                                {{ user.username }}
-                                {% if user == request.user %} <span class="small">(あなた)</span>{% endif %}
-                                {# ★削除済みラベルの追加 #}
-                                {% if not user.is_active %} <span class="badge rounded-pill bg-danger" style="font-size: 0.7em;">削除済み</span>{% endif %}
-                            </td>
-                            <td>{{ user.email }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">該当するユーザーはいません。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- 右側：ボタンエリア（幅を広げて col-lg-8 にし、横並びを強制） -->
+    <div class="col-xl-8 col-lg-7 text-end">
+      <!-- flex-nowrap を追加し、justify-content-end で右寄せ -->
+      <div class="d-flex gap-2 justify-content-end align-items-center flex-nowrap">
+        <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary shadow-sm text-nowrap">
+          ユーザー作成
+        </a>
+        
+        {% if request.user.rank == 'administer' %}
+        <a href="{% url 'administer:select_rank'%}" class="btn btn-success shadow-sm text-nowrap">
+          権限変更
+        </a>
 
-            {% if is_paginated %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination pagination-sm justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if show_all %}&show=all{% endif %}" aria-label="First">
-                                <span aria-hidden="true">&laquo; 最初</span>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if show_all %}&show=all{% endif %}">前へ</a>
-                        </li>
-                    {% endif %}
+        {% if show_all %}
+        <button type="button" class="btn btn-warning shadow-sm action-trigger text-nowrap" data-action="restore" data-msg="ユーザーを復元しています...">
+          一括復元
+        </button>
+        {% else %}
+        <button type="button" class="btn btn-danger shadow-sm action-trigger text-nowrap" data-action="soft_delete" data-msg="ユーザーを削除しています...">
+          一括削除
+        </button>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
-                    <li class="page-item disabled">
-                        <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if show_all %}&show=all{% endif %}">次へ</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ paginator.num_pages }}{% if show_all %}&show=all{% endif %}" aria-label="Last">
-                                <span aria-hidden="true">最後 &raquo;</span>
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
+  <!-- フォーム本体 -->
+  <form method="post" id="user-bulk-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="bulk-action-input" value="">
+    
+    <div class="table-responsive admin-card border-0 shadow-sm overflow-hidden">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            {% if request.user.rank == 'administer' %}
+            <th class="text-center" style="width: 80px">選択</th>
+            {% endif %}
+            <th style="width: 150px">権限</th>
+            <th>ユーザー名</th>
+            <th>メールアドレス</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user_item in users %}
+          <tr class="{% if request.user.rank == 'administer' and user_item != request.user %}user-row{% endif %} {% if not user_item.is_active %}opacity-50{% endif %}">
+            {% if request.user.rank == 'administer' %}
+            <td class="text-center">
+              {% if user_item == request.user %}
+              <span class="material-icons text-muted small" title="自分自身は操作できません">lock</span>
+              {% else %}
+              <input type="checkbox" name="selected_user" value="{{ user_item.pk }}" class="form-check-input row-checkbox" />
+              {% endif %}
+            </td>
             {% endif %}
 
-            <div class="d-flex justify-content-between gap-2 mt-4 pt-3 border-top">
-                <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary flex-fill shadow-sm py-2">
-                    <i class="bi bi-person-plus"></i> <span class="d-none d-lg-inline">ユーザー</span>作成
-                </a>
-
-                <a href="{% url 'administer:select_rank' %}" class="btn btn-success flex-fill shadow-sm py-2">
-                    <i class="bi bi-pencil-square"></i> <span class="d-none d-lg-inline">ランク</span>変更
-                </a>
-
-                {# ★修正ポイント：削除済み表示中ならボタンを「復元」に変更するようにすると親切です #}
-                {% if show_all %}
-                <button type="submit" name="action" value="restore" class="btn btn-warning flex-fill shadow-sm py-2" 
-                        onclick="return confirm('選択したユーザーを復元（有効化）しますか？')">
-                    <i class="bi bi-arrow-counterclockwise"></i> <span class="d-none d-lg-inline">ユーザー</span>復元
-                </button>
-                {% else %}
-                <button type="submit" name="action" value="soft_delete" class="btn btn-danger flex-fill shadow-sm py-2" 
-                        onclick="return confirm('選択したユーザーを削除（非表示化）しますか？')">
-                    <i class="bi bi-trash"></i> <span class="d-none d-lg-inline">ユーザー</span>削除
-                </button>
+            <td>
+              <span class="user-role-badge {% if not user_item.is_active %}bg-secondary{% endif %}">
+                {{ user_item.rank }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold text-dark">{{ user_item.username }}</span>
+                {% if user_item == request.user %}
+                <span class="badge bg-light text-primary border small" style="font-size: 0.7rem">あなた</span>
+                {% endif %} 
+                {% if not user_item.is_active %}
+                <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem">削除済み</span>
                 {% endif %}
+              </div>
+            </td>
+            <td class="text-muted small">{{ user_item.email }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="{% if request.user.rank == 'administer' %}4{% else %}3{% endif %}" class="text-center py-5 text-muted">
+              <span class="material-icons fs-1 d-block mb-2">person_off</span>
+              <p class="mb-0">該当するユーザーは見つかりませんでした。</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
 
-                {% if show_all %}
-                <a href="{% url 'administer:user_list' %}"
-                    class="btn btn-outline-secondary flex-fill shadow-sm py-2">
-                    有効のみ表示
-                </a>
-                {% else %}
-                <a href="{% url 'administer:user_list' %}?show=all"
-                    class="btn btn-outline-dark flex-fill shadow-sm py-2">
-                    削除済み表示
-                </a>
-                {% endif %}
+  <!-- ページネーション -->
+  {% if is_paginated %}
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_left</span></a></li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link shadow-sm rounded-circle mx-1">{{ page_obj.number }}</span></li>
+      {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_right</span></a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<!-- モーダル・スクリプト（変更なし） -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary" id="loading-text">処理しています...</h5>
+                    <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">完了しました！</h5>
+                    <p class="text-muted small mb-0">リストを更新しています...</p>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.user-row');
+    const bulkForm = document.getElementById('user-bulk-form');
+    const actionInput = document.getElementById('bulk-action-input');
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const loadingText = document.getElementById('loading-text');
+
+    rows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            const checkbox = this.querySelector('.row-checkbox');
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.checked ? this.classList.add('table-selected') : this.classList.remove('table-selected');
+            }
+        });
+    });
+
+    document.querySelectorAll('.action-trigger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.dataset.action;
+            const msg = this.dataset.msg;
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            if (checkedCount === 0) { alert("対象のユーザーを選択してください。"); return; }
+            loadingText.innerText = msg;
+            actionInput.value = action;
+            statusModal.show();
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                setTimeout(() => { bulkForm.submit(); }, 800);
+            }, 1200);
+        });
+    });
+
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            const row = this.closest('tr');
+            this.checked ? row.classList.add('table-selected') : row.classList.remove('table-selected');
+        });
+    });
+});
+</script>
+
+<style>
+  .fw-800 { font-weight: 800; }
+  .table-selected { background-color: rgba(118, 177, 157, 0.08) !important; }
+  .text-nowrap { white-space: nowrap !important; } /* ボタン改行禁止 */
+
+  .custom-loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .success-icon-wrapper span { font-size: 80px; animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .pagination .page-link { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); }
+  .search-input-group { background: var(--card-bg); border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.05); }
+  .search-input-group input { border: none; outline: none; background: transparent; margin-left: 8px; width: 100%; color: var(--text-color); }
+</style>
 {% endblock %}

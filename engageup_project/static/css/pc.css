@@ -1,43 +1,403 @@
-/* --- ねこねこ風スタイル（色とフォントのみ） --- */
+/* ===== CSS Variables (Themeable) ===== */
 :root {
-  --primary-color: #76b19d; /* 清潔感のあるセージグリーン */
-  --bg-color: #f8f2f2; /* 温かみのある背景色 */
-  --text-color: #444444; /* 柔らかい黒 */
-  --transition-smooth: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+  --primary-color: #76b19d; /* デフォルト：ねこねこ薬局グリーン */
+  --bg-color: #f8f2f2;
+  --text-color: #444;
+  --warning-color: #e8b06a; /* 優しいオレンジ（Warning） */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 88px;
+  --transition: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+}
+
+/* 各種カラーテーマ定義 */
+body.theme-blue {
+  --primary-color: #4a90e2;
+}
+body.theme-purple {
+  --primary-color: #8e44ad;
+}
+body.theme-red {
+  --primary-color: #e67e22;
+}
+body.theme-dark {
+  --primary-color: #2c3e50;
+  --bg-color: #ecf0f1;
 }
 
 body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  /* 丸ゴシック系フォントを設定 */
-  font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
-    "M PLUS Rounded 1c", sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background-color: var(
+    --primary-color
+  ); /* サイドバーと背景を同色にして隙間を消す */
+  font-family: "M PLUS Rounded 1c", sans-serif;
+  margin: 0;
+  overflow-x: hidden;
 }
 
-/* 英語ロゴ等 */
-.navbar-brand {
+/* ===== Layout ===== */
+.admin-layout {
+  display: flex;
+  transition: var(--transition);
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--primary-color);
+  transition: var(--transition);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.sidebar-collapsed .sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-header {
+  padding: 30px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #fff;
+}
+
+.logo-text {
   font-family: "Libre Baskerville", serif;
   font-weight: 700;
+  font-size: 1.4rem;
+  white-space: nowrap;
 }
 
-/* ナビゲーション・フッター・メニューの背景色を統一 */
-.bg-custom-theme {
-  background-color: var(--primary-color) !important;
+.sidebar-collapsed .logo-text,
+.sidebar-collapsed .menu-text {
+  display: none;
 }
 
-/* ホバー時の滑らかな動き */
-.nav-link,
-.btn {
-  transition: var(--transition-smooth);
-}
-
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.15);
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
   border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  padding: 2px;
 }
 
-/* オフキャンバスの閉じるボタンの色調整 */
-.btn-close {
-  filter: invert(1) grayscale(100%) brightness(200%);
+.sidebar-menu {
+  flex: 1;
+  padding-left: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 14px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-weight: 700;
+  border-radius: 30px 0 0 30px;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.menu-item:hover {
+  color: #fff;
+}
+
+/* ===== Active State Curve (接続部分) ===== */
+.menu-item.active {
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+}
+
+/* 上部の逆角丸 */
+.menu-item.active::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -20px;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border-radius: 50%;
+  box-shadow: 10px 10px 0 0 var(--bg-color);
+}
+
+/* 下部の逆角丸 */
+.menu-item.active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -20px;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border-radius: 50%;
+  box-shadow: 10px -10px 0 0 var(--bg-color);
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  flex: 1;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  padding: 40px;
+  transition: var(--transition);
+}
+
+/* ===== Header ===== */
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.breadcrumb-item a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.user-role-badge {
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* ===== Theme Dots ===== */
+.theme-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: 0.2s;
+}
+.theme-dot.active {
+  border-color: #ddd;
+  transform: scale(1.2);
+}
+.dot-green {
+  background-color: #76b19d;
+}
+.dot-blue {
+  background-color: #4a90e2;
+}
+.dot-purple {
+  background-color: #8e44ad;
+}
+.dot-red {
+  background-color: #e67e22;
+}
+
+/* ===== Footer ===== */
+.sidebar-footer {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ff8a80;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* ===== Cards ===== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+.admin-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 30px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  transition: var(--transition);
+}
+.admin-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+.admin-card h2 {
+  color: var(--primary-color);
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+
+/* ==========================================================
+   ねこねこ薬局風 ボタン・一括カスタマイズ
+   ========================================================== */
+
+/* ボタン全体の基本設定（丸みと余白） */
+.btn {
+  border-radius: 50px !important; /* カプセル型 */
+  padding: 8px 24px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* アイコンと文字の間隔 */
+  transition: all 0.3s ease !important;
+  border: none !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  filter: brightness(1.1);
+}
+
+/* 1. 青色ボタン（ユーザー作成・Info） -> ソフトブルー */
+.btn-primary,
+.btn-info {
+  background-color: #5da9e9 !important;
+  color: #fff !important;
+}
+.btn-primary::before {
+  content: "person_add";
+  font-family: "Material Icons";
+}
+
+/* 2. 緑色ボタン（ランク変更・Success） -> ねこねこグリーン */
+.btn-success {
+  background-color: #76b19d !important;
+  color: #fff !important;
+}
+.btn-success::before {
+  content: "published_with_changes";
+  font-family: "Material Icons";
+}
+
+/* 3. 赤色ボタン（削除・Danger） -> ソフトレッド */
+.btn-danger {
+  background-color: #e86a6a !important;
+  color: #fff !important;
+}
+.btn-danger::before {
+  content: "delete_outline";
+  font-family: "Material Icons";
+}
+
+/* 4. 白色・枠線ボタン（戻る・削除済み表示・Secondary） */
+.btn-secondary,
+.btn-light,
+.btn-outline-secondary {
+  background-color: #fff !important;
+  color: #777 !important;
+  border: 1px solid #ddd !important;
+}
+/* 5. オレンジボタン（復元・Warning） */
+.btn-warning {
+  background-color: var(--warning-color) !important;
+  color: #fff !important;
+}
+.btn-outline-secondary::before {
+  content: "visibility";
+  font-family: "Material Icons";
+}
+/* 「戻る」ボタン用（もしクラスが特定できれば） */
+.btn-back::before {
+  content: "arrow_back";
+  font-family: "Material Icons";
+}
+.btn-warning::before {
+  content: "settings_backup_restore";
+  font-family: "Material Icons";
+}
+
+/* テーブルのカスタマイズ */
+.table {
+  color: var(--text-color);
+  border-collapse: separate;
+  border-spacing: 0 8px; /* 行間に隙間を作る */
+}
+.table thead th {
+  border: none;
+  color: var(--primary-color);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  padding: 15px;
+}
+.table tbody tr {
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  transition: var(--transition);
+}
+.table tbody tr td {
+  padding: 15px;
+  vertical-align: middle;
+  border: none;
+}
+.table tbody tr td:first-child {
+  border-radius: 15px 0 0 15px;
+}
+.table tbody tr td:last-child {
+  border-radius: 0 15px 15px 0;
+}
+
+.table-hover tbody tr:hover {
+  transform: scale(1.01);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  background-color: #fff !important;
+}
+
+/* 検索バー */
+.search-input-group {
+  background: #fff;
+  border-radius: 50px;
+  padding: 5px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+.search-input-group input {
+  border: none;
+  outline: none;
+  padding: 8px;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+/* アイコン自体のスタイル調整 */
+.btn::before {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* フォームのチェックボックスも少し丸く */
+.form-check-input {
+  border-radius: 4px !important;
+  cursor: pointer;
+}
+
+
+/* SP対応 */
+@media (max-width: 991px) {
+  .main-content {
+    padding: 20px;
+  }
 }

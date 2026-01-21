@@ -1,0 +1,12 @@
+<h2>検定名：{{ exam.title }}</h2>
+
+{% for question in exam.questions.all %}
+    <p>問{{ forloop.counter }}: {{ question.text }}</p>
+    <ul>
+    {% for choice in question.choices.all %}
+        <li>{{ choice.text }} {% if choice.is_correct %}(正解){% endif %}</li>
+    {% endfor %}
+    </ul>
+{% endfor %}
+
+<p>※この検定に合格すると「{{ exam.badge.name }}」がもらえます！</p>

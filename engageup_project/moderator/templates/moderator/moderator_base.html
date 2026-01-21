@@ -1,15 +1,20 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}EngageUp{% endblock %}</title>
+    <title>{% block title %}EngageUp Moderator{% endblock %}</title>
 
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
     />
     <link
@@ -18,25 +23,27 @@
     />
     <link rel="stylesheet" href="{% static 'css/pc.css' %}" />
   </head>
-  <body>
-    <nav class="navbar navbar-dark bg-custom-theme">
-      <div class="container-fluid">
-        <div class="d-flex align-items-center">
-          <button
-            class="btn text-white p-0 me-2"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#offcanvasMenu"
-          >
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <a class="navbar-brand mb-0" href="{% url 'index' %}"
-            >EngageUp</a
-          >
-        </div>
-      </div>
-    </nav>
 
+  <body class="theme-green mode-light">
+    <div class="admin-layout" id="adminLayout">
+      <script>
+          // 画面が描画される前にクラスを付与してチラつきを防ぐ
+          if (localStorage.getItem('sidebarStatus') === 'collapsed') {
+              document.getElementById('adminLayout').classList.add('sidebar-collapsed');
+          }
+      </script>
+      <!-- ===== Sidebar ===== -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <a href="{% url 'index' %}" class="sidebar-logo text-decoration-none">
+            <span class="logo-text">EngageUp</span>
+          </a>
+          <button class="toggle-btn" onclick="toggleSidebar()">
+            <span class="material-icons" id="toggleIcon">chevron_left</span>
+          </button>
+        </div>
+
+<<<<<<< HEAD
     <div
       class="offcanvas offcanvas-start w-25 bg-custom-theme"
       tabindex="-1"
@@ -103,15 +110,238 @@
           </li>
         </ul>
       </div>
+=======
+        <nav class="sidebar-menu">
+          <!-- ダッシュボード: パスが完全一致、または名前が index のとき -->
+          <a class="menu-item {% if request.path == '/' or request.resolver_match.url_name == 'index' %}active{% endif %}" 
+             href="{% url 'index' %}">
+            <span class="material-icons">dashboard</span>
+            <span class="menu-text">ダッシュボード</span>
+          </a>
+
+          <!-- コース一覧: URLに 'courses' が含まれるとき -->
+          <a class="menu-item {% if 'courses' in request.path %}active{% endif %}" 
+             href="{% url 'courses:courses_list' %}">
+            <span class="material-icons">layers</span>
+            <span class="menu-text">コース一覧</span>
+          </a>
+
+          <!-- ユーザー管理: URLに 'user' または 'create_user' が含まれるとき -->
+          <a class="menu-item {% if 'user' in request.path or 'create_user' in request.path %}active{% endif %}" 
+             href="{% url 'administer:user_list' %}">
+            <span class="material-icons">group</span>
+            <span class="menu-text">ユーザー管理</span>
+          </a>
+
+          <!-- 検定管理: URLに 'enrollments' が含まれるとき -->
+          <a class="menu-item {% if 'enrollments' in request.path %}active{% endif %}" 
+             href="{% url 'enrollments:enrollmentsIndex' %}">
+            <span class="material-icons">rule</span>
+            <span class="menu-text">検定管理</span>
+          </a>
+
+          <!-- バッジ管理: URLに 'Badge' または 'badge' が含まれるとき -->
+          <a class="menu-item {% if 'Badge' in request.path or 'badge' in request.path %}active{% endif %}" 
+             href="{% url 'moderator:moderatorBadge' %}">
+            <span class="material-icons">military_tech</span>
+            <span class="menu-text">バッジ管理</span>
+          </a>
+
+          <!-- お知らせ投稿: URLに 'News' または 'news' が含まれるとき -->
+          <a class="menu-item {% if 'News' in request.path or 'news' in request.path %}active{% endif %}" 
+             href="{% url 'moderator:moderatorNews' %}">
+            <span class="material-icons">campaign</span>
+            <span class="menu-text">お知らせ投稿</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a class="logout" href="{% url 'accounts:logout' %}">
+            <span class="material-icons">logout</span>
+            <span class="menu-text">ログアウト</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- ===== Main Content ===== -->
+      <main class="main-content">
+        <header class="main-header">
+          <div class="header-left">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="{% url 'index' %}">ダッシュボード</a>
+                </li>
+                {% block breadcrumb %}{% endblock %}
+              </ol>
+            </nav>
+          </div>
+
+          <div class="header-right d-flex align-items-center gap-4">
+            <!-- カスタマイズ設定ドロップダウン -->
+            <div class="dropdown">
+              <button
+                class="btn btn-light rounded-pill p-2 px-3 shadow-sm d-flex align-items-center gap-2"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <span class="material-icons text-muted">settings</span>
+                <span class="small fw-bold">設定</span>
+              </button>
+              <div
+                class="dropdown-menu dropdown-menu-end p-4 shadow-lg border-0 rounded-4"
+                style="min-width: 280px"
+              >
+                <div class="mb-4">
+                  <p class="small text-muted fw-bold mb-2">カラーテーマ</p>
+                  <div class="d-flex justify-content-between px-2">
+                    <div
+                      class="theme-dot dot-green"
+                      onclick="setTheme('theme-green')"
+                    ></div>
+                    <div
+                      class="theme-dot dot-blue"
+                      onclick="setTheme('theme-blue')"
+                    ></div>
+                    <div
+                      class="theme-dot dot-purple"
+                      onclick="setTheme('theme-purple')"
+                    ></div>
+                    <div
+                      class="theme-dot dot-red"
+                      onclick="setTheme('theme-red')"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <p
+                    class="small text-muted fw-bold mb-2 d-flex justify-content-between"
+                  >
+                    フォントサイズ <span id="font-size-val">100%</span>
+                  </p>
+                  <input
+                    type="range"
+                    class="form-range custom-range"
+                    min="80"
+                    max="120"
+                    step="5"
+                    value="100"
+                    id="fontSizeRange"
+                    oninput="setFontSize(this.value)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- ユーザープロフィール (MOバッジ) -->
+            <div class="user-profile d-flex align-items-center gap-2">
+              <div
+                class="user-role-badge"
+                style="background: var(--primary-color)"
+              >
+                Moderator
+              </div>
+              <span class="fw-bold small user-name-text"
+                >{{ user.last_name }} 管理員</span
+              >
+            </div>
+          </div>
+        </header>
+        {% block content %}{% endblock %}
+      </main>
+>>>>>>> ef6747ff4cc7d81e7e6ab5df263cc2726c07e881
     </div>
 
-    <div class="container mt-4" style="min-height: 80vh">
-      {% block content %}{% endblock %}
-    </div>
+    <script>
+      // --- サイドバー開閉の切り替えと状態保存 ---
+      function toggleSidebar() {
+        const layout = document.getElementById('adminLayout');
+        const icon = document.getElementById('toggleIcon');
+        if (!layout) return;
 
-    <footer class="text-center text-white py-3 bg-custom-theme mt-5">
-      GroupG
-    </footer>
+        // クラスの付け外し
+        const isCollapsed = layout.classList.toggle('sidebar-collapsed');
+        
+        // アイコンの向きを更新
+        if (icon) {
+          icon.innerText = isCollapsed ? 'chevron_right' : 'chevron_left';
+        }
+
+        // 状態をブラウザに保存
+        localStorage.setItem('sidebarStatus', isCollapsed ? 'collapsed' : 'expanded');
+      }
+
+      // --- テーマ切り替え (Color) ---
+      function setTheme(themeName) {
+        const currentMode = document.body.classList.contains("mode-dark") ? "mode-dark" : "mode-light";
+        document.body.className = `${themeName} ${currentMode}`;
+        localStorage.setItem("selectedTheme", themeName);
+      }
+
+      // --- モード切り替え (Light/Dark) ---
+      function setMode(modeName) {
+        const currentTheme = Array.from(document.body.classList).find(c => c.startsWith('theme-')) || 'theme-green';
+        document.body.className = `${currentTheme} ${modeName}`;
+        localStorage.setItem("selectedMode", modeName);
+
+        // ボタンの見た目更新 (Customizeメニュー内のボタン)
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        const targetBtn = document.getElementById(`btn-${modeName.split('-')[1]}`);
+        if (targetBtn) targetBtn.classList.add('active');
+      }
+
+      // --- フォントサイズ調節 ---
+      function setFontSize(size) {
+        document.documentElement.style.fontSize = size + "%";
+        const valLabel = document.getElementById("font-size-val");
+        if (valLabel) valLabel.innerText = size + "%";
+        localStorage.setItem("selectedFontSize", size);
+      }
+
+      // --- 今日の日付表示更新 ---
+      function updateCurrentDate() {
+        const dateSpan = document.getElementById("current-date");
+        if (dateSpan) {
+          const now = new Date();
+          dateSpan.textContent = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+        }
+      }
+
+      // --- ページ読み込み時の初期設定 (一括) ---
+      document.addEventListener('DOMContentLoaded', () => {
+        const layout = document.getElementById('adminLayout');
+        const icon = document.getElementById('toggleIcon');
+
+        // 1. 日付の更新
+        updateCurrentDate();
+
+        // 2. localStorage から以前の設定を読み込む (なければデフォルト)
+        const savedTheme = localStorage.getItem('selectedTheme') || 'theme-green';
+        const savedMode = localStorage.getItem('selectedMode') || 'mode-light';
+        const savedFontSize = localStorage.getItem('selectedFontSize') || '100';
+        const savedSidebar = localStorage.getItem('sidebarStatus');
+
+        // 3. 設定の適用
+        setTheme(savedTheme);
+        setMode(savedMode);
+        setFontSize(savedFontSize);
+
+        // 設定メニューのスライダー位置を復元
+        const sizeRange = document.getElementById('fontSizeRange');
+        if (sizeRange) sizeRange.value = savedFontSize;
+
+        // 4. サイドバー状態の復元
+        if (layout) {
+          if (savedSidebar === 'collapsed') {
+            layout.classList.add('sidebar-collapsed');
+            if (icon) icon.innerText = 'chevron_right';
+          } else {
+            layout.classList.remove('sidebar-collapsed');
+            if (icon) icon.innerText = 'chevron_left';
+          }
+        }
+      });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
