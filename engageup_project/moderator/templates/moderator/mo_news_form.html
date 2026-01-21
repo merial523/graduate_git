@@ -8,9 +8,9 @@
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h2 class="h5 mb-0 text-dark">
                     <i class="bi bi-journal-plus me-2 text-success"></i>
-                    {% if object %}コースの変更{% else %}新規コース作成{% endif %}
+                    {% if object %}お知らせの変更{% else %}新規お知らせ作成{% endif %}
                 </h2>
-                <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary btn-sm">
+                <a href="{% url 'moderator:news_list' %}" class="btn btn-outline-secondary btn-sm">
                     一覧へ戻る
                 </a>
             </div>
@@ -49,7 +49,7 @@
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success btn-lg shadow-sm py-2 fw-bold">
                             <i class="bi bi-check-lg me-2"></i>
-                            {% if object %}変更を保存する{% else %}コースを登録する{% endif %}
+                            {% if object %}変更を保存する{% else %}お知らせを登録する{% endif %}
                         </button>
                     </div>
                 </form>

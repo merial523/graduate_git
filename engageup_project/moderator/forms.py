@@ -1,5 +1,5 @@
 from django import forms
-from main.models import User
+from main.models import News, User
 
 class SequentialUserCreateForm(forms.Form):
 
@@ -21,3 +21,8 @@ class SequentialUserCreateForm(forms.Form):
         initial="visitor",
         widget=forms.RadioSelect
     )
+
+class NewsForm(forms.ModelForm):
+    class Meta:
+        model = News
+        fields = ["title", "content","is_active"]
