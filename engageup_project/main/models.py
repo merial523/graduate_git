@@ -168,14 +168,12 @@ class Badge(models.Model):  # バッジ
 
     def __str__(self):
         return self.name
-<<<<<<< HEAD
 
 
 class News(models.Model):
     title = models.CharField(verbose_name="お知らせ名",max_length=100)
     content = models.TextField(verbose_name="内容")
     is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
-=======
     
 
 # ★新規追加：ユーザーがどの試験に合格したかを記録する
@@ -191,4 +189,3 @@ class UserExamStatus(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.exam.title} ({'合格' if self.is_passed else '未'})"
     
->>>>>>> ef6747ff4cc7d81e7e6ab5df263cc2726c07e881
