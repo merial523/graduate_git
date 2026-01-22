@@ -5,12 +5,12 @@
 <li class="breadcrumb-item">
   <a href="{% url 'administer:constant_list' %}">定数一覧</a>
 </li>
-<li class="breadcrumb-item active" aria-current="page">設定の編集</li>
+<li class="breadcrumb-item active" aria-current="page">システム定数の更新</li>
 {% endblock %} {% block content %}
 <div class="row justify-content-center pb-5">
   <div class="col-12 col-xl-10">
     <div class="mb-4">
-      <h1 class="page-title text-dark m-0 fw-800">システム設定の更新</h1>
+      <h1 class="page-title text-dark m-0 fw-800">システム定数の更新</h1>
     </div>
 
     <!-- フォーム全体を囲む。idを付与してJSで制御 -->
@@ -41,8 +41,8 @@
                     class="material-icons text-muted"
                     style="font-size: 16px"
                   >
-                    {% if 'company' in field.name %}business{% elif 'address' in
-                    field.name %}email{% else %}settings{% endif %}
+                    {% if 'company' in field.name %}business
+                    {% elif 'address' in field.name %}email{% else %}settings{% endif %}
                   </span>
                   {{ field.label }}
                 </label>

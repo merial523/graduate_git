@@ -1,15 +1,19 @@
-/* ===== CSS Variables (Themeable) ===== */
+/* ==========================================================
+   1. 変数定義 & テーマ設定 (Global Variables & Themes)
+   ========================================================== */
 :root {
   --primary-color: #76b19d; /* デフォルト：ねこねこ薬局グリーン */
-  --bg-color: #f8f2f2;
+  --accent-color: #e88d6a; /* オレンジ */
+  --warning-color: #e8b06a; /* 優しいオレンジ */
+  --bg-color: #f8f2f2; /* 背景色（ライト） */
   --text-color: #444;
-  --warning-color: #e8b06a; /* 優しいオレンジ（Warning） */
+  --card-bg: #ffffff;
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 88px;
   --transition: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
 }
 
-/* 各種カラーテーマ定義 */
+/* カラーテーマ */
 body.theme-blue {
   --primary-color: #4a90e2;
 }
@@ -19,27 +23,56 @@ body.theme-purple {
 body.theme-red {
   --primary-color: #e67e22;
 }
-body.theme-dark {
-  --primary-color: #2c3e50;
-  --bg-color: #ecf0f1;
+
+/* ダークモード */
+body.mode-dark {
+  --bg-color: #1e2124;
+  --card-bg: #2f3136;
+  --text-color: #ffffff;
 }
 
+/* ==========================================================
+   2. ベースレイアウト (Base Layout)
+   ========================================================== */
 body {
-  background-color: var(
-    --primary-color
-  ); /* サイドバーと背景を同色にして隙間を消す */
+  background-color: var(--primary-color); /* サイドバー接続のため */
+  color: var(--text-color);
   font-family: "M PLUS Rounded 1c", sans-serif;
   margin: 0;
   overflow-x: hidden;
+  transition: background-color var(--transition);
 }
 
-/* ===== Layout ===== */
 .admin-layout {
   display: flex;
   transition: var(--transition);
 }
 
-/* ===== Sidebar ===== */
+.main-content {
+  flex: 1;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  padding: 40px;
+  transition: background-color var(--transition);
+}
+
+@media (max-width: 991px) {
+  .main-content {
+    padding: 20px;
+  }
+}
+
+/* 共通ユーティリティ */
+.fw-800 {
+  font-weight: 800 !important;
+}
+.extra-small {
+  font-size: 0.75rem !important;
+}
+
+/* ==========================================================
+   3. サイドバー (Sidebar Components)
+   ========================================================== */
 .sidebar {
   width: var(--sidebar-width);
   height: 100vh;
@@ -92,6 +125,7 @@ body {
   padding: 2px;
 }
 
+/* サイドバーメニュー項目 */
 .sidebar-menu {
   flex: 1;
   padding-left: 16px;
@@ -116,48 +150,53 @@ body {
   color: #fff;
 }
 
-/* ===== Active State Curve (接続部分) ===== */
+/* アクティブ時の曲線接続 (Curve Logic) */
 .menu-item.active {
   background-color: var(--bg-color);
   color: var(--primary-color);
 }
 
-/* 上部の逆角丸 */
-.menu-item.active::before {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: -20px;
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  border-radius: 50%;
-  box-shadow: 10px 10px 0 0 var(--bg-color);
-}
-
-/* 下部の逆角丸 */
+.menu-item.active::before,
 .menu-item.active::after {
   content: "";
   position: absolute;
   right: 0;
-  bottom: -20px;
   width: 20px;
   height: 20px;
   background: transparent;
   border-radius: 50%;
+  pointer-events: none;
+}
+
+.menu-item.active::before {
+  top: -20px;
+  box-shadow: 10px 10px 0 0 var(--bg-color);
+}
+
+.menu-item.active::after {
+  bottom: -20px;
   box-shadow: 10px -10px 0 0 var(--bg-color);
 }
 
-/* ===== Main Content ===== */
-.main-content {
-  flex: 1;
-  background-color: var(--bg-color);
-  min-height: 100vh;
-  padding: 40px;
-  transition: var(--transition);
+.sidebar-footer {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ===== Header ===== */
+.logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ff8a80;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* ==========================================================
+   4. 共通コンポーネント (Common UI Components)
+   ========================================================== */
+
+/* ヘッダー & パンくず */
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -180,54 +219,15 @@ body {
   border-radius: 6px;
 }
 
-/* ===== Theme Dots ===== */
-.theme-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 3px solid transparent;
-  transition: 0.2s;
-}
-.theme-dot.active {
-  border-color: #ddd;
-  transform: scale(1.2);
-}
-.dot-green {
-  background-color: #76b19d;
-}
-.dot-blue {
-  background-color: #4a90e2;
-}
-.dot-purple {
-  background-color: #8e44ad;
-}
-.dot-red {
-  background-color: #e67e22;
-}
-
-/* ===== Footer ===== */
-.sidebar-footer {
-  padding: 20px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-.logout {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #ff8a80;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-/* ===== Cards ===== */
+/* カード & グリッド */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 24px;
 }
+
 .admin-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 24px;
   padding: 30px;
   text-decoration: none;
@@ -235,10 +235,12 @@ body {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
   transition: var(--transition);
 }
+
 .admin-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
 }
+
 .admin-card h2 {
   color: var(--primary-color);
   font-weight: 800;
@@ -246,18 +248,16 @@ body {
 }
 
 /* ==========================================================
-   ねこねこ薬局風 ボタン・一括カスタマイズ
+   5. ボタン (Custom Buttons)
    ========================================================== */
-
-/* ボタン全体の基本設定（丸みと余白） */
 .btn {
-  border-radius: 50px !important; /* カプセル型 */
+  border-radius: 50px !important;
   padding: 8px 24px !important;
   font-weight: 700 !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* アイコンと文字の間隔 */
+  gap: 8px;
   transition: all 0.3s ease !important;
   border: none !important;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
@@ -269,66 +269,64 @@ body {
   filter: brightness(1.1);
 }
 
-/* 1. 青色ボタン（ユーザー作成・Info） -> ソフトブルー */
+.btn::before {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .btn-primary,
 .btn-info {
   background-color: #5da9e9 !important;
   color: #fff !important;
 }
-.btn-primary::before {
-  font-family: "Material Icons";
-}
-
-/* 2. 緑色ボタン（ランク変更・Success） -> ねこねこグリーン */
 .btn-success {
-  background-color: #76b19d !important;
+  background-color: var(--primary-color) !important;
   color: #fff !important;
 }
-.btn-success::before {
-  font-family: "Material Icons";
-}
-
-/* 3. 赤色ボタン（削除・Danger） -> ソフトレッド */
 .btn-danger {
   background-color: #e86a6a !important;
   color: #fff !important;
 }
-.btn-danger::before {
-  font-family: "Material Icons";
-}
-
-/* 4. 白色・枠線ボタン（戻る・削除済み表示・Secondary） */
-.btn-secondary,
-.btn-light,
-.btn-outline-secondary {
-  background-color: #fff !important;
-  color: #777 !important;
-  border: 1px solid #ddd !important;
-}
-/* 5. オレンジボタン（復元・Warning） */
 .btn-warning {
   background-color: var(--warning-color) !important;
   color: #fff !important;
 }
-.btn-outline-secondary::before {
-  content: "visibility";
+.btn-secondary,
+.btn-light {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* アイコン指定 */
+.btn-primary::before {
   font-family: "Material Icons";
 }
-/* 「戻る」ボタン用（もしクラスが特定できれば） */
-.btn-back::before {
-  content: "arrow_back";
+.btn-success::before {
+  font-family: "Material Icons";
+}
+.btn-danger::before {
   font-family: "Material Icons";
 }
 .btn-warning::before {
   font-family: "Material Icons";
 }
+.btn-outline-secondary::before {
+  font-family: "Material Icons";
+}
+.btn-back::before {
+  font-family: "Material Icons";
+}
 
-/* テーブルのカスタマイズ */
+/* ==========================================================
+   6. テーブル (Tables)
+   ========================================================== */
 .table {
   color: var(--text-color);
   border-collapse: separate;
-  border-spacing: 0 8px; /* 行間に隙間を作る */
+  border-spacing: 0 8px;
 }
+
 .table thead th {
   border: none;
   color: var(--primary-color);
@@ -337,11 +335,13 @@ body {
   font-size: 0.85rem;
   padding: 15px;
 }
+
 .table tbody tr {
-  background: #fff;
+  background: var(--card-bg);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
   transition: var(--transition);
 }
+
 .table tbody tr td {
   padding: 15px;
   vertical-align: middle;
@@ -355,14 +355,45 @@ body {
 }
 
 .table-hover tbody tr:hover {
-  transform: scale(1.01);
+  transform: scale(1.005);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  background-color: #fff !important;
+}
+
+.table-selected {
+  background-color: rgba(118, 177, 157, 0.08) !important;
+}
+.user-row.is-deleted {
+  background-color: #fafafa;
+  opacity: 0.7;
+}
+
+/* ==========================================================
+   7. フォーム要素 (Form Elements)
+   ========================================================== */
+.custom-input-group input,
+.custom-input-group select,
+.custom-input-group textarea {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.custom-input-group input:focus {
+  background-color: var(--card-bg);
+  border-color: var(--primary-color);
+  outline: 0;
+  box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.15);
 }
 
 /* 検索バー */
 .search-input-group {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 50px;
   padding: 5px 20px;
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -370,133 +401,128 @@ body {
   align-items: center;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
+
 .search-input-group input {
   border: none;
   outline: none;
+  background: transparent;
   padding: 8px;
   width: 100%;
   font-size: 0.9rem;
+  color: var(--text-color);
 }
 
-/* アイコン自体のスタイル調整 */
-.btn::before {
-  font-size: 1.2rem;
-  line-height: 1;
+/* ラジオボタン美化（チップ形式） */
+.custom-radio-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-
-/* フォームのチェックボックスも少し丸く */
-.form-check-input {
-  border-radius: 4px !important;
+.custom-radio-group li {
+  background: var(--bg-color);
+  padding: 8px 16px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: 0.2s;
+  border: 2px solid transparent;
+}
+.custom-radio-group li:has(input:checked) {
+  background: var(--card-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: bold;
+}
+.custom-radio-group input[type="radio"] {
+  accent-color: var(--primary-color);
 }
 
-/* 警告アイコンのふわっとしたアニメーション */
-#alertModal .material-icons {
-  animation: pulse-warning 2s infinite;
+/* Djangoファイル入力のクリア削除用 */
+.django-file-custom {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.django-file-custom input[type="checkbox"],
+.django-file-custom label[for$="-clear_id"] {
+  display: none !important;
+}
+.django-file-custom a {
+  display: inline-block;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--primary-color);
 }
 
-/* 警告モーダルのボタン色（プライマリ色） */
-#alertModal .btn-primary {
-  background-color: var(--primary-color) !important;
-  border: none;
+/* ==========================================================
+   8. モーダル & アニメーション (Modals & Animations)
+   ========================================================== */
+.custom-loader {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid var(--primary-color);
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 1s linear infinite;
 }
 
-@keyframes pulse-warning {
+@keyframes spin {
   0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
+    transform: rotate(0deg);
   }
   100% {
+    transform: rotate(360deg);
+  }
+}
+
+.success-icon-wrapper span {
+  font-size: 80px;
+  animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
     transform: scale(1);
     opacity: 1;
   }
 }
 
-/* SP対応 */
-@media (max-width: 991px) {
-  .main-content {
-    padding: 20px;
-  }
+/* ==========================================================
+   9. 特殊レイアウト (Special Components)
+   ========================================================== */
+.action-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar-width, 260px);
+  width: calc(100% - var(--sidebar-width, 260px));
+  z-index: 900;
+  transition: var(--transition);
 }
 
-.fw-800 {
+.sidebar-collapsed .action-bar-container {
+  left: var(--sidebar-collapsed-width, 88px);
+  width: calc(100% - var(--sidebar-collapsed-width, 88px));
+}
+
+.action-bar-inner {
+  background-color: var(--bg-color) !important;
+  border-top: 2px solid var(--primary-color);
+  padding: 12px 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.12);
+}
+
+.selection-count {
   font-weight: 800;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.table-selected {
-  background-color: rgba(118, 177, 157, 0.08) !important;
-}
-.text-nowrap {
-  white-space: nowrap !important;
-}
-.fw-800 {
-  font-weight: 800;
-}
-.border-dashed {
-  border-style: dashed !important;
-  border-width: 2px !important;
-}
-.bg-soft-orange {
-  background-color: rgba(232, 176, 106, 0.1);
-}
-.text-orange {
-  color: #d38c35;
-}
-
-/* テーブルスタイルの微調整 */
-.table th {
-  background-color: transparent !important;
-  border: none;
-}
-.table td {
-  border-color: rgba(0, 0, 0, 0.03) !important;
-}
-
-/* IPリストのアニメーション */
-.allowed-ips > div {
-  border: 1px solid transparent;
-  transition: 0.2s;
-}
-.allowed-ips > div:hover {
-  border-color: var(--primary-color);
-  background-color: #fff !important;
-  transform: translateX(5px);
-}
-.fw-800 {
-    font-weight: 800;
-  }
-  .extra-small {
-    font-size: 0.7rem;
-  }
-  .custom-input-group input,
-  .custom-input-group select,
-  .custom-input-group textarea {
-    display: block;
-    width: 100%;
-    padding: 0.8rem 1.2rem;
-    font-size: 1rem;
-    color: var(--text-color);
-    background-color: var(--bg-color);
-    border: 2px solid transparent;
-    border-radius: 16px;
-    transition: all 0.3s ease;
-  }
-  .custom-input-group input:focus {
-    background-color: #fff;
-    border-color: var(--primary-color);
-    outline: 0;
-    box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.15);
-  }
-
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
