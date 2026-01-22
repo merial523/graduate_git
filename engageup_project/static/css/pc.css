@@ -392,19 +392,28 @@ body {
 
 /* 警告アイコンのふわっとしたアニメーション */
 #alertModal .material-icons {
-    animation: pulse-warning 2s infinite;
+  animation: pulse-warning 2s infinite;
 }
 
 /* 警告モーダルのボタン色（プライマリ色） */
 #alertModal .btn-primary {
-    background-color: var(--primary-color) !important;
-    border: none;
+  background-color: var(--primary-color) !important;
+  border: none;
 }
 
 @keyframes pulse-warning {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* SP対応 */
@@ -413,3 +422,81 @@ body {
     padding: 20px;
   }
 }
+
+.fw-800 {
+  font-weight: 800;
+}
+.table-selected {
+  background-color: rgba(118, 177, 157, 0.08) !important;
+}
+.text-nowrap {
+  white-space: nowrap !important;
+}
+.fw-800 {
+  font-weight: 800;
+}
+.border-dashed {
+  border-style: dashed !important;
+  border-width: 2px !important;
+}
+.bg-soft-orange {
+  background-color: rgba(232, 176, 106, 0.1);
+}
+.text-orange {
+  color: #d38c35;
+}
+
+/* テーブルスタイルの微調整 */
+.table th {
+  background-color: transparent !important;
+  border: none;
+}
+.table td {
+  border-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* IPリストのアニメーション */
+.allowed-ips > div {
+  border: 1px solid transparent;
+  transition: 0.2s;
+}
+.allowed-ips > div:hover {
+  border-color: var(--primary-color);
+  background-color: #fff !important;
+  transform: translateX(5px);
+}
+.fw-800 {
+    font-weight: 800;
+  }
+  .extra-small {
+    font-size: 0.7rem;
+  }
+  .custom-input-group input,
+  .custom-input-group select,
+  .custom-input-group textarea {
+    display: block;
+    width: 100%;
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    border: 2px solid transparent;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+  .custom-input-group input:focus {
+    background-color: #fff;
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.15);
+  }
+
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }

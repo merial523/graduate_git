@@ -1,139 +1,148 @@
 {% extends base_template %}
-
 {% load static %}
-
-{% block title %}システム定数一覧 | EngageUp{% endblock %}
-
+{% block title %}システム定数一覧| EngageUp{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item active" aria-current="page">定数一覧</li>
-{% endblock %}
-
-{% block content %}
+<li class="breadcrumb-item active" aria-current="page">定数一覧</li>
+{% endblock %} {% block content %}
 <div class="user-management-container">
-    <div class="mb-4">
-        <h1 class="page-title text-dark fw-800 fw-bold">システム定数一覧</h1>
-    </div>
+  <div class="mb-4">
+    <h1 class="page-title text-dark fw-800 fw-bold">システム定数一覧</h1>
+  </div>
 
-    <div class="row g-4">
-        <!-- 1. 基本設定エリア -->
-        <div class="col-lg-7">
-            <div class="admin-card border-0 shadow-sm h-100">
-                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
-                    <span class="material-icons text-primary">settings</span>
-                    <h5 class="fw-800 m-0 text-dark">基本設定</h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <tbody>
-                                {% for constant in constants %}
-                                <tr class="border-bottom">
-                                    <th class="py-3 text-muted small fw-800" style="width: 35%;">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="material-icons text-muted" style="font-size: 18px;">business</span>
-                                            会社コード
-                                        </div>
-                                    </th>
-                                    <td class="py-3">
-                                        <code class="bg-light px-3 py-1 rounded-pill text-primary fw-bold">{{ constant.company_code }}</code>
-                                    </td>
-                                </tr>
-                                <tr class="border-bottom">
-                                    <th class="py-3 text-muted small fw-800">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="material-icons text-muted" style="font-size: 18px;">location_on</span>
-                                            アドレス
-                                        </div>
-                                    </th>
-                                    <td class="py-3 text-dark fw-bold">
-                                        {{ constant.address }}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="2" class="text-center py-4 text-muted">設定データが見つかりません。</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="text-end mt-3">
-                        <a href="{% url 'administer:constant_update' %}" class="btn btn-success shadow-sm">
-                            <span class="material-icons">edit</span> 設定を編集
-                        </a>
-                    </div>
-                </div>
-            </div>
+  <div class="row g-4">
+    <!-- 基本設定エリア -->
+    <div class="col-lg-7">
+      <div class="admin-card border-0 shadow-sm h-100">
+        <div
+          class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2"
+        >
+          <span class="material-icons text-primary">settings</span>
+          <h5 class="fw-800 m-0 text-dark">基本設定</h5>
         </div>
-
-        <!-- 2. IPアドレス制限エリア (画面のみ作成) -->
-        <div class="col-lg-5">
-            <div class="admin-card border-0 shadow-sm h-100 border-start border-4 border-warning">
-                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between">
+        <div class="card-body p-4">
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <tbody>
+                {% for constant in constants %}
+                <tr class="border-bottom">
+                  <th class="py-3 text-muted small fw-800" style="width: 35%">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="material-icons text-warning">security</span>
-                        <h5 class="fw-800 m-0 text-dark">IPアドレス制限(未実装)</h5>
+                      <span
+                        class="material-icons text-muted"
+                        style="font-size: 18px"
+                        >business</span
+                      >
+                      会社コード
                     </div>
-                    <!-- ダミーのトグルスイッチ -->
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" checked disabled>
+                  </th>
+                  <td class="py-3">
+                    <code
+                      class="bg-light px-3 py-1 rounded-pill text-primary fw-bold"
+                      >{{ constant.company_code }}</code
+                    >
+                  </td>
+                </tr>
+                <tr class="border-bottom">
+                  <th class="py-3 text-muted small fw-800">
+                    <div class="d-flex align-items-center gap-2">
+                      <span
+                        class="material-icons text-muted"
+                        style="font-size: 18px"
+                        >location_on</span
+                      >
+                      アドレス
                     </div>
-                </div>
-                <div class="card-body p-4">
-                    <p class="text-muted small mb-4">許可されたIPアドレス以外からの管理画面アクセスを遮断します。</p>
-                    
-                    <div class="allowed-ips mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 px-3 bg-light rounded-3">
-                            <span class="font-monospace small">192.168.1.1 (社内LAN)</span>
-                            <span class="material-icons text-muted small">lock</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 px-3 bg-light rounded-3">
-                            <span class="font-monospace small">203.0.113.5 (外部拠点)</span>
-                            <span class="material-icons text-muted small">lock</span>
-                        </div>
-                    </div>
+                  </th>
+                  <td class="py-3 text-dark fw-bold">{{ constant.address }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="2" class="text-center py-4 text-muted">
+                    設定データが見つかりません。
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
 
-                    <button class="btn btn-outline-secondary w-100 border-dashed py-2" disabled>
-                        <span class="material-icons me-1">add</span> 許可IPを追加する
-                    </button>
-                    
-                    <div class="alert bg-soft-orange text-orange mt-4 small border-0 rounded-4">
-                        <div class="d-flex gap-2">
-                            <span class="material-icons" style="font-size: 18px;">warning</span>
-                            <span>制限を有効にする前に、自身の現在IPが含まれているか確認してください。</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <div class="text-end mt-3">
+            <a
+              href="{% url 'administer:constant_update' %}"
+              class="btn btn-success shadow-sm"
+            >
+              <span class="material-icons">edit</span> 設定を編集
+            </a>
+          </div>
         </div>
+      </div>
     </div>
+
+    <!-- IPアドレス制限エリア (画面のみ作成) -->
+    <div class="col-lg-5">
+      <div
+        class="admin-card border-0 shadow-sm h-100 border-start border-4 border-warning"
+      >
+        <div
+          class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between"
+        >
+          <div class="d-flex align-items-center gap-2">
+            <span class="material-icons text-warning">security</span>
+            <h5 class="fw-800 m-0 text-dark">IPアドレス制限(未実装)</h5>
+          </div>
+          <!-- ダミーのトグルスイッチ -->
+          <div class="form-check form-switch">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              checked
+              disabled
+            />
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted small mb-4">
+            許可されたIPアドレス以外からの管理画面アクセスを遮断します。
+          </p>
+
+          <div class="allowed-ips mb-4">
+            <div
+              class="d-flex justify-content-between align-items-center mb-2 p-2 px-3 bg-light rounded-3"
+            >
+              <span class="font-monospace small">192.168.1.1 (社内LAN)</span>
+              <span class="material-icons text-muted small">lock</span>
+            </div>
+            <div
+              class="d-flex justify-content-between align-items-center mb-2 p-2 px-3 bg-light rounded-3"
+            >
+              <span class="font-monospace small">203.0.113.5 (外部拠点)</span>
+              <span class="material-icons text-muted small">lock</span>
+            </div>
+          </div>
+
+          <button
+            class="btn btn-outline-secondary w-100 border-dashed py-2"
+            disabled
+          >
+            <span class="material-icons me-1">add</span> 許可IPを追加する
+          </button>
+
+          <div
+            class="alert bg-soft-orange text-orange mt-4 small border-0 rounded-4"
+          >
+            <div class="d-flex gap-2">
+              <span class="material-icons" style="font-size: 18px"
+                >warning</span
+              >
+              <span
+                >制限を有効にする前に、自身の現在IPが含まれているか確認してください。</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<style>
-    .fw-800 { font-weight: 800; }
-    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
-    .bg-soft-orange { background-color: rgba(232, 176, 106, 0.1); }
-    .text-orange { color: #d38c35; }
-
-    /* テーブルスタイルの微調整 */
-    .table th {
-        background-color: transparent !important;
-        border: none;
-    }
-    .table td {
-        border-color: rgba(0,0,0,0.03) !important;
-    }
-
-    /* IPリストのアニメーション */
-    .allowed-ips > div {
-        border: 1px solid transparent;
-        transition: 0.2s;
-    }
-    .allowed-ips > div:hover {
-        border-color: var(--primary-color);
-        background-color: #fff !important;
-        transform: translateX(5px);
-    }
-</style>
 {% endblock %}

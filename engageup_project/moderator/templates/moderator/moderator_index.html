@@ -11,10 +11,6 @@
     <div class="text-end d-none d-md-block">
       <span
         class="badge bg-white text-dark border p-2 px-3 rounded-pill shadow-sm"
-        style="
-          background-color: var(--card-bg) !important;
-          color: var(--text-color) !important;
-        "
       >
         <span
           class="material-icons fw-bold small align-middle"
@@ -50,7 +46,7 @@
     <p class="text-muted">付与されたバッジの統計と管理</p>
   </a>
 
-  <a href="{% url 'moderator:moderatorNews' %}" class="admin-card">
+  <a href="{% url 'moderator:news_list' %}" class="admin-card">
     <h2 class="text-primary">お知らせ投稿</h2>
     <p class="text-muted">受講生向け通知の作成・配信</p>
   </a>
