@@ -2,62 +2,32 @@
 
 {% block content %}
 <div class="container mt-5">
-    <div class="card border-0 shadow-lg mx-auto" style="max-width: 850px; border-radius: 12px; overflow: hidden;">
-        
-        <!-- ヘッダー（Windowsのウィンドウ風） -->
-        <div style="background-color: #333; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; gap: 8px;">
-                <div style="width: 12px; height: 12px; background-color: #ff5f56; border-radius: 50%;"></div>
-                <div style="width: 12px; height: 12px; background-color: #ffbd2e; border-radius: 50%;"></div>
-                <div style="width: 12px; height: 12px; background-color: #27c93f; border-radius: 50%;"></div>
-            </div>
-            <span style="color: #bbb; font-family: sans-serif; font-size: 0.85em;">Django Debug Console - AI Generation</span>
-            <div></div>
+    <div class="card border-danger shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">⚠️ エラーが発生しました</h4>
         </div>
-
-        <div class="card-body" style="background-color: #fcfcfc; padding: 30px;">
-            <h4 class="text-danger mb-4" style="font-weight: bold;">⚠️ AI生成プロセスで例外が検出されました</h4>
-            
-            <p class="text-muted mb-2">エラー・スタックトレースの概要:</p>
-
-            <!-- ★ ターミナル風表示エリア -->
-            <div style="background-color: #1e1e1e; color: #d4d4d4; padding: 25px; border-radius: 6px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.95em; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); overflow-x: auto;">
-                <div style="border-bottom: 1px solid #333; margin-bottom: 10px; padding-bottom: 5px; color: #569cd6;">
-                    $ python manage.py run_ai_generation --exam_id={{ exam_id }}
-                </div>
-                
-                <span style="color: #ce9178;">[LOG]</span> 教材ファイルを読み込み中... OK<br>
-                <span style="color: #ce9178;">[LOG]</span> Gemini APIにリクエストを送信中...<br>
-                <span style="color: #f44336; font-weight: bold;">[CRITICAL ERROR]</span> 以下の原因で処理が中断されました:<br>
-                <br>
-                <div style="color: #f48771; padding-left: 20px; border-left: 3px solid #f44336;">
-                    {{ error }}
-                </div>
-                <br>
-                <span style="color: #569cd6;">>>> システムは待機状態に戻りました。設定を確認して再試行してください。</span>
+        <div class="card-body">
+            <p class="text-danger fw-bold">エラー内容：</p>
+            <div class="alert alert-light border mb-4">
+                {{ error }}
             </div>
 
-            <!-- アクションボタン -->
-            <div class="mt-5 d-flex flex-wrap gap-2">
+            <div class="d-grid gap-2">
+                <!-- 教材がない場合などに、再設定画面へ誘導するボタン -->
                 {% if exam_id %}
-                    <a href="{% url 'enrollments:exam_edit' exam_id %}" class="btn btn-primary" style="padding: 10px 25px; font-weight: bold; border-radius: 6px;">
-                        📁 教材を再設定する
+                    <a href="{% url 'enrollments:exam_edit' exam_id %}" class="btn btn-primary btn-lg">
+                        📁 教材をアップロードしに行く
                     </a>
                 {% endif %}
-                <a href="javascript:history.back()" class="btn btn-outline-secondary" style="padding: 10px 25px; border-radius: 6px;">戻る</a>
-                <a href="{% url 'enrollments:exam_list' %}" class="btn btn-link" style="color: #666;">検定一覧に戻る</a>
+
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                    前の画面に戻る
+                </a>
+                <a href="{% url 'enrollments:exam_list' %}" class="btn btn-link">
+                    検定一覧へ戻る
+                </a>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    /* 背景を少し暗くしてカードを際立たせる */
-    body { background-color: #f0f2f5; }
-    
-    /* スクロールバーのカスタマイズ（ターミナル風） */
-    div::-webkit-scrollbar { width: 8px; height: 8px; }
-    div::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-    div::-webkit-scrollbar-track { background: #222; }
-</style>
 {% endblock %}
