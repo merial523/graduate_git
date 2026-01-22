@@ -10,7 +10,7 @@ from django.views import View
 from django.views.generic.base import ContextMixin 
 from django.views.generic import ListView, UpdateView, TemplateView
 from django.urls import reverse_lazy
-
+from google.generativeai.types import HarmCategory, HarmBlockThreshold  # type: ignore
 from common.views import BaseCreateView, BaseTemplateMixin, AdminOrModeratorRequiredMixin
 from main.models import Exam, Question, Badge, Choice, UserExamStatus
 from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet, ExamForm
@@ -184,23 +184,44 @@ class ExamBulkActionView(AdminOrModeratorRequiredMixin, View):
         return redirect('enrollments:exam_list')
 
 class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ContextMixin, View):
+    """AIによる問題自動生成（セーフティフィルター緩和・エラー対策済み版）"""
+    
     def get(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
-        return render(request, 'enrollments/exam_ai_add.html', self.get_context_data(exam=exam))
+        context = self.get_context_data(exam=exam)
+        return render(request, 'enrollments/exam_ai_add.html', context)
 
     def post(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
+        
+        # 教材の存在チェック
         if not exam.exams_file:
-            return render(request, 'enrollments/enrollments_error.html', self.get_context_data(error='教材がありません', exam_id=exam_id)) 
+            context = self.get_context_data(error='教材が登録されていません。', exam_id=exam_id)
+            return render(request, 'enrollments/enrollments_error.html', context) 
         
         num_questions = request.POST.get('count', 5)
         difficulty = request.POST.get('difficulty', '中級')
+
         try:
+            # 1. 教材データを読み込み
             with exam.exams_file.open('rb') as f:
                 file_data = f.read()
 
+            # 2. AIの設定
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            model = genai.GenerativeModel("gemini-flash-latest")
+            
+            # ★ 修正ポイント：セーフティ設定を追加して「回答拒否」を防ぐ
+            model = genai.GenerativeModel(
+                model_name="gemini-flash-latest",
+                safety_settings={
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                }
+            )
+            
+            # 3. 厳格なプロンプトの定義
             prompt = f"""
                 以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
                 問題の難易度は「{difficulty}」にしてください。
@@ -222,29 +243,55 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
                 ]
 
                 【禁止事項】
-                1. JSON以外の説明文、挨拶、"はい、分かりました" などの言葉は一切含めないこと。
-                2. 正解（is_correct: true）の位置は、1番目から4番目の中でランダムに変えること。
-                """
-            response = model.generate_content([prompt, {'mime_type': 'application/pdf', 'data': file_data}])
-            quiz_data = json.loads(response.text.replace('```json', '').replace('```', '').strip())
+                1. JSON以外の説明文、挨拶などは一切含めないこと。
+                2. 正解（is_correct: true）の位置は、ランダムに配置すること。
+            """
+
+            # 4. AIへのリクエスト
+            response = model.generate_content([
+                prompt, 
+                {'mime_type': 'application/pdf', 'data': file_data}
+            ])
+
+            # 5. 解析処理（JSONのクリーニング）
+            raw_text = response.text.replace('```json', '').replace('```', '').strip()
+            quiz_data = json.loads(raw_text)
+
+            # データが単一辞書ならリストに包む（型エラー対策）
             if isinstance(quiz_data, dict):
-                        # AIが {"questions": [...]} のように包んで返してきた場合への対策
-                        if 'questions' in quiz_data:
-                            quiz_data = quiz_data['questions']
-                        else:
-                            quiz_data = [quiz_data]
+                quiz_data = quiz_data.get('questions', [quiz_data])
 
+            # 6. データベースへの保存
             for item in quiz_data:
-                # これで item は必ず辞書形式になり、エラーが消えます
-                q = Question.objects.create(exam=exam, text=item['text'])
-                choices = item['choices']
-                random.shuffle(choices)
-                for c in choices:
-                    Choice.objects.create(question=q, text=c['text'], is_correct=c['is_correct'])
-            return redirect('enrollments:question_list', exam_id=exam.id)
-        except Exception as e:
-            return render(request, 'enrollments/enrollments_error.html', self.get_context_data(error=str(e), exam_id=exam_id))
+                # 'text'がなくても 'question' 等で探す（KeyError対策）
+                q_text = item.get('text') or item.get('question') or item.get('question_text')
+                if not q_text:
+                    continue
 
+                q = Question.objects.create(exam=exam, text=q_text)
+
+                # 選択肢の取得
+                choices_data = item.get('choices') or item.get('options')
+                if not choices_data:
+                    continue
+
+                # シャッフルして保存
+                random.shuffle(choices_data)
+                for c in choices_data:
+                    c_text = c.get('text') or c.get('content') or c.get('option')
+                    if c_text:
+                        Choice.objects.create(
+                            question=q, 
+                            text=c_text, 
+                            is_correct=c.get('is_correct', False)
+                        )
+            
+            return redirect('enrollments:question_list', exam_id=exam.id)
+
+        except Exception as e:
+            # エラーの詳細を error.html に送る
+            context = self.get_context_data(error=str(e), exam_id=exam_id)
+            return render(request, 'enrollments/enrollments_error.html', context)
 
 # --- 受講者用 ---
 
