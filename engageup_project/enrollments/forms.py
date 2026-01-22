@@ -36,7 +36,7 @@ ChoiceFormSet = inlineformset_factory(
     Question, Choice, 
     fields=['text', 'is_correct'],
     extra=4,
-    can_delete=False,
+    can_delete=True,
     formset=BaseChoiceFormSet
 )
 
