@@ -226,32 +226,46 @@
     .user-row { cursor: pointer; transition: 0.2s; }
     .table-primary-soft { background-color: rgba(118, 177, 157, 0.1) !important; }
 
-    /* ボトムアクションバー（透過なし・不透明背景） */
-    .action-bar-container { 
-        position: fixed; 
-        bottom: 0; 
-        left: 0; 
-        width: 100%; 
-        padding: 0 0 0 var(--sidebar-width, 260px); 
-        z-index: 1050; 
-        transition: padding 0.4s ease; 
+    /* --- アクションバーの重なり解消設定 --- */
+    .action-bar-container {
+        position: fixed;
+        bottom: 0;
+        /* left: 0 をやめて、サイドバーの幅（変数）を起点にする */
+        left: var(--sidebar-width, 260px); 
+        /* 幅は「100% - サイドバーの幅」にする */
+        width: calc(100% - var(--sidebar-width, 260px));
+        
+        /* z-indexをサイドバー（通常1000〜1050）より低く設定して背面に回す */
+        z-index: 900; 
+        
+        padding-left: 0 !important; /* paddingでの調整は不要になるので0に */
+        transition: left 0.4s cubic-bezier(0.4, 0.4, 0, 1), width 0.4s cubic-bezier(0.4, 0.4, 0, 1);
     }
-    .sidebar-collapsed .action-bar-container { padding-left: var(--sidebar-collapsed-width, 88px); }
-    
-    /* ボトムアクションバーの背景色と透過防止の設定 */
+
+    /* サイドバーが閉じている時（アイコン状態）の連動設定 */
+    .sidebar-collapsed .action-bar-container {
+        left: var(--sidebar-collapsed-width, 88px);
+        width: calc(100% - var(--sidebar-collapsed-width, 88px));
+    }
+
     .action-bar-inner {
-        /* 背景色にテーマの bg-color を適用 */
-        background-color: var(--bg-color) !important; 
-        
-        /* 透過を完全に防止 */
+        background-color: var(--bg-color) !important;
         opacity: 1 !important;
-        
-        /* 上部の境界線を強調して、メインコンテンツとの境目をはっきりさせる */
-        border-top: 2px solid var(--primary-color); 
-        padding: 15px 0; 
-        
-        /* 影を少し強めにして、上に浮き上がっている感を出す */
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.12); 
+        border-top: 2px solid var(--primary-color);
+        padding: 12px 0;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.12);
+    }
+
+    /* モバイル対応：スマホではサイドバーが消えるため全幅に戻す */
+    @media (max-width: 991px) {
+        .action-bar-container {
+            left: 0 !important;
+            width: 100% !important;
+            z-index: 1050; /* スマホでは最前面に出す */
+        }
+        .action-bar-inner {
+            padding: 10px;
+        }
     }
 
     /* ラジオボタン（チップ）が背景色と同化して見えにくい場合の調整 */
