@@ -100,8 +100,14 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="{% if request.user.rank == 'administer' %}4{% else %}3{% endif %}" class="text-center py-5 text-muted">該当するユーザーはいません</td>
-          </tr>
+              <td colspan="4" class="text-center py-5 text-muted">
+                <div class="mb-3">
+                  <span class="material-icons" style="font-size: 48px; opacity: 0.3;">search_off</span>
+                </div>
+                <p class="mb-1 fw-bold">該当するユーザーが見つかりません</p>
+                <p class="small mb-0">条件を変えて再度お試しください</p>
+              </td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -147,4 +153,86 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.user-row');
+    const bulkForm = document.getElementById('user-bulk-form');
+    const actionInput = document.getElementById('bulk-action-input');
+    
+    // モーダルの初期化
+    const statusModalEl = document.getElementById('statusModal');
+    const alertModalEl = document.getElementById('alertModal');
+    const statusModal = statusModalEl ? new bootstrap.Modal(statusModalEl) : null;
+    const alertModal = alertModalEl ? new bootstrap.Modal(alertModalEl) : null;
+    
+    const loadingText = document.getElementById('loading-text');
+    const alertModalMsg = document.getElementById('alert-modal-msg');
+
+    // 行選択機能
+    rows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            const checkbox = this.querySelector('.row-checkbox');
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.checked ? this.classList.add('table-selected') : this.classList.remove('table-selected');
+            }
+        });
+    });
+
+    // ボタンのクリックイベント（削除・復元）
+    document.querySelectorAll('.action-trigger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.dataset.action;
+            const msg = this.dataset.msg;
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+
+            if (checkedCount === 0) {
+                if (alertModal) {
+                    alertModalMsg.innerText = "操作するユーザーを一人以上選択してください。";
+                    alertModal.show();
+                }
+                return;
+            }
+
+            if (statusModal) {
+                loadingText.innerText = msg;
+                actionInput.value = action;
+                statusModal.show();
+
+                setTimeout(() => {
+                    document.getElementById('modal-loading').style.display = 'none';
+                    document.getElementById('modal-success').style.display = 'block';
+                    setTimeout(() => { bulkForm.submit(); }, 800);
+                }, 1200);
+            }
+        });
+    });
+
+    // チェックボックス直接操作のハイライト
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            const row = this.closest('tr');
+            this.checked ? row.classList.add('table-selected') : row.classList.remove('table-selected');
+        });
+    });
+});
+</script>
+
+<style>
+  .fw-800 { font-weight: 800; }
+  .table-selected { background-color: rgba(118, 177, 157, 0.08) !important; }
+  .text-nowrap { white-space: nowrap !important; }
+
+  /* ローディングアニメーション */
+  .custom-loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  
+  .success-icon-wrapper span { animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .pagination .page-link { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); }
+  .search-input-group { background: var(--card-bg); border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.05); }
+  .search-input-group input { border: none; outline: none; background: transparent; margin-left: 8px; width: 100%; color: var(--text-color); }
+</style>
 {% endblock %}

@@ -77,7 +77,7 @@ class LoginRequiredCustomMixin:
     """
     未ログインならログインページへ
     """
-    login_url = reverse_lazy("login")
+    login_url = reverse_lazy("accounts:login")
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

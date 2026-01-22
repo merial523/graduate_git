@@ -1,194 +1,176 @@
 {% extends base_template %}
+
 {% load static %}
-{% block title%}システム定数の編集 | EngageUp{% endblock %}
+
+{% block title %}システム定数の編集 | EngageUp{% endblock %}
+
 {% block breadcrumb %}
-<li class="breadcrumb-item">
-  <a href="{% url 'administer:constant_list' %}">定数一覧</a>
-</li>
-<li class="breadcrumb-item active" aria-current="page">設定の編集</li>
-{% endblock %} {% block content %}
+    <li class="breadcrumb-item"><a href="{% url 'administer:constant_list' %}">定数一覧</a></li>
+    <li class="breadcrumb-item active" aria-current="page">設定の編集</li>
+{% endblock %}
+
+{% block content %}
 <div class="row justify-content-center pb-5">
-  <div class="col-12 col-xl-10">
-    <div class="mb-4">
-      <h1 class="page-title text-dark m-0 fw-800">システム設定の更新</h1>
+    <div class="col-12 col-xl-10">
+        <div class="mb-4">
+            <h1 class="page-title text-dark m-0 fw-800">システム設定の更新</h1>
+            <p class="text-muted small">サービス全体に影響する重要な設定値を管理します。</p>
+        </div>
+
+        <!-- フォーム全体を囲む。idを付与してJSで制御 -->
+        <form method="post" id="constant-update-form">
+            {% csrf_token %}
+
+            <div class="row g-4">
+                <!-- 左カラム: 【実際に保存される項目】 -->
+                <div class="col-lg-6">
+                    <div class="admin-card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                            <span class="material-icons text-primary">app_registration</span>
+                            <h5 class="fw-800 m-0 text-dark">基本設定（保存対象）</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger rounded-4 small">{{ form.non_field_errors }}</div>
+                            {% endif %}
+
+                            {% for field in form %}
+                                <div class="mb-4">
+                                    <label class="form-label fw-800 small d-flex align-items-center gap-2">
+                                        <span class="material-icons text-muted" style="font-size: 16px;">
+                                            {% if 'company' in field.name %}business{% elif 'address' in field.name %}email{% else %}settings{% endif %}
+                                        </span>
+                                        {{ field.label }}
+                                    </label>
+                                    <div class="custom-input-group">
+                                        {{ field }}
+                                    </div>
+                                    {% if field.errors %}
+                                        <div class="text-danger small mt-2 fw-bold">{{ field.errors.0 }}</div>
+                                    {% endif %}
+                                    {% if field.help_text %}
+                                        <div class="form-text extra-small">{{ field.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右カラム: 【将来用の拡張設定（見本）】 -->
+                <div class="col-lg-6">
+                    <div class="admin-card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                            <span class="material-icons text-warning">verified_user</span>
+                            <h5 class="fw-800 m-0 text-dark">拡張セキュリティ（プレビュー）</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <p class="text-muted small mb-4">※以下の項目は現在開発中のため、変更は保存されません。</p>
+                            
+                            <div class="mb-4 p-3 bg-light rounded-4 d-flex justify-content-between align-items-center opacity-75">
+                                <div>
+                                    <p class="fw-800 m-0 small">メンテナンスモード</p>
+                                    <p class="text-muted extra-small m-0">有効にすると一般ユーザーはログイン不可になります</p>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" disabled>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 opacity-75">
+                                <label class="form-label fw-800 small d-flex align-items-center gap-2">
+                                    <span class="material-icons text-muted" style="font-size: 16px;">history</span>
+                                    パスワード有効期限（日）
+                                </label>
+                                <div class="custom-input-group">
+                                    <input type="number" class="form-control" value="90" disabled>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 opacity-75">
+                                <label class="form-label fw-800 small d-flex align-items-center gap-2">
+                                    <span class="material-icons text-muted" style="font-size: 16px;">timer</span>
+                                    自動ログアウト時間（分）
+                                </label>
+                                <div class="custom-input-group">
+                                    <input type="number" class="form-control" value="60" disabled>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="mt-5 text-center">
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'administer:constant_list' %}" class="btn btn-light px-5 py-2 border rounded-pill">
+                        キャンセル
+                    </a>
+                    <!-- type="button" にして JS で演出を挟む -->
+                    <button type="button" id="save-trigger" class="btn btn-success btn-lg px-5 shadow-sm fw-800 rounded-pill">
+                        <span class="material-icons me-2">cloud_upload</span> 設定を保存する
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
-
-    <!-- フォーム全体を囲む。idを付与してJSで制御 -->
-    <form method="post" id="constant-update-form">
-      {% csrf_token %}
-
-      <div class="row g-4">
-        <!-- 左カラム: 【実際に保存される項目】 -->
-        <div class="col-lg-6">
-          <div class="admin-card border-0 shadow-sm h-100">
-            <div
-              class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2"
-            >
-              <span class="material-icons text-primary">app_registration</span>
-              <h5 class="fw-800 m-0 text-dark">基本設定（保存対象）</h5>
-            </div>
-            <div class="card-body p-4">
-              {% if form.non_field_errors %}
-              <div class="alert alert-danger rounded-4 small">
-                {{ form.non_field_errors }}
-              </div>
-              {% endif %} {% for field in form %}
-              <div class="mb-4">
-                <label
-                  class="form-label fw-800 small d-flex align-items-center gap-2"
-                >
-                  <span
-                    class="material-icons text-muted"
-                    style="font-size: 16px"
-                  >
-                    {% if 'company' in field.name %}business{% elif 'address' in
-                    field.name %}email{% else %}settings{% endif %}
-                  </span>
-                  {{ field.label }}
-                </label>
-                <div class="custom-input-group">{{ field }}</div>
-                {% if field.errors %}
-                <div class="text-danger small mt-2 fw-bold">
-                  {{ field.errors.0 }}
-                </div>
-                {% endif %} {% if field.help_text %}
-                <div class="form-text extra-small">{{ field.help_text }}</div>
-                {% endif %}
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-
-        <!-- 右カラム: 【将来用の拡張設定（見本）】 -->
-        <div class="col-lg-6">
-          <div class="admin-card border-0 shadow-sm h-100">
-            <div
-              class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2"
-            >
-              <span class="material-icons text-warning">verified_user</span>
-              <h5 class="fw-800 m-0 text-dark">
-                拡張セキュリティ（プレビュー）
-              </h5>
-            </div>
-            <div class="card-body p-4">
-              <p class="text-muted small mb-4">
-                ※以下の項目は現在開発中のため、変更は保存されません。
-              </p>
-
-              <div
-                class="mb-4 p-3 bg-light rounded-4 d-flex justify-content-between align-items-center opacity-75"
-              >
-                <div>
-                  <p class="fw-800 m-0 small">メンテナンスモード</p>
-                  <p class="text-muted extra-small m-0">
-                    有効にすると一般ユーザーはログイン不可になります
-                  </p>
-                </div>
-                <div class="form-check form-switch">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    disabled
-                  />
-                </div>
-              </div>
-
-              <div class="mb-4 opacity-75">
-                <label
-                  class="form-label fw-800 small d-flex align-items-center gap-2"
-                >
-                  <span
-                    class="material-icons text-muted"
-                    style="font-size: 16px"
-                    >history</span
-                  >
-                  パスワード有効期限（日）
-                </label>
-                <div class="custom-input-group">
-                  <input
-                    type="number"
-                    class="form-control"
-                    value="90"
-                    disabled
-                  />
-                </div>
-              </div>
-
-              <div class="mb-4 opacity-75">
-                <label
-                  class="form-label fw-800 small d-flex align-items-center gap-2"
-                >
-                  <span
-                    class="material-icons text-muted"
-                    style="font-size: 16px"
-                    >timer</span
-                  >
-                  自動ログアウト時間（分）
-                </label>
-                <div class="custom-input-group">
-                  <input
-                    type="number"
-                    class="form-control"
-                    value="60"
-                    disabled
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- アクションボタン -->
-      <div class="mt-5 text-center">
-        <div class="d-flex justify-content-center gap-3">
-          <a
-            href="{% url 'administer:constant_list' %}"
-            class="btn btn-light px-5 py-2 border rounded-pill"
-          >
-            キャンセル
-          </a>
-          <!-- type="button" にして JS で演出を挟む -->
-          <button
-            type="button"
-            id="save-trigger"
-            class="btn btn-success btn-lg px-5 shadow-sm fw-800 rounded-pill"
-          >
-            <span class="material-icons me-2">cloud_upload</span> 設定を保存する
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
 </div>
 
 <!-- 処理中ポップアップモーダル -->
-<div
-  class="modal fade"
-  id="statusModal"
-  tabindex="-1"
-  data-bs-backdrop="static"
->
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-5">
-      <div class="modal-body text-center p-5">
-        <div id="modal-loading">
-          <div class="custom-loader mb-4"></div>
-          <h5 class="fw-800 text-primary">設定を保存しています...</h5>
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">設定を保存しています...</h5>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success" style="font-size: 64px;">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">設定を更新しました</h5>
+                </div>
+            </div>
         </div>
-        <div id="modal-success" style="display: none">
-          <div class="success-icon-wrapper mb-4">
-            <span class="material-icons text-success" style="font-size: 64px"
-              >check_circle</span
-            >
-          </div>
-          <h5 class="fw-800 text-dark">設定を更新しました</h5>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveBtn = document.getElementById('save-trigger');
+        const form = document.getElementById('constant-update-form');
+        const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+        saveBtn.addEventListener('click', function() {
+            // モーダル表示
+            statusModal.show();
+
+            // 1秒間の演出のあとに送信
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                
+                setTimeout(() => {
+                    form.submit(); // ここで実際に保存が走ります
+                }, 800);
+            }, 1200);
+        });
+    });
+</script>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    .extra-small { font-size: 0.7rem; }
+    .custom-input-group input, .custom-input-group select, .custom-input-group textarea {
+        display: block; width: 100%; padding: 0.8rem 1.2rem; font-size: 1rem; color: var(--text-color);
+        background-color: var(--bg-color); border: 2px solid transparent; border-radius: 16px; transition: all 0.3s ease;
+    }
+    .custom-input-group input:focus { background-color: #fff; border-color: var(--primary-color); outline: 0; box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.15); }
+    
+    /* ローディングアニメーション */
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
 {% endblock %}

@@ -1,111 +1,383 @@
 {% extends base_template %}
-
 {% load static %}
-
+{% block title %}コース一覧 |EngageUp{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">コース一覧</li>
+{% endblock %}
 {% block content %}
-<div class="card shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h2 class="h5 mb-0">コース一覧</h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'courses:courses_create' %}" class="btn btn-primary btn-sm shadow-sm">
-                <i class="bi bi-plus-lg"></i> コース作成
-            </a>
-            <a href="{% url 'administer:administer_index' %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-house"></i> 管理ホーム
-            </a>
+<div class="user-management-container pb-5">
+  <!-- ヘッダーエリア -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title text-dark m-0 fw-800">コース・動画管理</h1>
+
+    <div class="display-toggle">
+      {% if request.GET.show == 'deleted' %}
+      <a
+        href="{% url 'courses:courses_list' %}"
+        class="btn btn-light btn-sm border rounded-pill px-3"
+      >
+        <span class="material-icons small align-middle">visibility</span>
+        有効コースのみ
+      </a>
+      {% else %}
+      <a
+        href="{% url 'courses:courses_list' %}?show=deleted"
+        class="btn btn-light btn-sm border rounded-pill px-3"
+      >
+        <span class="material-icons small align-middle">visibility_off</span>
+        削除済みを表示
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 検索 & アクションボタン -->
+  <div class="row g-3 mb-4 align-items-center">
+    <!-- 検索バー -->
+    <div class="col-xl-4 col-lg-5">
+      <form
+        method="get"
+        action="{% url 'courses:courses_list' %}"
+        class="d-flex gap-2"
+      >
+        <div class="search-input-group shadow-sm flex-grow-1">
+          <span class="material-icons text-muted">search</span>
+          <input
+            type="text"
+            name="q"
+            placeholder="科目名で検索..."
+            value="{{ request.GET.q|default:'' }}"
+          />
         </div>
+        {% if request.GET.show %}<input
+          type="hidden"
+          name="show"
+          value="{{ request.GET.show }}"
+        />{% endif %}
+      </form>
     </div>
 
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            <div class="table-responsive">
-                <table class="table table-hover border align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center" style="width: 50px;">選択</th>
-                            <th>ID</th>
-                            <th>科目</th>
-                            <th>回数</th>
-                            <th>状態</th>
-                            <th class="text-center">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for course in courses %}
-                        {# 削除済み（is_active=False）の場合は行を暗くする #}
-                        <tr class="{% if not course.is_active %}table-secondary text-muted opacity-75{% endif %}">
-                            <td class="text-center">
-                                <input type="checkbox" name="course_ids" value="{{ course.id }}" class="form-check-input">
-                            </td>
-                            <td>{{ course.id }}</td>
-                            <td class="fw-bold">{{ course.subject }}</td>
-                            <td>{{ course.courseCount }}</td>
-                            <td>
-                                {% if course.is_active %}
-                                    <span class="badge bg-success">有効</span>
-                                {% else %}
-                                    <span class="badge bg-dark">削除済み</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if course.is_active %}
-                                    <a href="{% url 'courses:courses_update' course.id %}" class="btn btn-outline-success btn-sm">
-                                        <i class="bi bi-pencil"></i> 変更
-                                    </a>
-                                {% else %}
-                                    <span class="text-muted small">-</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">コースが登録されていません。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            {% if is_paginated %}
-            <nav class="mt-4">
-                <ul class="pagination pagination-sm justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">前へ</a>
-                        </li>
-                    {% endif %}
-                    <li class="page-item disabled">
-                        <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-                    </li>
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">次へ</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-
-            <div class="d-flex justify-content-between gap-2 mt-4 pt-3 border-top">
-                <div class="d-flex gap-2 flex-fill">
-                    <button type="submit" name="action" value="delete" class="btn btn-danger flex-fill shadow-sm py-2" onclick="return confirm('選択したコースを削除（無効化）しますか？')">
-                        <i class="bi bi-trash"></i> 選択削除
-                    </button>
-                    <button type="submit" name="action" value="restore" class="btn btn-warning flex-fill shadow-sm py-2" onclick="return confirm('選択したコースを復元しますか？')">
-                        <i class="bi bi-arrow-counterclockwise"></i> 選択復元
-                    </button>
-                </div>
-                <div class="d-flex gap-2 flex-fill">
-                    <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-success flex-fill shadow-sm py-2">
-                        有効コース
-                    </a>
-                    <a href="{% url 'courses:courses_list' %}?show=deleted" class="btn btn-outline-dark flex-fill shadow-sm py-2">
-                        削除済みコース
-                    </a>
-                </div>
-            </div>
-        </form>
+    <!-- 右側ボタン -->
+    <div class="col-xl-8 col-lg-7 text-end">
+      <div
+        class="d-flex gap-2 justify-content-end align-items-center flex-nowrap"
+      >
+        <a
+          href="{% url 'courses:courses_create' %}"
+          class="btn btn-primary shadow-sm text-nowrap"
+        >
+          <span class="material-icons">add_circle</span> 新規コース作成
+        </a>
+      </div>
     </div>
+  </div>
+
+  <!-- リストテーブル -->
+  <form method="post" id="course-bulk-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="bulk-action-input" value="" />
+
+    <div
+      class="table-responsive admin-card border-0 shadow-sm overflow-hidden p-0"
+    >
+      <table class="table table-hover align-middle mb-0 emphasized-table">
+        <thead class="bg-light">
+          <tr style="border-bottom: 3px solid var(--primary-color)">
+            <th class="text-center" style="width: 70px">選択</th>
+            <th style="width: 100px">ID</th>
+            <th>科目名</th>
+            <th>受講回数</th>
+            <th>ステータス</th>
+            <th class="text-center" style="width: 120px">詳細編集</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+          <tr
+            class="user-row {% if not course.is_active %}opacity-50 is-deleted{% endif %}"
+          >
+            <td class="text-center">
+              <input
+                type="checkbox"
+                name="course_ids"
+                value="{{ course.id }}"
+                class="form-check-input row-checkbox"
+              />
+            </td>
+            <td class="text-muted small">#{{ course.id }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span
+                  class="material-icons text-primary"
+                  style="font-size: 20px"
+                  >layers</span
+                >
+                <span class="fw-bold text-dark">{{ course.subject }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border px-2 fw-normal">
+                <span
+                  class="material-icons align-middle small"
+                  style="font-size: 14px"
+                  >event_repeat</span
+                >
+                {{ course.courseCount }} 回
+              </span>
+            </td>
+            <td>
+              {% if course.is_active %}
+              <span class="badge bg-success rounded-pill px-3">有効</span>
+              {% else %}
+              <span class="badge bg-secondary rounded-pill px-3">削除済み</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if course.is_active %}
+              <a
+                href="{% url 'courses:courses_update' course.id %}"
+                class="btn btn-light btn-sm border shadow-none rounded-pill px-3"
+              >
+                <span class="material-icons small align-middle">edit</span> 変更
+              </a>
+              {% else %}
+              <span class="text-muted small">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted bg-white">
+              <span class="material-icons fs-1 d-block mb-2">auto_stories</span>
+              該当するコースは見つかりませんでした。
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 余白調整 -->
+    <div style="height: 100px"></div>
+
+    <!-- ボトム・アクション・バー（下部固定） -->
+    <div class="action-bar-container">
+      <div class="action-bar-inner shadow-lg">
+        <div class="container-fluid px-4">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <div class="selection-count text-primary fw-800">
+                <span class="material-icons">how_to_reg</span>
+                <span id="selected-count-display">0</span> 件を選択中
+              </div>
+            </div>
+            <div class="col text-end">
+              {% if request.GET.show == 'deleted' %}
+              <button
+                type="button"
+                class="btn btn-warning action-trigger"
+                data-action="restore"
+                data-msg="コースを復元しています..."
+              >
+                <span class="material-icons">settings_backup_restore</span>
+                選択したコースを復元
+              </button>
+              {% else %}
+              <button
+                type="button"
+                class="btn btn-danger action-trigger"
+                data-action="delete"
+                data-msg="コースを削除しています..."
+              >
+                <span class="material-icons">delete_outline</span>
+                選択したコースを削除
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
+
+<!-- ポップアップモーダル群 -->
+<div
+  class="modal fade"
+  id="statusModal"
+  tabindex="-1"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-5 text-center p-5">
+      <div id="modal-loading">
+        <div class="custom-loader mb-4"></div>
+        <h5 class="fw-800 text-primary" id="loading-text">処理中...</h5>
+      </div>
+      <div id="modal-success" style="display: none">
+        <div class="success-icon-wrapper mb-4">
+          <span class="material-icons text-success" style="font-size: 80px"
+            >check_circle</span
+          >
+        </div>
+        <h5 class="fw-800 text-dark">完了しました！</h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg rounded-5 p-4 text-center">
+      <div class="mb-3">
+        <span class="material-icons text-warning" style="font-size: 64px"
+          >warning_amber</span
+        >
+      </div>
+      <h5 class="fw-800 mb-3">確認が必要です</h5>
+      <p class="text-muted small" id="alert-modal-msg">
+        対象を選択してください
+      </p>
+      <button
+        type="button"
+        class="btn btn-primary rounded-pill w-100"
+        data-bs-dismiss="modal"
+      >
+        了解
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const rows = document.querySelectorAll(".user-row"); // 行クリック
+    const bulkForm = document.getElementById("course-bulk-form");
+    const actionInput = document.getElementById("bulk-action-input");
+    const countDisplay = document.getElementById("selected-count-display");
+    const statusModal = new bootstrap.Modal(
+      document.getElementById("statusModal"),
+    );
+    const alertModal = new bootstrap.Modal(
+      document.getElementById("alertModal"),
+    );
+
+    // 1. 行クリック選択
+    rows.forEach((row) => {
+      row.addEventListener("click", function (e) {
+        if (e.target.type === "checkbox" || e.target.tagName === "A") return;
+        const cb = this.querySelector(".row-checkbox");
+        if (cb) {
+          cb.checked = !cb.checked;
+          this.classList.toggle("table-selected", cb.checked);
+          updateCount();
+        }
+      });
+    });
+
+    // 2. チェックボックス単体操作
+    document.querySelectorAll(".row-checkbox").forEach((cb) => {
+      cb.addEventListener("change", function () {
+        this.closest("tr").classList.toggle("table-selected", this.checked);
+        updateCount();
+      });
+    });
+
+    function updateCount() {
+      countDisplay.innerText = document.querySelectorAll(
+        ".row-checkbox:checked",
+      ).length;
+    }
+
+    // 3. アクション実行
+    document.querySelectorAll(".action-trigger").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const action = this.dataset.action;
+        const checkedCount = document.querySelectorAll(
+          ".row-checkbox:checked",
+        ).length;
+
+        if (checkedCount === 0) {
+          document.getElementById("alert-modal-msg").innerText =
+            "操作するコースを選択してください。";
+          alertModal.show();
+          return;
+        }
+
+        document.getElementById("loading-text").innerText = this.dataset.msg;
+        actionInput.value = action;
+        statusModal.show();
+
+        setTimeout(() => {
+          document.getElementById("modal-loading").style.display = "none";
+          document.getElementById("modal-success").style.display = "block";
+          setTimeout(() => {
+            bulkForm.submit();
+          }, 800);
+        }, 1200);
+      });
+    });
+  });
+</script>
+
+<style>
+  .fw-800 {
+    font-weight: 800;
+  }
+  .emphasized-table thead th {
+    padding: 1.2rem 1rem !important;
+    border: none;
+  }
+  .emphasized-table td {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1rem !important;
+  }
+  .table-selected {
+    background-color: rgba(118, 177, 157, 0.08) !important;
+  }
+
+  /* 下部固定バー */
+  .action-bar-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding-left: var(--sidebar-width, 260px);
+    z-index: 1040;
+    transition: padding 0.4s ease;
+  }
+  .sidebar-collapsed .action-bar-container {
+    padding-left: var(--sidebar-collapsed-width, 88px);
+  }
+  .action-bar-inner {
+    background-color: var(--card-bg);
+    border-top: 2px solid var(--primary-color);
+    padding: 15px 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .custom-loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  @media (max-width: 991px) {
+    .action-bar-container {
+      padding-left: 0 !important;
+    }
+  }
+</style>
 {% endblock %}
