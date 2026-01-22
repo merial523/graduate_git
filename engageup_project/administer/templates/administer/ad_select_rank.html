@@ -1,232 +1,300 @@
 {% extends base_template %}
 {% load static %}
+
 {% block title %}権限変更 | EngageUp{% endblock %}
+
 {% block breadcrumb %}
-<li class="breadcrumb-item">
-  <a href="{% url 'administer:user_list' %}">ユーザー管理</a>
-</li>
-<li class="breadcrumb-item active" aria-current="page">権限変更</li>
-{% endblock %} {% block content %}
+    <li class="breadcrumb-item"><a href="{% url 'administer:user_list' %}">ユーザー管理</a></li>
+    <li class="breadcrumb-item active" aria-current="page">権限変更</li>
+{% endblock %}
+
+{% block content %}
 <div class="user-management-container pb-5">
-  <div class="mb-4">
-    <h1 class="page-title text-dark m-0 fw-800">権限変更</h1>
-  </div>
-
-  <!-- フィルタ ＆ 検索バー -->
-  <div class="row g-3 mb-4 align-items-center">
-    <div class="col-lg-7">
-      <form method="get" class="d-flex gap-2">
-        <div class="search-input-group shadow-sm flex-grow-1">
-          <span class="material-icons text-muted">search</span>
-          <input
-            type="text"
-            name="q"
-            placeholder="名前やメールで検索..."
-            value="{{ request.GET.q }}"
-          />
-        </div>
-        <!-- 権限フィルタ -->
-        <select
-          name="rank_filter"
-          class="form-select border-0 shadow-sm rounded-4 px-3"
-          style="width: 160px; background-color: var(--card-bg)"
-          onchange="this.form.submit()"
-        >
-          <option
-            value="all"
-            {%
-            if
-            current_rank=""
-            ="all"
-            %}selected{%
-            endif
-            %}
-          >
-            全ての権限
-          </option>
-          {% for r_choice in rank_choices %}
-          <option
-            value="{{ r_choice }}"
-            {%
-            if
-            current_rank=""
-            ="r_choice"
-            %}selected{%
-            endif
-            %}
-          >
-            {{ r_choice }}
-          </option>
-          {% endfor %}
-        </select>
-      </form>
+    <div class="mb-4">
+        <h1 class="page-title text-dark m-0 fw-800">権限変更</h1>
+        <p class="text-muted small">対象のユーザーを選択し、一括で新しい権限を割り当てます</p>
     </div>
-  </div>
 
-  <!-- 更新用フォーム -->
-  <form method="post" id="rank-update-form">
-    {% csrf_token %}
-
-    <div class="admin-card border-0 shadow-sm mb-4 overflow-hidden">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="user-table">
-          <thead class="bg-light">
-            <tr>
-              <th class="text-center" style="width: 70px">選択</th>
-              <th style="width: 140px">現在のランク</th>
-              <th>ユーザー名</th>
-              <th>メールアドレス</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user_item in users %}
-            <tr
-              class="user-row {% if user_item == request.user %}is-self{% endif %} {% if not user_item.is_active %}is-deleted{% endif %}"
-              data-user-id="{{ user_item.pk }}"
-            >
-              <td class="text-center">
-                {% if user_item == request.user %}
-                <span class="material-icons text-muted" style="font-size: 18px"
-                  >lock</span
-                >
-                {% else %}
-                <input
-                  type="checkbox"
-                  name="selected_user"
-                  value="{{ user_item.pk }}"
-                  class="form-check-input row-checkbox"
-                />
-                {% endif %}
-              </td>
-              <td><span class="user-role-badge">{{ user_item.rank }}</span></td>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  <span class="fw-bold text-dark"
-                    >{{ user_item.username }}</span
-                  >
-                  {% if user_item == request.user %}
-                  <span
-                    class="badge bg-soft-blue text-primary small py-1 px-2 border border-primary border-opacity-10"
-                    >あなた</span
-                  >
-                  {% endif %}
-                  <!--  削除済みインジケーター -->
-                  {% if not user_item.is_active %}
-                  <span
-                    class="badge bg-danger rounded-pill"
-                    style="font-size: 0.65rem"
-                    >削除済み</span
-                  >
-                  {% endif %}
+    <!-- ★追加：フィルタ ＆ 検索バー -->
+    <div class="row g-3 mb-4 align-items-center">
+        <div class="col-lg-7">
+            <form method="get" class="d-flex gap-2">
+                <div class="search-input-group shadow-sm flex-grow-1">
+                    <span class="material-icons text-muted">search</span>
+                    <input type="text" name="q" placeholder="名前やメールで検索..." value="{{ request.GET.q }}">
                 </div>
-              </td>
-              <td class="text-muted small">{{ user_item.email }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {% if is_paginated %}
-    <nav class="mb-5">
-      <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
-        <li class="page-item">
-          <a
-            class="page-link shadow-sm rounded-circle mx-1"
-            href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"
-            ><span class="material-icons">chevron_left</span></a
-          >
-        </li>
-        {% endif %}
-        <li class="page-item active">
-          <span class="page-link shadow-sm rounded-circle mx-1"
-            >{{ page_obj.number }}</span
-          >
-        </li>
-        {% if page_obj.has_next %}
-        <li class="page-item">
-          <a
-            class="page-link shadow-sm rounded-circle mx-1"
-            href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"
-            ><span class="material-icons">chevron_right</span></a
-          >
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
-    {% endif %}
-
-    <!-- ボトム・アクション・バー（透過なし） -->
-    <div class="action-bar-container">
-      <div class="action-bar-inner shadow-lg">
-        <div class="container">
-          <div class="row align-items-center">
-            <div class="col-md-auto d-none d-lg-block">
-              <div class="selection-count">
-                <span class="material-icons text-primary">how_to_reg</span>
-                <span id="selected-count-display">0</span> 名を選択中
-              </div>
-            </div>
-            <div class="col-md">
-              <div class="custom-radio-group">
-                <ul
-                  class="d-flex justify-content-center justify-content-md-start"
-                >
-                  {% for radio in form.rank %}
-                  <li>
-                    <label>
-                      {{ radio.tag }}
-                      <span class="choice-label">{{ radio.choice_label }}</span>
-                    </label>
-                  </li>
-                  {% endfor %}
-                </ul>
-              </div>
-            </div>
-            <div class="col-md-auto">
-              <button
-                type="button"
-                id="submit-trigger"
-                class="btn btn-success btn-lg shadow-sm fw-800 px-5"
-              >
-                権限を更新する
-              </button>
-            </div>
-          </div>
+                <!-- 権限フィルタ -->
+                <select name="rank_filter" class="form-select border-0 shadow-sm rounded-4 px-3" style="width: 160px; background-color: var(--card-bg)" onchange="this.form.submit()">
+                    <option value="all" {% if current_rank == "all" %}selected{% endif %}>全ての権限</option>
+                    {% for r_choice in rank_choices %}
+                        <option value="{{ r_choice }}" {% if current_rank == r_choice %}selected{% endif %}>{{ r_choice }}</option>
+                    {% endfor %}
+                </select>
+            </form>
         </div>
-      </div>
     </div>
-  </form>
+
+    <!-- 更新用フォーム -->
+    <form method="post" id="rank-update-form">
+        {% csrf_token %}
+
+        <div class="admin-card border-0 shadow-sm mb-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="user-table">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="text-center" style="width: 70px;">選択</th>
+                            <th style="width: 140px;">現在のランク</th>
+                            <th>ユーザー名</th>
+                            <th>メールアドレス</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_item in users %}
+                        <tr class="user-row {% if user_item == request.user %}is-self{% endif %} {% if not user_item.is_active %}is-deleted{% endif %}" data-user-id="{{ user_item.pk }}">
+                            <td class="text-center">
+                                {% if user_item == request.user %}
+                                    <span class="material-icons text-muted" style="font-size: 18px;">lock</span>
+                                {% else %}
+                                    <input type="checkbox" name="selected_user" value="{{ user_item.pk }}" class="form-check-input row-checkbox">
+                                {% endif %}
+                            </td>
+                            <td><span class="user-role-badge">{{ user_item.rank }}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark">{{ user_item.username }}</span>
+                                    {% if user_item == request.user %}
+                                        <span class="badge bg-soft-blue text-primary small py-1 px-2 border border-primary border-opacity-10">あなた</span>
+                                    {% endif %}
+                                    <!-- ★削除済みインジケーター -->
+                                    {% if not user_item.is_active %}
+                                        <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;">削除済み</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-muted small">{{ user_item.email }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mb-5">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_left</span></a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link shadow-sm rounded-circle mx-1">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_right</span></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- ボトム・アクション・バー（透過なし） -->
+        <div class="action-bar-container">
+            <div class="action-bar-inner shadow-lg">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-md-auto d-none d-lg-block">
+                            <div class="selection-count">
+                                <span class="material-icons text-primary">how_to_reg</span>
+                                <span id="selected-count-display">0</span> 名を選択中
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="custom-radio-group">
+                                <ul class="d-flex justify-content-center justify-content-md-start">
+                                    {% for radio in form.rank %}
+                                    <li>
+                                        <label>
+                                            {{ radio.tag }}
+                                            <span class="choice-label">{{ radio.choice_label }}</span>
+                                        </label>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-auto">
+                            <button type="button" id="submit-trigger" class="btn btn-success btn-lg shadow-sm fw-800 px-5">
+                                 権限を更新する
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- 処理中/完了ポップアップモーダル -->
-<div
-  class="modal fade"
-  id="statusModal"
-  tabindex="-1"
-  data-bs-backdrop="static"
-  data-bs-keyboard="false"
->
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-5">
-      <div class="modal-body text-center p-5">
-        <div id="modal-loading">
-          <div class="custom-loader mb-4"></div>
-          <h5 class="fw-800 text-primary">権限を更新しています...</h5>
-          <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">権限を更新しています...</h5>
+                    <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">更新が完了しました！</h5>
+                    <p class="text-muted small mb-0">リストを更新しています...</p>
+                </div>
+            </div>
         </div>
-        <div id="modal-success" style="display: none">
-          <div class="success-icon-wrapper mb-4">
-            <span class="material-icons text-success">check_circle</span>
-          </div>
-          <h5 class="fw-800 text-dark">更新が完了しました！</h5>
-          <p class="text-muted small mb-0">リストを更新しています...</p>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('.user-row');
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        const countDisplay = document.getElementById('selected-count-display');
+        const submitBtn = document.getElementById('submit-trigger');
+        const form = document.getElementById('rank-update-form');
+        const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+        rows.forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (this.classList.contains('is-self') || e.target.type === 'checkbox') return;
+                const checkbox = this.querySelector('.row-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    updateRowHighlight(this, checkbox.checked);
+                    updateCount();
+                }
+            });
+        });
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                updateRowHighlight(this.closest('.user-row'), this.checked);
+                updateCount();
+            });
+        });
+
+        function updateRowHighlight(row, isChecked) {
+            isChecked ? row.classList.add('table-primary-soft') : row.classList.remove('table-primary-soft');
+        }
+
+        function updateCount() {
+            countDisplay.innerText = document.querySelectorAll('.row-checkbox:checked').length;
+        }
+
+        submitBtn.addEventListener('click', function() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            const rankSelected = document.querySelector('input[name="rank"]:checked');
+
+            if (checkedCount === 0) { alert("変更対象のユーザーを選択してください。"); return; }
+            if (!rankSelected) { alert("変更後のランクを選択してください。"); return; }
+
+            statusModal.show();
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                setTimeout(() => { form.submit(); }, 1000);
+            }, 1500);
+        });
+    });
+</script>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    
+    /* 削除済み行のスタイル */
+    .user-row.is-deleted {
+        background-color: #fafafa;
+        opacity: 0.7;
+    }
+
+    /* ローディングアニメーション */
+    .custom-loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .success-icon-wrapper span { font-size: 80px; animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .search-input-group { background: var(--card-bg); border-radius: 16px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(0,0,0,0.05); }
+    .search-input-group input { border: none; outline: none; background: transparent; width: 100%; color: var(--text-color); }
+    .user-row { cursor: pointer; transition: 0.2s; }
+    .table-primary-soft { background-color: rgba(118, 177, 157, 0.1) !important; }
+
+    /* --- アクションバーの重なり解消設定 --- */
+    .action-bar-container {
+        position: fixed;
+        bottom: 0;
+        /* left: 0 をやめて、サイドバーの幅（変数）を起点にする */
+        left: var(--sidebar-width, 260px); 
+        /* 幅は「100% - サイドバーの幅」にする */
+        width: calc(100% - var(--sidebar-width, 260px));
+        
+        /* z-indexをサイドバー（通常1000〜1050）より低く設定して背面に回す */
+        z-index: 900; 
+        
+        padding-left: 0 !important; /* paddingでの調整は不要になるので0に */
+        transition: left 0.4s cubic-bezier(0.4, 0.4, 0, 1), width 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+    }
+
+    /* サイドバーが閉じている時（アイコン状態）の連動設定 */
+    .sidebar-collapsed .action-bar-container {
+        left: var(--sidebar-collapsed-width, 88px);
+        width: calc(100% - var(--sidebar-collapsed-width, 88px));
+    }
+
+    .action-bar-inner {
+        background-color: var(--bg-color) !important;
+        opacity: 1 !important;
+        border-top: 2px solid var(--primary-color);
+        padding: 12px 0;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.12);
+    }
+
+    /* モバイル対応：スマホではサイドバーが消えるため全幅に戻す */
+    @media (max-width: 991px) {
+        .action-bar-container {
+            left: 0 !important;
+            width: 100% !important;
+            z-index: 1050; /* スマホでは最前面に出す */
+        }
+        .action-bar-inner {
+            padding: 10px;
+        }
+    }
+
+    /* ラジオボタン（チップ）が背景色と同化して見えにくい場合の調整 */
+    .custom-radio-group label {
+        /* チップ自体の背景をカードと同じ白にすることで、バーの上で目立たせる */
+        background-color: var(--card-bg); 
+        padding: 8px 16px; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        transition: 0.2s; 
+        border: 2px solid transparent; 
+        font-weight: bold; 
+        font-size: 0.85rem; 
+        display: flex; 
+        align-items: center; 
+        color: var(--text-color);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .selection-count { font-weight: 800; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
+    .custom-radio-group ul { list-style: none; padding: 0; margin: 0; gap: 8px; }
+    .custom-radio-group label { background: var(--bg-color); padding: 8px 16px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; color: var(--text-color); }
+    .custom-radio-group input[type="radio"] { margin-right: 8px; accent-color: var(--primary-color); }
+    .custom-radio-group li:has(input:checked) label { background: #fff; border-color: var(--primary-color); color: var(--primary-color); box-shadow: 0 4px 10px rgba(118, 177, 157, 0.15); }
+    
+    @media (max-width: 767px) {
+        .action-bar-container { padding-left: 0 !important; }
+        .action-bar-inner { padding: 10px; }
+        .action-bar-inner .btn { width: 100%; }
+    }
+</style>
 {% endblock %}
