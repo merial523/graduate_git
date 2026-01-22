@@ -392,19 +392,28 @@ body {
 
 /* 警告アイコンのふわっとしたアニメーション */
 #alertModal .material-icons {
-    animation: pulse-warning 2s infinite;
+  animation: pulse-warning 2s infinite;
 }
 
 /* 警告モーダルのボタン色（プライマリ色） */
 #alertModal .btn-primary {
-    background-color: var(--primary-color) !important;
-    border: none;
+  background-color: var(--primary-color) !important;
+  border: none;
 }
 
 @keyframes pulse-warning {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* SP対応 */
@@ -412,4 +421,50 @@ body {
   .main-content {
     padding: 20px;
   }
+}
+
+/* ページネーション全体のデザイン設定 */
+.pagination .page-item {
+  border: none;
+}
+
+.pagination-circle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  background-color: #fff;
+  color: #555;
+  font-size: 1.1rem;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+/* アクティブなページ（セージグリーン） */
+.pagination .page-item.active .pagination-circle {
+  background-color: #76b19d !important; /* 画像のメインカラーに近い色 */
+  color: #fff !important;
+}
+
+/* ホバー時 */
+.pagination-circle:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 下部のテキスト情報 */
+.pagination-info {
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+
+/* Material Iconsの微調整 */
+.pagination-circle .material-icons {
+  font-size: 24px;
+  color: #76b19d; /* 矢印の色もテーマカラーに合わせる場合 */
 }

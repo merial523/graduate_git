@@ -1,31 +1,85 @@
 {% extends base_template %}
+{% load static %}
 
+{% block title %}バッジ編集 | EngageUp{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'moderator:moderatorBadge' %}">登録バッジ一覧</a></li>
+    <li class="breadcrumb-item active" aria-current="page">バッジ編集</li>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 700px;">
-    <div class="mb-4">
-        <a href="{% url 'moderator:moderatorBadge' %}" class="btn btn-sm btn-outline-secondary">← 一覧に戻る</a>
+<div class="user-management-container pb-5">
+    <!-- 画面見出し -->
+    <div class="mb-3 text-start">
+        <h1 class="page-title text-dark m-0 fw-800">バッジ情報の編集</h1>
     </div>
 
-    <div class="card shadow">
-        <div class="card-header bg-white">
-            <h2 class="h5 mb-0">バッジ情報の編集</h2>
-        </div>
-        <div class="card-body">
-            <p class="small text-muted mb-4">名称、画像、または紐付いている検定を変更できます。</p>
-
-            <form method="POST" enctype="multipart/form-data">
+    <div class="admin-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <!-- enctypeは画像を扱うために必須 -->
+            <form method="post" enctype="multipart/form-data" id="badge-edit-form">
                 {% csrf_token %}
-                
-                <div class="badge-form">
-                    {{ form.as_p }}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 small mb-3">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="row g-4 align-items-center">
+                    <!-- 左側：テキスト設定 (バッジ名 ＆ 検定選択) -->
+                    <div class="col-md-6 border-end">
+                        <div class="mb-3">
+                            <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2 small">
+                                <span class="material-icons text-primary" style="font-size: 18px;">workspace_premium</span>
+                                バッジ名称
+                            </label>
+                            <div class="custom-input-group">
+                                {{ form.name }}
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2 small">
+                                <span class="material-icons text-primary" style="font-size: 18px;">assignment_turned_in</span>
+                                紐付け検定
+                            </label>
+                            <div class="custom-input-group">
+                                {{ form.exam }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：アイコン画像設定 (プレビュー ＆ アップロード) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2 small">
+                            <span class="material-icons text-primary" style="font-size: 18px;">image</span>
+                            アイコン画像
+                        </label>
+                        
+                        <div class="bg-light rounded-4 p-3 d-flex align-items-center gap-3 border border-dashed overflow-hidden">
+                            <!-- 現在のプレビューサークル -->
+                            <div class="badge-preview-circle shadow-sm flex-shrink-0">
+                                {% if badge.icon %}
+                                    <img src="{{ badge.icon.url }}" id="img-preview" alt="current badge">
+                                {% else %}
+                                    <span class="material-icons text-muted fs-1" id="img-placeholder">image_not_supported</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- アップロード操作：クリアとチェックボックスのみを非表示に設定 -->
+                            <div class="flex-grow-1 django-file-custom">
+                                <p class="extra-small text-muted mb-1 fw-bold">画像を選択して更新</p>
+                                {{ form.icon }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <hr class="my-4">
-
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success btn-lg">
-                        変更を保存する
+                <!-- 下部：操作ボタンエリア -->
+                <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-3">
+                    <a href="{% url 'moderator:moderatorBadge' %}" class="btn btn-light px-4 border rounded-pill">キャンセル</a>
+                    <button type="button" id="save-btn" class="btn btn-success px-5 shadow-sm fw-800 rounded-pill">
+                        <span class="material-icons me-2">cloud_done</span> 変更を保存
                     </button>
                 </div>
             </form>
@@ -33,23 +87,133 @@
     </div>
 </div>
 
+<!-- 処理中/完了ポップアップモーダル -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">バッジを更新しています...</h5>
+                    <p class="text-muted small">少々お待ちください</p>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success" style="font-size: 70px;">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">バッジを更新しました！</h5>
+                    <p class="text-muted small">一覧画面へ戻ります...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-    /* フォームの見た目を少し整えるスタイル */
-    .badge-form p {
-        margin-bottom: 1.5rem;
+    .fw-800 { font-weight: 800 !important; }
+    .extra-small { font-size: 0.7rem; }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; border-color: #ddd !important; }
+
+    /* --- Django特有の「クリア」を狙い撃ちで非表示にする --- */
+    .django-file-custom {
+        font-size: 0.75rem;
+        color: #888;
+        line-height: 1.4;
     }
-    .badge-form input[type="text"], 
-    .badge-form select, 
-    .badge-form textarea {
+    /* チェックボックスと「クリア」ラベルを消す */
+    .django-file-custom input[type="checkbox"], 
+    .django-file-custom label[for$="-clear_id"] {
+        display: none !important;
+    }
+    /* 長いファイル名が突き抜けないように「...」で省略 */
+    .django-file-custom a {
+        display: inline-block;
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+        color: var(--primary-color);
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .django-file-custom input[type="file"] {
+        margin-top: 8px;
         display: block;
         width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
+        font-size: 0.8rem;
     }
+
+    /* 入力欄の共通デザイン */
+    .custom-input-group input, 
+    .custom-input-group select {
+        display: block; width: 100%; padding: 0.6rem 1rem; font-size: 1rem;
+        color: var(--text-color); background-color: var(--bg-color);
+        border: 2px solid transparent; border-radius: 12px; transition: 0.2s;
+    }
+    .custom-input-group input:focus, .custom-input-group select:focus {
+        background-color: #fff; border-color: var(--primary-color); outline: 0;
+        box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.1);
+    }
+
+    /* 丸型画像プレビュー */
+    .badge-preview-circle {
+        width: 64px; height: 64px; background-color: #fff; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; border: 2px solid white;
+    }
+    .badge-preview-circle img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+
+    /* ポップアップ演出用 */
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .success-icon-wrapper span { animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveBtn = document.getElementById('save-btn');
+        const form = document.getElementById('badge-edit-form');
+        const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+        // 保存ボタンクリック時のアニメーション演出
+        saveBtn.addEventListener('click', function() {
+            statusModal.show();
+            // 1.2秒の処理中演出
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                // 0.8秒の完了表示のあとに実際に送信
+                setTimeout(() => {
+                    form.submit();
+                }, 800);
+            }, 1200);
+        });
+
+        // ファイルが選択された際に左側のサークルプレビューを即座に更新する
+        const iconInput = document.querySelector('input[type="file"]');
+        if (iconInput) {
+            iconInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const previewImg = document.getElementById('img-preview');
+                        const placeholder = document.getElementById('img-placeholder');
+                        if (previewImg) {
+                            previewImg.src = event.target.result;
+                        } else if (placeholder) {
+                            const newImg = document.createElement('img');
+                            newImg.src = event.target.result;
+                            newImg.id = 'img-preview';
+                            placeholder.parentNode.replaceChild(newImg, placeholder);
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
