@@ -3,7 +3,7 @@ from django.views.generic import FormView, ListView, UpdateView
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.utils.crypto import get_random_string
-from main.models import User
+from main.models import Exam, User
 from .forms import SequentialUserCreateForm
 from main.models import Badge
 from common.views import BaseCreateView
@@ -97,6 +97,9 @@ class BadgeManageView(ListView):
         if query:
             return Badge.objects.filter(name__icontains=query)
         return Badge.objects.all()
+    
+    def get_queryset(self):
+        return Badge.objects.filter(is_active=True)
 
 
 class BadgeUpdateView(UpdateView):
@@ -104,6 +107,12 @@ class BadgeUpdateView(UpdateView):
     fields = ["name", "icon", "exam"]
     template_name = "moderator/mo_badge_update.html"
     success_url = reverse_lazy("moderator:moderatorBadge")
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["exam"].queryset = Exam.objects.filter(exam_type = "main", is_active=True)
+        return form
+    
 
 #管理者HTMLで入力したテキストを一般会員HTMLで見れるようにする
 

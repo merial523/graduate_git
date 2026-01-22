@@ -101,6 +101,16 @@ class User(AbstractUser):  # ユーザーのランク
     def __str__(self):
         return self.username
 
+class Badge(models.Model):  # バッジ
+    exam = models.OneToOneField("Exam", on_delete=models.CASCADE, related_name="badge")
+    name = models.CharField(verbose_name="バッジ名", max_length=100)
+    icon = models.ImageField(
+        verbose_name="バッジ画像", upload_to="badges/", null=True, blank=True
+    )
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+
+    def __str__(self):
+        return self.name
 
 class Exam(models.Model):  # 検定
     # --- 試験タイプ（仮・本）の選択肢 ---
@@ -136,9 +146,14 @@ class Exam(models.Model):  # 検定
         # まずは検定自体を保存
         super().save(*args, **kwargs)
 
-        if is_new:
+        if is_new and self.exam_type == 'main':
             # Badgeクラスはこの下にありますが、メソッドの中なので呼び出せます
             Badge.objects.create(exam=self, name=f"{self.title}合格バッジ")
+        else:
+            # 既存の検定が更新された場合、関連するバッジも更新
+            if hasattr(self, 'badge'):
+                self.badge.is_active = self.is_active
+                self.badge.save()
 
 
 
@@ -159,15 +174,6 @@ class Choice(models.Model):
     def __str__(self):
         return self.text
 
-class Badge(models.Model):  # バッジ
-    exam = models.OneToOneField("Exam", on_delete=models.CASCADE, related_name="badge")
-    name = models.CharField(verbose_name="バッジ名", max_length=100)
-    icon = models.ImageField(
-        verbose_name="バッジ画像", upload_to="badges/", null=True, blank=True
-    )
-
-    def __str__(self):
-        return self.name
 
 
 class News(models.Model):
