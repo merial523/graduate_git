@@ -3,7 +3,7 @@ from . import views
 
 app_name = "moderator"
 urlpatterns = [
-    path("", views.moderator_index, name="moderator_index"),  # トップページ用
+    path("", views.ModeratorIndexView.as_view(), name="moderator_index"),  # トップページ用
     path(
         "create-user",
         views.SequentialUserCreateView.as_view(),
@@ -16,7 +16,7 @@ urlpatterns = [
     # <int:pk> はバッジのID（数字）が入ります。HTMLの url 'moderator:badge_edit' と対応
     path("badges/<int:pk>/edit/", views.BadgeUpdateView.as_view(), name="badge_edit"),
     path(
-        "moderator_news/", views.moderator_news, name="moderatorNews"
+        "moderator_news/", views.ModeratorNewsView.as_view(), name="moderatorNews"
     ),  # お知らせ投稿ページ
 
     path("news-list",views.NewsListView.as_view(),name ="news_list"),

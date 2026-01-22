@@ -1,17 +1,18 @@
-from django.shortcuts import render,redirect
+from django.views.generic import TemplateView
+from common.views import BaseTemplateMixin
+class IndexView(BaseTemplateMixin,TemplateView):
 
+    def get_template_names(self):
+        user = self.request.user
 
-def index(request):
+        if user.is_authenticated:
+            if user.rank == "administer":
+                return ["administer/administer_index.html"]
+            elif user.rank == "moderator":
+                return ["moderator/moderator_index.html"]
+            elif user.rank == "staff":
+                return ["staff/staff_index.html"]
+            elif user.rank == "visitor":
+                return ["visitor/visitor_index.html"]
 
-        if request.user.rank == "administer":
-            return render(request,"administer/administer_index.html")
-        elif request.user.rank == "moderator":
-            return render(request,"moderator/moderator_index.html")
-        elif request.user.rank == "staff":
-            return render(request,"staff/staff_index.html")
-        elif request.user.rank == "visitor":
-            return render(request,"visitor/visitor_index.html")
-        else:
-            return render(request, "main/a.html")
-
-
+        return ["main/a.html"]
