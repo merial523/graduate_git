@@ -90,6 +90,20 @@ class User(AbstractUser):  # ユーザーのランク
         default=False, verbose_name="パスワード暗号化フラグ"
     )  # パスワードを暗号化　削除するか検討
 
+    #  追加：プロフィール写真
+    avatar = models.ImageField(
+        upload_to="avatars/", 
+        null=True, 
+        blank=True, 
+        verbose_name="プロフィール写真"
+    )
+    #  追加：備考欄（自己紹介）
+    remarks = models.TextField(
+        max_length=500, 
+        blank=True, 
+        verbose_name="備考・自己紹介"
+    )
+
     USERNAME_FIELD = "email"  # ユーザーネームを打ち込む
     REQUIRED_FIELDS = ["username"]
     username = models.CharField(

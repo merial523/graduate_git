@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
 
+app_name = "prof"
+
 urlpatterns = [
-    path("", views.profile_index, name="profileIndex"),  # トップページ用
+    path('my-profile/', views.UserProfileView.as_view(), name='user_profile'),
+    path('edit/', views.ProfileUpdateView.as_view(), name='profile_edit'),
 ]

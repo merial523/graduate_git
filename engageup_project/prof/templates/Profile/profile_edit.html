@@ -1,0 +1,15 @@
+{% extends base_template %}
+{% block content %}
+<div class="container mt-4">
+    <h2>プロフィール編集</h2>
+    <hr>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">保存する</button>
+            <a href="{% url 'prof:user_profile' %}" class="btn btn-link">キャンセル</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
