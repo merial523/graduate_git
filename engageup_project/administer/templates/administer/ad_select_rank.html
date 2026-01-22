@@ -12,7 +12,6 @@
 <div class="user-management-container pb-5">
     <div class="mb-4">
         <h1 class="page-title text-dark m-0 fw-800">権限変更</h1>
-        <p class="text-muted small">対象のユーザーを選択し、一括で新しい権限を割り当てます</p>
     </div>
 
     <!-- ★追加：フィルタ ＆ 検索バー -->
@@ -74,6 +73,16 @@
                             </td>
                             <td class="text-muted small">{{ user_item.email }}</td>
                         </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <div class="mb-3">
+                                <span class="material-icons" style="font-size: 48px; opacity: 0.3;">search_off</span>
+                                </div>
+                                <p class="mb-1 fw-bold">該当するユーザーが見つかりません</p>
+                                <p class="small mb-0">条件を変えて再度お試しください</p>
+                            </td>
+                            </tr>
                         {% endfor %}
                     </tbody>
                 </table>
