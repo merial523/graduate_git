@@ -13,13 +13,19 @@ from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet, ExamForm
 
 # --- 基本表示 ---
 
-def enrollments_index(request):
-    """トップページ表示"""
-    return render(request, "enrollments/5101.html")
+from django.views.generic import TemplateView
+from common.views import BaseTemplateMixin
 
-def enrollments_history(request):
-    """受験履歴表示"""
-    return render(request, "enrollments/enrollments_history.html")
+class EnrollmentsIndexView(
+    BaseTemplateMixin,
+    TemplateView
+):
+    template_name = "enrollments/5101.html"
+class EnrollmentsHistoryView(
+    BaseTemplateMixin,
+    TemplateView
+):
+    template_name = "enrollments/enrollments_history.html"
 
 
 # --- 検定管理（管理者・モデレーター用） ---

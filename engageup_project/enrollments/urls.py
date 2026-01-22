@@ -6,8 +6,8 @@ app_name = 'enrollments'
 
 urlpatterns = [
     # --- 基本・トップ ---
-    path("", views.enrollments_index, name="enrollmentsIndex"),
-    path("exam_history/", views.enrollments_history, name="enrollmentsHistory"),
+    path("", views.EnrollmentsIndexView.as_view(), name="enrollmentsIndex"),
+    path("exam_history/", views.EnrollmentsHistoryView.as_view(), name="enrollmentsHistory"),
 
     # --- 検定管理（管理者用） ---
     path('exams/', views.ExamListView.as_view(), name='exam_list'),
