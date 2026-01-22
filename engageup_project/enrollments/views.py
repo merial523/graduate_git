@@ -59,6 +59,8 @@ class ExamCreateView(BaseCreateView):
     template_name = "enrollments/exam_create.html"
     success_url = reverse_lazy("enrollments:exam_list") 
     form_class = ExamForm
+    is_continue_url = "enrollments:exam_list"
+    is_continue = True
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -188,8 +190,10 @@ def bulk_action_exam(request):
         if exam_ids:
             if action == 'delete':
                 Exam.objects.filter(id__in=exam_ids).update(is_active=False)
+                Badge.objects.filter(exam_id__in=exam_ids).update(is_active=False)
             elif action == 'restore':
                 Exam.objects.filter(id__in=exam_ids).update(is_active=True)
+                Badge.objects.filter(exam_id__in=exam_ids).update(is_active=True)
                 return redirect(f"{reverse_lazy('enrollments:exam_list')}?show=deleted")
     return redirect('enrollments:exam_list')
 

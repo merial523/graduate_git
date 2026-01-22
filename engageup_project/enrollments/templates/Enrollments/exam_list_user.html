@@ -1,28 +1,85 @@
 {% extends base_template %}
-
+{% load static %}
 {% block content %}
-<h2>検定一覧（利用者用）</h2>
+<div class="container mt-4">
+    <div class="d-flex align-items-center mb-4 border-bottom pb-3">
+        <i class="bi bi-journal-check fs-2 text-success me-3"></i>
+        <h2 class="h4 mb-0">検定一覧</h2>
+    </div>
 
-<ul>
-    {% for exam in exams %}
-    <li style="margin-bottom: 20px;">
-        <strong>{{ exam.title }}</strong> [{{ exam.get_exam_type_display }}]
-        
-        {% if exam.id in passed_exam_ids %}
-            <span style="color: green;">(合格済み)</span>
-        {% endif %}
+    <div class="row g-4">
+        {% for exam in exams %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center border-0 py-3">
+                    <span class="badge rounded-pill bg-secondary px-3">
+                        {{ exam.get_exam_type_display }}
+                    </span>
+                    {% if exam.id in passed_exam_ids %}
+                        <span class="badge bg-success shadow-sm">
+                            <i class="bi bi-check-circle-fill"></i> 合格済み
+                        </span>
+                    {% endif %}
+                </div>
 
-        <br>
-        
-        <!-- ロック判定 -->
-        {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
-            <span style="color: gray;">🔒 ロック中（{{ exam.prerequisite.title }}の合格が必要です）</span>
-        {% else %}
-            <a href="{% url 'enrollments:exam_take' exam.id %}">受験する</a>
-        {% endif %}
-    </li>
-    {% empty %}
-    <li>検定はありません。</li>
-    {% endfor %}
-</ul>
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-3">{{ exam.title }}</h5>
+                    <p class="card-text text-muted small">
+                        {% if exam.description %}
+                            {{ exam.description|truncatechars:50 }}
+                        {% else %}
+                            この検定の説明はありません。
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="card-footer bg-white border-0 pb-4">
+                    {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
+                        <div class="alert alert-secondary mb-0 py-2 small d-flex align-items-center">
+                            <i class="bi bi-lock-fill me-2"></i>
+                            <div>
+                                <strong>ロック中</strong><br>
+                                {{ exam.prerequisite.title }} の合格が必要です
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="d-grid">
+                            <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-success shadow-sm fw-bold py-2">
+                                <i class="bi bi-pencil-square me-1"></i>
+                                {% if exam.id in passed_exam_ids %}再受験する{% else %}受験する{% endif %}
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="text-muted mt-3">現在公開されている検定はありません。</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    /* カードのホバー演出 */
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+    
+    /* ボタンの配色をEngageUpグリーンに統一 */
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+</style>
 {% endblock %}

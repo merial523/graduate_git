@@ -17,6 +17,7 @@
 
     <div class="admin-card border-0 shadow-sm overflow-visible">
         <div class="card-body p-4">
+            <!-- formにidを付与 -->
             <form method="post" id="create-user-form">
                 {% csrf_token %}
 
@@ -24,9 +25,7 @@
                     <div class="alert alert-danger rounded-4 shadow-sm mb-4">{{ form.non_field_errors }}</div>
                 {% endif %}
 
-                <!-- 入力項目を横並びに配置 -->
                 <div class="row g-4 align-items-start">
-                    <!-- 左側：入力フィールド群 -->
                     <div class="col-lg-8">
                         <div class="row g-3">
                             <div class="col-md-4">
@@ -49,7 +48,6 @@
                         </div>
                     </div>
 
-                    <!-- 右側：ランク選択（ラジオボタン） -->
                     <div class="col-lg-4">
                         <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2">
                             <span class="material-icons text-primary">stars</span>
@@ -62,20 +60,20 @@
                     </div>
                 </div>
 
-                <!-- 下部アクションバー -->
                 <div class="mt-5 pt-4 border-top d-flex justify-content-between align-items-center">
-                <div class="d-flex gap-3">
-                    <span class="material-icons text-green">info</span>
+                    <div class="d-flex gap-3">
+                        <span class="material-icons text-green">info</span>
                     <div class="text-green small">
                         <strong>ヒント:</strong> 生成されるユーザーIDの例：<br>
                         企業コードが「ENG」、開始番号が「101」の場合 → <br>
                         <strong>ENG101, ENG102...</strong> となります。
                     </div>
-                </div>
+                    </div>
                     <div class="d-flex gap-3">
                         <a href="{% url 'administer:user_list' %}" class="btn btn-light px-4 border">キャンセル</a>
-                        <button type="submit" class="btn btn-primary px-5 fw-800 shadow-sm">
-                            作成する
+                        <!-- type="button" に変更してJSでポップアップを制御 -->
+                        <button type="button" id="submit-btn" class="btn btn-primary px-5 fw-800 shadow-sm">
+                            <span class="material-icons me-2">person_add</span>作成する
                         </button>
                     </div>
                 </div>
@@ -84,21 +82,72 @@
     </div>
 </div>
 
+<!-- 処理中/完了ポップアップモーダル -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">ユーザーを作成しています...</h5>
+                    <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success" style="font-size: 80px;">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">作成が完了しました！</h5>
+                    <p class="text-muted small mb-0">リスト画面へ戻ります...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    const codeInp = document.querySelector('input[name="company_code"]');
-    const numInp = document.querySelector('input[name="start_number"]');
-    const preview = document.getElementById('id-preview');
-    function updatePreview() {
-        preview.innerText = (codeInp.value || "---") + (numInp.value || "000");
-    }
-    if(codeInp && numInp) {
-        codeInp.addEventListener('input', updatePreview);
-        numInp.addEventListener('input', updatePreview);
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('create-user-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+        // 送信ボタンクリック時の演出
+        submitBtn.addEventListener('click', function() {
+            // バリデーションチェック（簡易版：空欄がないか）
+            const inputs = form.querySelectorAll('input[required]');
+            let isValid = true;
+            inputs.forEach(input => { if(!input.value) isValid = false; });
+            
+            // 実際はDjangoのエラーメッセージに任せるため、ここでは演出を開始
+            statusModal.show();
+
+            // 1.2秒後に成功マークへ切り替え
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+
+                // さらに0.8秒後にフォームを実際に送信
+                setTimeout(() => {
+                    form.submit();
+                }, 800);
+            }, 1200);
+        });
+    });
 </script>
 
 <style>
     .fw-800 { font-weight: 800; }
+    
+    /* ローディングアニメーション */
+    .custom-loader {
+        width: 60px; height: 60px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid var(--primary-color);
+        border-radius: 50%;
+        display: inline-block;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     /* 入力欄の共通スタイル */
     .custom-input-group input {
         display: block; width: 100%;
@@ -117,31 +166,12 @@
         box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.15);
     }
 
-    /* ラジオボタン（ランク）の横並び・美化設定 */
-    .custom-radio-group ul {
-        list-style: none; padding: 0; margin: 0;
-        display: flex; flex-wrap: wrap; gap: 10px;
-    }
-    .custom-radio-group li {
-        background: var(--bg-color);
-        padding: 8px 16px;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: 0.2s;
-        border: 2px solid transparent;
-    }
-    .custom-radio-group li:has(input:checked) {
-        background: #fff;
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-        font-weight: bold;
-    }
-    .custom-radio-group label {
-        cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;
-    }
-    .custom-radio-group input[type="radio"] {
-        margin: 0; accent-color: var(--primary-color);
-    }
+    /* ラジオボタン美化 */
+    .custom-radio-group ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+    .custom-radio-group li { background: var(--bg-color); padding: 8px 16px; border-radius: 10px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+    .custom-radio-group li:has(input:checked) { background: #fff; border-color: var(--primary-color); color: var(--primary-color); font-weight: bold; }
+    .custom-radio-group label { cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .custom-radio-group input[type="radio"] { margin: 0; accent-color: var(--primary-color); }
 
     .text-green { color: #5a8a7a; }
 </style>
