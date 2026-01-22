@@ -1,22 +1,29 @@
-from django.views.generic import ListView,  UpdateView
-from django.shortcuts import redirect, render
+from django.views.generic import (
+    TemplateView, ListView, UpdateView
+)
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from common.views import BaseCreateView
+
+from common.views import BaseCreateView,AdminOrModeratorRequiredMixin, BaseTemplateMixin
 
 from main.models import Course
 from .forms import CourseForm
 
-@login_required
-def courses_index(request):
+class CoursesIndexView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    TemplateView
+):
     """
     courses アプリのトップページ
     """
-    return render(request, "courses/courseIndex.html")
+    template_name = "courses/courseIndex.html"
 
-@method_decorator(login_required, name="dispatch")
-class CourseListView(ListView):
+class CourseListView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    ListView
+):
     model = Course
     template_name = "courses/mo_courses_list.html"
     context_object_name = "courses"
@@ -37,14 +44,16 @@ class CourseListView(ListView):
         if ids:
             if action == "delete":
                 Course.objects.filter(id__in=ids).update(is_active=False)
-
             elif action == "restore":
                 Course.objects.filter(id__in=ids).update(is_active=True)
 
         return redirect(request.get_full_path())
 
-@method_decorator(login_required, name="dispatch")
-class CourseCreateView(BaseCreateView):
+class CourseCreateView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    BaseCreateView
+):
     model = Course
     form_class = CourseForm
     template_name = "courses/mo_courses_form.html"
@@ -54,8 +63,11 @@ class CourseCreateView(BaseCreateView):
         form.instance.is_active = True
         return super().form_valid(form)
 
-@method_decorator(login_required, name="dispatch")
-class CourseUpdateView(UpdateView):
+class CourseUpdateView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    UpdateView
+):
     model = Course
     form_class = CourseForm
     template_name = "courses/mo_courses_form.html"

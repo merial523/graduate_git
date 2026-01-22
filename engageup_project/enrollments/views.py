@@ -7,7 +7,7 @@ from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, UpdateView
 from django.urls import reverse_lazy
-from common.views import BaseCreateView
+from common.views import BaseCreateView,BaseTemplateMixin,AdminOrModeratorRequiredMixin
 from main.models import Exam, Question, Badge, Choice, UserExamStatus
 from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet, ExamForm
 
@@ -24,79 +24,84 @@ def enrollments_history(request):
 
 # --- 検定管理（管理者・モデレーター用） ---
 
-class ExamListView(ListView):
-    """検定一覧（管理用）：並べ替え、論理削除の表示切り替えに対応"""
+class ExamListView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    ListView
+):
     model = Exam
     template_name = "enrollments/all_enrollments.html"
     context_object_name = "exams"
 
     def get_queryset(self):
-        # URLのパラメータ show=deleted を確認
         self.is_trash_mode = self.request.GET.get("show") == "deleted"
-        
-        # 表示対象をフィルタリング
         queryset = Exam.objects.filter(is_active=not self.is_trash_mode)
 
-        # 並べ替えの適用
         sort = self.request.GET.get('sort', 'newest')
         sort_dict = {
             'newest': '-created_at',
             'oldest': 'created_at',
             'title': 'title',
         }
-        order_by = sort_dict.get(sort, '-created_at')
-        return queryset.order_by(order_by)
-    
+        return queryset.order_by(sort_dict.get(sort, '-created_at'))
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['is_trash_mode'] = self.is_trash_mode
         context['current_sort'] = self.request.GET.get('sort', 'newest')
         return context
 
-class ExamCreateView(BaseCreateView):
-    """新規検定作成"""
+
+class ExamCreateView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    BaseCreateView
+):
     model = Exam
     template_name = "enrollments/exam_create.html"
-    success_url = reverse_lazy("enrollments:exam_list") 
+    success_url = reverse_lazy("enrollments:exam_list")
     form_class = ExamForm
     is_continue_url = "enrollments:exam_list"
     is_continue = True
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # prerequisite（前提試験）の選択肢を「仮試験（mock）」かつ「有効なもの」だけに絞る
-        form.fields['prerequisite'].queryset = Exam.objects.filter(exam_type='mock', is_active=True)
+        form.fields['prerequisite'].queryset = Exam.objects.filter(
+            exam_type='mock',
+            is_active=True
+        )
         return form
-    
+
     def form_valid(self, form):
-        # 選択された保存済み教材ファイルがあれば設定
         exam_file = form.cleaned_data.get('exam_file')
         if exam_file:
             form.instance.exams_file.name = os.path.join('exams_files', exam_file)
         return super().form_valid(form)
-    
-    
 
-class ExamUpdateView(UpdateView):
-    """検定設定および教材の編集"""
+class ExamUpdateView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    UpdateView
+):
     model = Exam
     template_name = "enrollments/exam_create.html"
     form_class = ExamForm
 
     def get_success_url(self):
-        return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
-    
+        return reverse_lazy(
+            'enrollments:question_list',
+            kwargs={'exam_id': self.object.id}
+        )
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # 選択肢を「仮試験」だけに絞る
         form.fields['prerequisite'].queryset = Exam.objects.filter(
-            exam_type='mock', 
+            exam_type='mock',
             is_active=True
         ).exclude(id=self.object.id)
         return form
-    
+
     def form_valid(self, form):
-        # 選択された保存済み教材ファイルがあれば設定
         exam_file = form.cleaned_data.get('exam_file')
         if exam_file:
             form.instance.exams_file.name = os.path.join('exams_files', exam_file)
