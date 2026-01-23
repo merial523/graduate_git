@@ -1,12 +1,13 @@
 {% extends base_template %}
 {% load static %}
+{% block breadcrumb %}<li class="breadcrumb-item active">検定管理</li>{% endblock %}
 
 {% block content %}
 <div class="user-management-container pb-5">
   <!-- タイトルエリア -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="page-title text-dark m-0 fw-bold">
-      {% if is_trash_mode %}検定ゴミ箱{% else %}検定管理{% endif %}
+      検定管理
     </h1>
 
     <div class="display-toggle">
@@ -57,12 +58,12 @@
         <div class="ms-auto d-flex align-items-center">
           {% if not is_trash_mode %}
           <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold me-3">
-            <span class="material-icons">add</span> 新規検定作成
+            <span class="material-icons">add</span> 新規作成
           </a>
           {% endif %}
           
           <a href="javascript:void(0)" class="text-muted small text-decoration-none d-inline-flex align-items-center help-trigger" data-bs-toggle="modal" data-bs-target="#helpModal">
-            <span class="material-icons size-18 me-1">help_outline</span> 削除・復元方法
+            <span class="material-icons size-18 me-1">help_outline</span> ヘルプ
           </a>
         </div>
       </form>
@@ -144,7 +145,8 @@
                         </ul>
                     </div>
                     {% else %}
-                    <span class="badge bg-light text-muted border px-3">削除済み</span>
+                    <span class="badge bg-danger text-white px-3 fw-bold">削除済み</span>
+
                     {% endif %}
                   </div>
               </div>
@@ -161,7 +163,7 @@
                     <div class="col-md-auto">
                         <div class="selection-count py-1 d-flex align-items-center">
                             <span class="material-icons text-primary me-2">how_to_reg</span>
-                            <span id="selected-count-display" class="fw-bold fs-5 me-2 text-primary">0</span> 件を選択中
+                            <span id="selected-count-display" class="fw-bold fs-5 me-2">0</span> 件を選択中
                         </div>
                     </div>
                     <div class="col text-end">
@@ -190,45 +192,115 @@
   </form>
 </div>
 
-<!-- ヘルプモーダル (ad_user_list準拠) -->
+<!-- ヘルプモーダル -->
 <div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
-            <div class="modal-header bg-dark text-white border-0 py-3">
-                <h5 class="modal-title fw-bold d-flex align-items-center">
-                    <span class="material-icons me-2">help_outline</span> 検定の削除・復元方法
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="help-section mb-4">
-                    <h6 class="fw-bold text-danger d-flex align-items-center mb-3">
-                        <span class="material-icons me-2">delete_outline</span> 検定を削除する場合
-                    </h6>
-                    <ol class="small text-muted ps-3">
-                        <li class="mb-2">リストから削除したい検定の行をクリック、または左側のチェックボックスを選択します。</li>
-                        <li class="mb-2">画面下部に黒い<b>「アクションバー」</b>が浮かび上がります。</li>
-                        <li><b>「一括削除」</b>ボタンを押すと、検定はゴミ箱へ移動します。</li>
-                    </ol>
-                </div>
-                <hr>
-                <div class="help-section mt-4">
-                    <h6 class="fw-bold text-warning d-flex align-items-center mb-3">
-                        <span class="material-icons me-2">settings_backup_restore</span> 検定を復元する場合
-                    </h6>
-                    <ol class="small text-muted ps-3">
-                        <li class="mb-2">画面上部の<b>「削除済みを表示」</b>ボタンを押し、ゴミ箱の中を表示させます。</li>
-                        <li class="mb-2">復元したい検定を選択します。</li>
-                        <li>アクションバーの<b>「一括復元」</b>ボタンを押すと、通常一覧に戻ります。</li>
-                    </ol>
-                </div>
-            </div>
-            <div class="modal-footer border-0 p-3">
-                <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100" data-bs-dismiss="modal">閉じる</button>
-            </div>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+
+      <!-- ヘッダー -->
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold d-flex align-items-center">
+          <span class="material-icons me-2">help_outline</span>
+          ユーザーの削除・復元方法
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- 本文 -->
+      <div class="modal-body px-4 py-3">
+
+        <!-- 削除説明 -->
+        <section class="mb-4">
+          <h6 class="fw-bold text-danger d-flex align-items-center mb-2">
+            <span class="material-icons me-2">delete_outline</span>
+            検定を削除する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              削除したい検定の行をクリック、または左側のチェックボックスを選択します。
+            </li>
+            <li class="mb-1">
+              画面下部に黒い <b>アクションバー</b> が表示されます。
+            </li>
+            <li>
+              <b>「一括削除」</b> ボタンを押すと、検定はゴミ箱へ移動します。
+            </li>
+          </ol>
+        </section>
+
+        <hr class="my-3">
+
+        <!-- 復元説明 -->
+        <section class="mb-4">
+          <h6 class="fw-bold text-warning d-flex align-items-center mb-2">
+            <span class="material-icons me-2">settings_backup_restore</span>
+            検定を復元する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              画面上部の <b>「削除済みを表示」</b> ボタンを押して、ゴミ箱を表示します。
+            </li>
+            <li class="mb-1">
+              復元したい検定を選択します。
+            </li>
+            <li>
+              <b>「一括復元」</b> ボタンを押すと、通常の一覧に戻ります。
+            </li>
+          </ol>
+        </section>
+
+        <hr class="my-3">
+
+        <!-- 公開 / 非公開説明 -->
+        <section class="mb-3">
+          <h6 class="fw-bold text-primary d-flex align-items-center mb-2">
+            <span class="material-icons me-2">visibility</span>
+            検定を公開・非公開にする場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              検定一覧の右側にある <b>公開 / 非公開スイッチ</b> を切り替えます。
+            </li>
+            <li>
+              非公開にすると、検定は <b>一覧には残ったまま</b>、受験者からは表示されなくなります。
+            </li>
+            <p>※行選択をすることで・非公開を切り替えることができます。</p>
+          </ol>
+        </section>
+
+        <!-- 補足説明 -->
+        <div class="mt-3 p-2 rounded bg-light">
+          <p class="mb-1 small fw-bold text-muted">
+            公開 / 非公開 と 削除 / 復元 の違い
+          </p>
+          <ul class="small text-muted ps-3 mb-0">
+            <li>
+              <b>公開 / 非公開</b>：「今はメンテナンス中だから一時的に隠したい」などの<b>運営のコントロール</b>
+            </li>
+            <li>
+              <b>削除 / 復元</b>：「該当年度のモノはもう不要だから消したい」などの<b>データ整理・断捨離</b>
+            </li>
+          </ul>
         </div>
+
+      </div>
+
+      <!-- フッター -->
+      <div class="modal-footer border-0 p-3">
+        <button type="button"
+                class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100"
+                data-bs-dismiss="modal">
+          閉じる
+        </button>
+      </div>
+
     </div>
+  </div>
 </div>
+
 
 <!-- 確認用ポップアップモーダル (指定されたデザイン) -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">

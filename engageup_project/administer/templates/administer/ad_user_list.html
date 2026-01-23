@@ -49,7 +49,7 @@
         </a>
         <!-- ヘルプボタンの追加 -->
         <a href="javascript:void(0)" class="text-muted small text-decoration-none ms-3 d-inline-flex align-items-center help-trigger" data-bs-toggle="modal" data-bs-target="#helpModal">
-          <span class="material-icons size-18 me-1">help_outline</span> 削除・復元方法
+          <span class="material-icons size-18 me-1">help_outline</span> ヘルプ
         </a>
         {% endif %}
       </div>
@@ -207,43 +207,79 @@
 
 <!-- ヘルプモーダル -->
 <div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
-            <div class="modal-header bg-dark text-white border-0 py-3">
-                <h5 class="modal-title fw-bold d-flex align-items-center">
-                    <span class="material-icons me-2">help_outline</span> ユーザーの削除・復元方法
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="help-section mb-4">
-                    <h6 class="fw-bold text-danger d-flex align-items-center mb-3">
-                        <span class="material-icons me-2">delete_outline</span> ユーザーを削除する場合
-                    </h6>
-                    <ol class="small text-muted ps-3">
-                        <li class="mb-2">リストから削除したいユーザーの行をクリック、または左側のチェックボックスを選択します。</li>
-                        <li class="mb-2">画面下部に黒い<b>「アクションバー」</b>が浮かび上がります。</li>
-                        <li><b>「一括削除」</b>ボタンを押すと、ユーザーはログイン不可状態（削除済み）になります。</li>
-                    </ol>
-                </div>
-                <hr>
-                <div class="help-section mt-4">
-                    <h6 class="fw-bold text-warning d-flex align-items-center mb-3">
-                        <span class="material-icons me-2">settings_backup_restore</span> ユーザーを復元する場合
-                    </h6>
-                    <ol class="small text-muted ps-3">
-                        <li class="mb-2">画面上部の<b>「全ユーザー表示」</b>ボタンを押し、削除済みのユーザーを表示させます。</li>
-                        <li class="mb-2">「削除済み」バッジがついたユーザーを選択します。</li>
-                        <li>アクションバーの<b>「一括復元」</b>ボタンを押すと、再度ログインが可能になります。</li>
-                    </ol>
-                </div>
-            </div>
-            <div class="modal-footer border-0 p-3">
-                <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100" data-bs-dismiss="modal">閉じる</button>
-            </div>
-        </div>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+
+      <!-- ヘッダー -->
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold d-flex align-items-center">
+          <span class="material-icons me-2">help_outline</span>
+          ユーザーの削除・復元方法
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- 本文 -->
+      <div class="modal-body px-4 py-3">
+
+        <!-- 削除 -->
+        <section class="mb-3">
+          <h6 class="fw-bold text-danger d-flex align-items-center mb-2">
+            <span class="material-icons me-2">delete_outline</span>
+            ユーザーを削除する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              リストから削除したいユーザーの行をクリック、または左側のチェックボックスを選択します。
+            </li>
+            <li class="mb-1">
+              画面下部に黒い <b>「アクションバー」</b> が表示されます。
+            </li>
+            <li>
+              <b>「一括削除」</b> ボタンを押すと、ユーザーはログイン不可状態（削除済み）になります。
+            </li>
+          </ol>
+        </section>
+
+        <hr class="my-3">
+
+        <!-- 復元 -->
+        <section>
+          <h6 class="fw-bold text-warning d-flex align-items-center mb-2">
+            <span class="material-icons me-2">settings_backup_restore</span>
+            ユーザーを復元する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              画面上部の <b>「全ユーザー表示」</b> ボタンを押し、削除済みのユーザーを表示させます。
+            </li>
+            <li class="mb-1">
+              「削除済み」バッジがついたユーザーを選択します。
+            </li>
+            <li>
+              アクションバーの <b>「一括復元」</b> ボタンを押すと、再度ログインが可能になります。
+            </li>
+          </ol>
+        </section>
+
+      </div>
+
+      <!-- フッター -->
+      <div class="modal-footer border-0 pt-0 px-3 pb-3">
+        <button type="button"
+                class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100"
+                data-bs-dismiss="modal">
+          閉じる
+        </button>
+      </div>
+
     </div>
+  </div>
 </div>
+
 
 <!-- 処理中/完了ポップアップモーダル -->
 <div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
