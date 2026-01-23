@@ -141,9 +141,10 @@ class BadgeUpdateView(
     UpdateView
 ):
     model = Badge
-    fields = ["name", "icon", "exam"]
+    fields = ["name", "icon"]
     template_name = "moderator/mo_badge_update.html"
     success_url = reverse_lazy("moderator:moderatorBadge")
+
 
 
 # =====================================================
