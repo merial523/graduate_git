@@ -37,7 +37,7 @@
     </div>
 </div>
 
-<!-- 3. バッジ取得ランキング -->
+<!-- 3. バッジ取得ランキング（動的データ版） -->
 <div class="content-box ranking-section mb-4">
     <div class="box-header">
         <h2 class="page-title">🏆 リアルタイム・ランキング</h2>
@@ -45,47 +45,64 @@
     </div>
     
     <div class="ranking-container">
-        <!-- 1位 -->
-        <div class="rank-card gold">
-            <div class="rank-badge">1</div>
-            <div class="user-img">🥇</div>
-            <div class="rank-info">
-                <span class="user-name">田中 太郎</span>
-                <span class="score">32枚獲得</span>
-            </div>
-        </div>
-
-        <!-- 2位・3位 -->
-        <div class="row g-2 mb-3">
-            <div class="col-6">
-                <div class="rank-card silver">
-                    <div class="rank-badge">2</div>
-                    <span class="user-name">佐藤 次郎</span>
-                    <span class="score text-muted">28枚</span>
+        {% if badge_ranking %}
+            
+            <!-- 🥇 1位の表示（リストの0番目） -->
+            {% with first=badge_ranking.0 %}
+            <div class="rank-card gold">
+                <div class="rank-badge">1</div>
+                <div class="user-img">🥇</div>
+                <div class="rank-info">
+                    <span class="user-name">{{ first.username }}</span> <!-- 氏名なら .name に変更 -->
+                    <span class="score">{{ first.badge_count }}枚獲得</span>
                 </div>
             </div>
-            <div class="col-6">
-                <div class="rank-card bronze">
-                    <div class="rank-badge">3</div>
-                    <span class="user-name">鈴木 三郎</span>
-                    <span class="score text-muted">25枚</span>
+            {% endwith %}
+
+            <!-- 🥈 2位・🥉 3位の表示（横並びエリア） -->
+            <div class="row g-2 mb-3">
+                <!-- 2位（リストの1番目） -->
+                <div class="col-6">
+                    {% if badge_ranking.1 %}
+                        {% with second=badge_ranking.1 %}
+                        <div class="rank-card silver">
+                            <div class="rank-badge">2</div>
+                            <div class="rank-info">
+                                <span class="user-name text-truncate" style="max-width: 80px; display: block;">{{ second.username }}</span>
+                                <span class="score text-muted small">{{ second.badge_count }}枚</span>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% else %}
+                        <!-- データがない場合の空枠 -->
+                        <div class="rank-card border-dashed text-center text-muted py-3 small">順位未確定</div>
+                    {% endif %}
+                </div>
+
+                <!-- 3位（リストの2番目） -->
+                <div class="col-6">
+                    {% if badge_ranking.2 %}
+                        {% with third=badge_ranking.2 %}
+                        <div class="rank-card bronze">
+                            <div class="rank-badge">3</div>
+                            <div class="rank-info">
+                                <span class="user-name text-truncate" style="max-width: 80px; display: block;">{{ third.username }}</span>
+                                <span class="score text-muted small">{{ third.badge_count }}枚</span>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% else %}
+                        <div class="rank-card border-dashed text-center text-muted py-3 small">順位未確定</div>
+                    {% endif %}
                 </div>
             </div>
-        </div>
 
-        <!-- 4位以下 -->
-        <div class="rank-list-mini">
-            <div class="rank-list-item">
-                <span class="num">4</span>
-                <span class="name">高橋 五郎</span>
-                <span class="pts">22枚</span>
+        {% else %}
+            <!-- まだ誰もバッジを獲得していない場合 -->
+            <div class="text-center py-4 text-muted small">
+                ランキング集計中です...
             </div>
-            <div class="rank-list-item">
-                <span class="num">5</span>
-                <span class="name">渡辺 七子</span>
-                <span class="pts">20枚</span>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 

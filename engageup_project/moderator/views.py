@@ -15,6 +15,9 @@ from .forms import SequentialUserCreateForm, NewsForm
 from accounts.authority import AuthoritySet
 from common.views import BaseCreateView, BaseTemplateMixin,AdminOrModeratorRequiredMixin
 
+from django.core.cache import cache
+from django.db.models import Count, Q
+
 
 # =====================================================
 # トップ・固定ページ
@@ -210,3 +213,30 @@ class NewsUpdateView(
 
     def get_queryset(self):
         return News.objects.filter(is_active=True)
+
+
+# --- ランキング機能を提供するクラス ---
+class BadgeRankingMixin:
+    """バッジ取得数ランキングのデータを提供するMixin"""
+    
+    def get_badge_ranking_data(self):
+        # 1. キャッシュを確認
+        ranking = cache.get('badge_ranking_list')
+
+        if not ranking:
+            # 2. キャッシュが空なら集計（上位3名）
+            ranking = User.objects.annotate(
+                badge_count=Count(
+                    'userexamstatus',
+                    filter=Q(
+                        userexamstatus__is_passed=True,
+                        userexamstatus__exam__exam_type='main',
+                        userexamstatus__exam__is_active=True
+                    )
+                )
+            ).order_by('-badge_count')[:3]
+
+            # 3. 1時間(3600秒)キャッシュ
+            cache.set('badge_ranking_list', ranking, 3600)
+
+        return ranking

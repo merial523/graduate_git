@@ -1,0 +1,28 @@
+{% extends base_template %}
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'staff:staff_index' %}" class="btn btn-light rounded-circle me-3">←</a>
+        <h2 class="fw-bold m-0">📢 お知らせ一覧</h2>
+    </div>
+
+    {% for news in news_list %}
+        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 20px; overflow: hidden;">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">NEWS</span>
+                    <small class="text-muted">{{ news.created_at|date:"Y/m/d H:i" }}</small>
+                </div>
+                {% for news in news_list %}
+                <h4>{{ news.title }}</h4>
+                <div style="white-space: pre-wrap; line-height: 1.8; color: #444;">{{ news.content }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-5">
+            <p class="text-muted">現在、お知らせはありません。</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
