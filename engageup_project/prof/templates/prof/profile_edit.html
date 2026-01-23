@@ -1,15 +1,77 @@
 {% extends base_template %}
 {% block content %}
-<div class="container mt-4">
-    <h2>プロフィール編集</h2>
-    <hr>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary">保存する</button>
-            <a href="{% url 'prof:user_profile' %}" class="btn btn-link">キャンセル</a>
+<div class="container mt-5" style="max-width: 700px;">
+    <h2 class="mb-4">✏️ プロフィール編集</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- 各入力項目をループで回してBootstrapのスタイルを当てる -->
+                {% for field in form %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        
+                        <!-- 
+                          Djangoのフォームパーツをそのまま出すのではなく、
+                          Bootstrapの form-control クラスを強制的に当てるための工夫 
+                        -->
+                        <div class="input-group">
+                            {{ field }}
+                        </div>
+
+                        {% if field.help_text %}
+                            <div class="form-text text-muted">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <hr class="my-4">
+
+                <!-- ボタンエリア -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'prof:user_profile' %}" class="btn btn-outline-secondary">
+                        キャンセル
+                    </a>
+                    <button type="submit" class="btn btn-primary px-5">
+                        変更を保存する
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
+
+<style>
+    /* 
+       Djangoが生成するinputタグやtextareaタグに、
+       一括でBootstrapの form-control スタイルを適用させる 
+    */
+    input[type="text"], 
+    input[type="file"], 
+    textarea {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    textarea {
+        height: 120px; /* 備考欄の高さ */
+    }
+</style>
 {% endblock %}
