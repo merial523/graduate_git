@@ -17,9 +17,6 @@ from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet, ExamForm
 
 # --- 基本表示 ---
 
-class EnrollmentsIndexView(BaseTemplateMixin, TemplateView):
-    template_name = "enrollments/5101.html"
-
 class EnrollmentsHistoryView(BaseTemplateMixin, TemplateView):
     template_name = "enrollments/enrollments_history.html"
 

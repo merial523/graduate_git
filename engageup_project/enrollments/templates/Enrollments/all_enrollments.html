@@ -1,155 +1,324 @@
 {% extends base_template %}
 {% load static %}
 
+{% block title %}検定管理 | EngageUp{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">検定管理</li>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <!-- 一括操作（一括削除・復元）のためのフォーム -->
-    <form action="{% url 'enrollments:bulk_action_exam' %}" method="post" id="bulk-form">
-        {% csrf_token %}
+<div class="user-management-container pb-5">
+  <!-- ヘッダーエリア -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      <h1 class="page-title text-dark m-0 fw-bold">
+        {% if is_trash_mode %}検定ゴミ箱{% else %}検定管理{% endif %}
+      </h1>
+    </div>
+
+    <div class="display-toggle">
+      {% if is_trash_mode %}
+      <a href="{% url 'enrollments:exam_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        通常一覧に戻る
+      </a>
+      {% else %}
+      <a href="{% url 'enrollments:exam_list' %}?show=deleted" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+        <span class="material-icons fw-bold small align-middle">visibility_off</span> 削除済みを表示
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 検索 ＆ アクション -->
+  <div class="row g-3 mb-4 align-items-center">
+    <!-- 検索バー -->
+    <div class="col-xl-4 col-lg-5">
+      <form method="get" action="{% url 'enrollments:exam_list' %}" class="d-flex gap-2">
+        <div class="search-input-group shadow-sm flex-grow-1">
+          <span class="material-icons text-muted">search</span>
+          <input type="text" name="q" placeholder="検定名で検索..." value="{{ request.GET.q|default:'' }}" />
+        </div>
+        {% if is_trash_mode %}<input type="hidden" name="show" value="deleted" />{% endif %}
+      </form>
+    </div>
+
+    <!-- 右側：ボタンエリア -->
+    <div class="col-xl-8 col-lg-7 text-end">
+      <div class="d-flex gap-2 justify-content-end align-items-center flex-nowrap">
+        {% if not is_trash_mode %}
+        <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold">
+          <span class="material-icons">add_circle</span> 新規検定作成
+        </a>
+        {% endif %}
         
-        <!-- ヘッダーエリア：タイトル、並べ替え、モード切替ボタン -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                {% if is_trash_mode %}
-                    <h2 class="text-secondary">検定削除済みを見る</h2>
-                {% else %}
-                    <h2>検定一覧</h2>
-                {% endif %}
-            </div>
+        <!-- ヘルプボタン -->
+        <a href="javascript:void(0)" class="text-muted small text-decoration-none ms-3 d-inline-flex align-items-center help-trigger" data-bs-toggle="modal" data-bs-target="#examHelpModal">
+          <span class="material-icons size-18 me-1">help_outline</span> 操作ガイド
+        </a>
+      </div>
+    </div>
+  </div>
 
-            <div class="d-flex align-items-center gap-2">
-                <!-- 並べ替え設定 -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        並べ替え: 
-                        {% if current_sort == 'oldest' %}古い順
-                        {% elif current_sort == 'title' %}名前順
-                        {% else %}新しい順{% endif %}
-                    </button>
-                    <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
-                        <li><a class="dropdown-item" href="?sort=newest{% if is_trash_mode %}&show=deleted{% endif %}">新しい順</a></li>
-                        <li><a class="dropdown-item" href="?sort=oldest{% if is_trash_mode %}&show=deleted{% endif %}">古い順</a></li>
-                        <li><a class="dropdown-item" href="?sort=title{% if is_trash_mode %}&show=deleted{% endif %}">名前順 (A-Z)</a></li>
-                    </ul>
+  <!-- リストテーブル -->
+  <form action="{% url 'enrollments:bulk_action_exam' %}" method="post" id="user-bulk-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="bulk-action-input" value="">
+    
+    <div class="table-responsive admin-card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light border-bottom">
+          <tr>
+            <th class="text-center" style="width: 70px">選択</th>
+            <th style="width: 120px">タイプ</th>
+            <th>検定名</th>
+            <th>問題数</th>
+            <th>紐付け先</th>
+            <th class="text-center" style="width: 120px">詳細</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exam in exams %}
+          <tr class="user-row {% if is_trash_mode %}opacity-50{% endif %}">
+            <td class="text-center">
+              <input type="checkbox" name="selected_exams" value="{{ exam.id }}" class="form-check-input row-checkbox" />
+            </td>
+            <td>
+                {% if exam.exam_type == 'mock' %}
+                    <span class="badge bg-soft-blue text-primary border border-primary border-opacity-10 rounded-pill px-3 fw-normal">仮試験</span>
+                {% else %}
+                    <span class="badge bg-soft-red text-danger border border-danger border-opacity-10 rounded-pill px-3 fw-normal">本試験</span>
+                {% endif %}
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold text-dark">{{ exam.title }}</span>
+                {% if not exam.exams_file %}
+                  <span class="badge bg-light text-muted border small" style="font-size: 0.6rem">教材未登録</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+                <div class="d-flex align-items-center text-muted small">
+                    <span class="material-icons size-18 me-1">quiz</span>
+                    {{ exam.questions.count }} 問
                 </div>
-
-                <!-- モード別のアクションボタン（削除・復元など） -->
-                {% if is_trash_mode %}
-                    <input type="hidden" name="action" value="restore">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('選択した検定を復元しますか？')">選択した項目を復元</button>
-                    <a href="{% url 'enrollments:exam_list' %}" class="btn btn-outline-secondary">通常一覧に戻る</a>
+            </td>
+            <td>
+                {% if exam.exam_type == 'main' and exam.prerequisite %}
+                    <a href="?q={{ exam.prerequisite.title }}" class="small text-primary text-decoration-none d-flex align-items-center">
+                        <span class="material-icons size-18 me-1">link</span>
+                        {{ exam.prerequisite.title }}
+                    </a>
                 {% else %}
-                    <input type="hidden" name="action" value="delete">
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('選択した検定を削除済みへ移動しますか？')">選択した項目を削除</button>
-                    <a href="{% url 'enrollments:exam_list' %}?show=deleted" class="btn btn-outline-danger">検定削除済みを見る</a>
-                    <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary">+ 新規作成</a>
+                    <span class="text-muted small">-</span>
                 {% endif %}
+            </td>
+            <td class="text-center">
+                {% if not is_trash_mode %}
+                <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-light btn-sm rounded-pill px-3 border shadow-none">
+                    管理
+                </a>
+                {% else %}
+                <span class="small text-muted">削除済み</span>
+                {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+              <td colspan="6" class="text-center py-5 text-muted">
+                <div class="mb-3">
+                  <span class="material-icons" style="font-size: 48px; opacity: 0.3;">inventory_2</span>
+                </div>
+                <p class="mb-1 fw-bold">検定が見つかりません</p>
+                <p class="small mb-0">新しい検定を作成するか、条件を変えてください</p>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- フローティング・アクションバー -->
+    <div class="action-bar-container" id="floating-action-bar">
+        <div class="action-bar-inner shadow-lg mx-3 mb-3 rounded-pill border-0 bg-dark text-white">
+            <div class="container-fluid px-4 py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-auto">
+                        <div class="selection-count py-1 d-flex align-items-center">
+                            <span class="material-icons text-primary me-2">how_to_reg</span>
+                            <span id="selected-count-display" class="fw-bold fs-5 me-2">0</span> 件を選択中
+                        </div>
+                    </div>
+                    <div class="col text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                            {% if is_trash_mode %}
+                            <button type="button" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold action-trigger" 
+                                    data-action="restore" data-msg="検定を復元しています...">
+                                <span class="material-icons align-middle size-18">settings_backup_restore</span> 一括復元
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold action-trigger" 
+                                    data-action="delete" data-msg="検定をゴミ箱へ移動しています...">
+                                <span class="material-icons align-middle size-18">delete_outline</span> 一括削除
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+  </form>
 
-        <!-- 検定リストテーブル -->
-        <table class="table table-hover border shadow-sm bg-white">
-            <thead class="table-dark">
-                <tr>
-                    <th style="width: 40px;">
-                        <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;">
-                    </th>
-                    <th>検定名</th>
-                    <th>問題数</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for exam in exams %}
-                    <tr class="{% if is_trash_mode %}table-light text-muted{% endif %}">
-                        <!-- チェックボックス -->
-                        <td>
-                            <input type="checkbox" name="selected_exams" value="{{ exam.id }}" class="exam-check form-check-input" style="cursor: pointer;">
-                        </td>
-
-                        <!-- 検定タイトルと試験タイプ -->
-                        <td>
-                            <div style="font-size: 1.1em; font-weight: bold;">{{ exam.title }}</div>
-                            <div class="mt-1">
-                                {% if exam.exam_type == 'mock' %}
-                                    <span class="badge bg-light text-info border border-info" style="font-weight: normal;">
-                                        【仮試験】
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-light text-danger border border-danger" style="font-weight: normal;">
-                                        【本試験】
-                                    </span>
-                                    {% if exam.prerequisite %}
-                                        <small class="text-muted ms-1">(前提: {{ exam.prerequisite.title }})</small>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </td>
-
-                        <!-- 問題数表示 -->
-                        <td>{{ exam.questions.count }} 問</td>
-
-                        <!-- 各種ボタン -->
-                        <td>
-                            {% if is_trash_mode %}
-                                <!-- 復元のみ -->
-                                <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-success" onclick="return confirm('復元しますか？')">
-                                    復元
-                                </button>
-                            {% else %}
-                                <!-- 通常モード時：管理メニュー一式 -->
-                                <div class="mb-1 small">
-                                    教材：{% if exam.exams_file %}<span class="text-success">あり</span>{% else %}<span class="text-danger">未登録</span>{% endif %}
-                                </div>
-                                
-                                <a href="{% url 'enrollments:exam_edit' exam.id %}" class="btn btn-sm btn-outline-primary">編集・教材</a>
-                                {% if exam.badge %}
-                                    <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ</a>
-                                {% endif %}
-
-                                <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">問題管理</a>
-                                {% if exam.badge %}
-                                <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('削除済みへ移動しますか？')">
-                                    削除
-                                </button>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <!-- データがない場合の表示 -->
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">
-                            {% if is_trash_mode %}削除済みは空です。{% else %}検定が登録されていません。{% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </form>
+  <!-- ページネーション（ユーザー管理のロジックを踏襲） -->
+  {% if is_paginated %}
+  <nav class="mt-5">
+    <ul class="pagination justify-content-center align-items-center gap-2">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link pagination-circle shadow-sm" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if is_trash_mode %}&show=deleted{% endif %}">
+          <span class="material-icons">chevron_left</span>
+        </a>
+      </li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link pagination-circle shadow-sm fw-bold">{{ page_obj.number }}</span></li>
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link pagination-circle shadow-sm" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if is_trash_mode %}&show=deleted{% endif %}">
+          <span class="material-icons">chevron_right</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 
-<!-- 全選択/解除のJavaScript -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const selectAll = document.getElementById('selectAll');
-        const checkboxes = document.querySelectorAll('.exam-check');
+<!-- 取扱説明書（ヘルプモーダル） -->
+<div class="modal fade" id="examHelpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold d-flex align-items-center">
+                    <span class="material-icons me-2">help_outline</span> 検定管理の操作ガイド
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="help-section mb-4">
+                    <h6 class="fw-bold text-primary d-flex align-items-center mb-2">
+                        <span class="material-icons me-2">list_alt</span> 問題の管理
+                    </h6>
+                    <p class="small text-muted ps-4">各検定の右側にある「管理」ボタンから、問題の追加・編集・削除が行えます。AIによる自動生成も管理画面内から実行可能です。</p>
+                </div>
+                <div class="help-section mb-4">
+                    <h6 class="fw-bold text-danger d-flex align-items-center mb-2">
+                        <span class="material-icons me-2">delete_outline</span> 検定を削除する
+                    </h6>
+                    <p class="small text-muted ps-4">リストの行をクリックして選択し、下部に表示されるアクションバーから「一括削除」を行ってください。削除された検定は受講者から見えなくなります。</p>
+                </div>
+                <div class="help-section">
+                    <h6 class="fw-bold text-success d-flex align-items-center mb-2">
+                        <span class="material-icons me-2">link</span> 試験の紐付け
+                    </h6>
+                    <p class="small text-muted ps-4">本試験は「合格が必要な仮試験」を1つ設定できます。紐付けがある場合、受講者は仮試験に合格するまで本試験に進めません。</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        if (selectAll) {
-            selectAll.addEventListener('change', function() {
-                checkboxes.forEach(cb => {
-                    cb.checked = this.checked;
-                });
-            });
-        }
-    });
-</script>
+<!-- 処理中/完了ポップアップモーダル（pc.jsの仕様に合わせる） -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5 text-center p-5">
+            <div id="modal-loading">
+                <div class="custom-loader mb-4"></div>
+                <h5 class="fw-800 text-primary" id="loading-text">処理しています...</h5>
+            </div>
+            <div id="modal-success" style="display: none;">
+                <span class="material-icons text-success mb-4" style="font-size: 80px;">check_circle</span>
+                <h5 class="fw-800 text-dark">完了しました！</h5>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
-    /* 削除済みの時にタイトルを少し薄くする */
-    .table-light.text-muted strong { color: #adb5bd; }
-    /* ボタンの余白調整 */
-    .btn-sm { margin-bottom: 2px; }
-    .gap-2 { gap: 0.5rem !important; }
+  .fw-800 { font-weight: 800; }
+  .size-18 { font-size: 18px; }
+  .bg-soft-blue { background-color: rgba(93, 169, 233, 0.1); }
+  .bg-soft-red { background-color: rgba(232, 106, 106, 0.1); }
+  
+  .user-row { cursor: pointer; transition: background-color 0.2s; }
+  .table-selected { background-color: rgba(118, 177, 157, 0.1) !important; }
+
+  /* アクションバー */
+  .action-bar-container {
+    position: fixed; bottom: 0; left: var(--sidebar-width, 260px); 
+    width: calc(100% - var(--sidebar-width, 260px));
+    z-index: 1000; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(100px); opacity: 0; pointer-events: none;
+  }
+  .action-bar-container.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .sidebar-collapsed .action-bar-container { left: var(--sidebar-collapsed-width, 88px); width: calc(100% - var(--sidebar-collapsed-width, 88px)); }
+
+  /* ページネーション */
+  .pagination-circle { width: 40px; height: 40px; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; border: none; }
+  
+  @media (max-width: 991px) { .action-bar-container { left: 0; width: 100%; } }
 </style>
+
+<!-- ユーザー管理と同じロジックのJS (pc.jsが正しく読み込まれていれば基本動作しますが、念のため埋め込み) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionBar = document.getElementById('floating-action-bar');
+    const countDisplay = document.getElementById('selected-count-display');
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+    function updateSelection() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        if (countDisplay) countDisplay.innerText = checkedCount;
+        if (actionBar) {
+            if (checkedCount > 0) actionBar.classList.add('active');
+            else actionBar.classList.remove('active');
+        }
+    }
+
+    document.querySelectorAll('.user-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            const cb = this.querySelector('.row-checkbox');
+            if (cb) {
+                cb.checked = !cb.checked;
+                this.classList.toggle('table-selected', cb.checked);
+                updateSelection();
+            }
+        });
+    });
+
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            this.closest('tr').classList.toggle('table-selected', this.checked);
+            updateSelection();
+        });
+    });
+
+    document.querySelectorAll('.action-trigger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('loading-text').innerText = this.dataset.msg;
+            statusModal.show();
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                setTimeout(() => { document.getElementById('exam-bulk-form').submit(); }, 800);
+            }, 1200);
+        });
+    });
+});
+</script>
 {% endblock %}
