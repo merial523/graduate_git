@@ -67,7 +67,7 @@
 
           <!-- 検定管理: URLに 'enrollments' が含まれるとき -->
           <a class="menu-item {% if 'enrollments' in request.path %}active{% endif %}" 
-             href="{% url 'enrollments:enrollmentsIndex' %}">
+             href="{% url 'enrollments:exam_list' %}">
             <span class="material-icons">rule</span>
             <span class="menu-text">検定管理</span>
           </a>
