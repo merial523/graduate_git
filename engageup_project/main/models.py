@@ -196,6 +196,10 @@ class News(models.Model):
     title = models.CharField(verbose_name="お知らせ名",max_length=100)
     content = models.TextField(verbose_name="内容")
     is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
+    created_at = models.DateTimeField(
+        verbose_name="投稿日", 
+        auto_now_add=True  # 最初に保存された時の日時を自動で入れる
+    )
     
 
 # ★新規追加：ユーザーがどの試験に合格したかを記録する

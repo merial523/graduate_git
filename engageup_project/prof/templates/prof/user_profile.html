@@ -1,39 +1,70 @@
 {% extends base_template %}
 {% block content %}
-<div class="container mt-4">
-    <h2>マイプロフィール</h2>
-    <hr>
-    <div style="display: flex; gap: 30px; margin-bottom: 30px;">
-        <!-- 写真エリア -->
-        <div style="width: 150px; text-align: center;">
-            {% if request.user.avatar %}
-                <img src="{{ request.user.avatar.url }}" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
-            {% else %}
-                <div style="width: 150px; height: 150px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center;">No Image</div>
-            {% endif %}
-        </div>
-        <!-- 文字情報エリア -->
-        <div>
-            <h3>ユーザー名: {{ request.user.username }}</h3>
-            <p><strong>会員番号:</strong> {{ request.user.member_num }}</p>
-            <p><strong>備考:</strong><br>{{ request.user.remarks|default:"未記入"|linebreaksbr }}</p>
-            <a href="{% url 'prof:profile_edit' %}">[プロフィールを編集する]</a>
+<div class="container mt-5">
+    <h2 class="mb-4">👤 マイプロフィール</h2>
+    
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <!-- 
+              d-flex: 横並びにする 
+              align-items-start: 上揃えにする
+              flex-column flex-md-row: スマホでは縦、PCでは横並びにする
+            -->
+            <div class="d-flex flex-column flex-md-row align-items-start">
+                
+                <!-- 写真エリア（幅を100pxで固定して、絶対に重ならないようにする） -->
+                <div class="text-center mb-3 mb-md-0 me-md-4" style="flex: 0 0 100px;">
+                    {% if request.user.avatar %}
+                        <img src="{{ request.user.avatar.url }}" class="rounded-circle border" style="width: 100px; height: 100px; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; color: #adb5bd; font-size: 0.8em;">
+                            No Image
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 文字情報エリア（flex-grow-1で残りの幅をすべて使う） -->
+                <div class="flex-grow-1 w-100">
+                    <h3 class="fw-bold mb-1">{{ request.user.username }}</h3>
+                    <p class="text-muted small mb-3">会員番号: {{ request.user.member_num }}</p>
+                    
+                    <!-- 備考欄（カードの中のさらに小さな枠として表示） -->
+                    <div class="p-3 rounded border bg-light w-100">
+                        <label class="fw-bold small text-muted d-block mb-1">備考・自己紹介</label>
+                        <div style="word-break: break-all;"> <!-- 長い文章でも改行されるようにする -->
+                            {{ request.user.remarks|default:"未記入"|linebreaksbr }}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'prof:profile_edit' %}" class="btn btn-outline-primary btn-sm">
+                            ⚙️ プロフィールを編集
+                        </a>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
-    <h4>獲得称号（バッジ）</h4>
-    <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+    <!-- バッジエリア（ここは変更なし） -->
+    <h4 class="fw-bold mb-3">🎖️ 獲得称号</h4>
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 g-3">
         {% for status in passed_statuses %}
             {% if status.exam.badge %}
-                <div style="border: 1px solid #ccc; padding: 10px; text-align: center; width: 100px;">
-                    {% if status.exam.badge.icon %}
-                        <img src="{{ status.exam.badge.icon.url }}" style="width: 50px;">
-                    {% endif %}
-                    <p style="font-size: 10px; margin-top: 5px;">{{ status.exam.badge.name }}</p>
+                <div class="col">
+                    <div class="card h-100 text-center border-0 bg-light py-2">
+                        <div class="mb-1">
+                            {% if status.exam.badge.icon %}
+                                <img src="{{ status.exam.badge.icon.url }}" style="height: 50px; width: 50px; object-fit: contain;">
+                            {% else %}
+                                <div style="font-size: 30px;">🎖️</div>
+                            {% endif %}
+                        </div>
+                        <p class="small fw-bold mb-0">{{ status.exam.badge.name }}</p>
+                    </div>
                 </div>
             {% endif %}
-        {% empty %}
-            <p>まだ獲得したバッジはありません。</p>
         {% endfor %}
     </div>
 </div>
