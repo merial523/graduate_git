@@ -19,4 +19,5 @@ urlpatterns = [
     path('exam_list/', views.UserExamListView.as_view(), name='exam_list_user'),
     path('exam/<int:exam_id>/take/', views.ExamTakeView.as_view(), name='exam_take'),
     path('exam/<int:exam_id>/grade/', views.ExamGradeView.as_view(), name='exam_grade'),
+    path('exams/<int:exam_id>/toggle-active/', views.ExamToggleActiveView.as_view(), name='exam_toggle_active'),
 ]

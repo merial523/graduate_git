@@ -137,7 +137,9 @@ class Exam(models.Model):  # 検定
     description = models.TextField(verbose_name="説明・研修テキスト", blank=True) 
     passing_score = models.IntegerField(verbose_name="合格基準点", default=80) # 自動採点に必要
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日") # 管理用
-    is_active = models.BooleanField(default=True, verbose_name="有効フラグ") # 検定が有効かどうか
+    # is_active = models.BooleanField(default=True, verbose_name="有効フラグ") # 検定が有効かどうか
+    is_deleted = models.BooleanField(default=False, verbose_name="削除フラグ")
+    is_active = models.BooleanField(default=True, verbose_name="公開状態")
     
     # ★追加：仮試験か本試験か
     exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='mock', verbose_name="試験タイプ")
