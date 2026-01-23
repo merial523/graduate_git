@@ -202,11 +202,15 @@ class ExamBulkActionView(AdminOrModeratorRequiredMixin, View):
         exam_ids = request.POST.getlist('selected_exams')
         action = request.POST.get('action')
         if exam_ids:
-            is_active = (action == 'restore')
-            Exam.objects.filter(id__in=exam_ids).update(is_active=is_active)
-            Badge.objects.filter(exam_id__in=exam_ids).update(is_active=is_active)
+            # 共通のフラグ設定 (restoreならTrue, deleteならFalse)
+            is_active_value = (action == 'restore')
+            
+            # 1. 選択された検定自体を一括更新
+            Exam.objects.filter(id__in=exam_ids).update(is_active=is_active_value)
+            Badge.objects.filter(exam_id__in=exam_ids).update(is_active=is_active_value)
 
-            # メイン検定の場合、関連する模擬検定も一括更新
+            # --- 連動処理A: 【本試験 → 仮試験】への影響 ---
+            # 選択された「本試験」が持つ「前提の仮試験(prerequisite)」のIDを抽出
             related_mock_ids = Exam.objects.filter(
                 id__in=exam_ids, 
                 exam_type='main'
@@ -215,27 +219,33 @@ class ExamBulkActionView(AdminOrModeratorRequiredMixin, View):
             # Noneを除外して一括更新
             mock_ids = [rid for rid in related_mock_ids if rid is not None]
             if mock_ids:
-                Exam.objects.filter(id__in=mock_ids).update(is_active=is_active)
-                Badge.objects.filter(exam_id__in=mock_ids).update(is_active=is_active)
+                Exam.objects.filter(id__in=mock_ids).update(is_active=is_active_value)
+                Badge.objects.filter(exam_id__in=mock_ids).update(is_active=is_active_value)
 
-            #仮検定を復元する場合、関連するメイン検定もアクティブ化
-            if action == 'restore':
-                # 選択された中に「仮試験」があれば、それを前提にしている本試験を探す
-                mock_ids = Exam.objects.filter(id__in=exam_ids, exam_type='mock').values_list('id', flat=True)
+            # --- 連動処理B: 【仮試験 → 本試験】への影響 ---
+            # 選択された「仮試験」を前提にしている「本試験」のIDを抽出
+            # ※これが「仮試験のみ削除した時に本試験も消す」ためのロジックです
+            selected_mock_ids = Exam.objects.filter(
+                id__in=exam_ids, 
+                exam_type='mock'
+            ).values_list('id', flat=True)
+            
+            if selected_mock_ids:
+                # これらの仮試験を前提(prerequisite)としている本試験を探す
+                dependent_main_ids = Exam.objects.filter(
+                    prerequisite_id__in=selected_mock_ids
+                ).values_list('id', flat=True)
                 
-                if mock_ids:
-                    # その仮試験を prerequisite に持っている本試験のIDをリストアップ
-                    dependent_main_ids = Exam.objects.filter(prerequisite_id__in=mock_ids).values_list('id', flat=True)
-                    
-                    if dependent_main_ids:
-                        # 連動する本試験たちを復元
-                        Exam.objects.filter(id__in=dependent_main_ids).update(is_active=True)
-                        Badge.objects.filter(exam_id__in=dependent_main_ids).update(is_active=True)
+                if dependent_main_ids:
+                    # 連動する本試験たちも一括更新（削除・復元の両方に対応）
+                    Exam.objects.filter(id__in=dependent_main_ids).update(is_active=is_active_value)
+                    Badge.objects.filter(exam_id__in=dependent_main_ids).update(is_active=is_active_value)
 
+            # 復元時はゴミ箱画面へ、削除時は通常一覧へリダイレクト
             if action == 'restore':
                 return redirect(f"{reverse_lazy('enrollments:exam_list')}?show=deleted")
+        
         return redirect('enrollments:exam_list')
-
 class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ContextMixin, View):
     """AIによる問題自動生成（セーフティフィルター緩和・エラー対策済み版）"""
     
