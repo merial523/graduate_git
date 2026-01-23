@@ -1,30 +1,77 @@
 {% extends base_template %}
+{% load static %}
 
 {% block content %}
-<h2>結果発表</h2>
-<hr>
+<div class="container mt-5 mb-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            
+            <!-- 1. メインメッセージ -->
+            <div class="mb-5">
+                {% if is_passed %}
+                    <h1 class="display-1">🎉</h1>
+                    <h1 class="fw-bold text-success display-4">合格おめでとう！</h1>
+                    <p class="lead text-muted">素晴らしい成績です。合格基準をクリアしました。</p>
+                {% else %}
+                    <h1 class="display-1">✍️</h1>
+                    <h1 class="fw-bold text-danger display-4">不合格...</h1>
+                    <p class="lead text-muted">あと一歩でした。もう一度教材を確認しましょう。</p>
+                {% endif %}
+            </div>
 
-<h3>検定名: {{ exam.title }}</h3>
-<p style="font-size: 24px; font-weight: bold;">
-    スコア: {{ score }} 点 / 100 点
-</p>
+            <!-- 2. スコア表示 -->
+            <div class="py-4 border-top border-bottom mb-5">
+                <div class="row">
+                    <div class="col-6 border-end">
+                        <small class="text-muted d-block mb-1">今回のスコア</small>
+                        <div class="display-4 fw-bold text-dark">{{ score }}<span class="fs-4">点</span></div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block mb-1">正解数</small>
+                        <div class="display-4 fw-bold text-dark">{{ correct_count }}<span class="fs-4"> / {{ total }}</span></div>
+                    </div>
+                </div>
+            </div>
 
-<p style="font-size: 20px;">
-    結果: 
-    {% if is_passed %}
-        <span style="color: green; font-weight: bold;">合格！</span>
-    {% else %}
-        <span style="color: red; font-weight: bold;">不合格</span>
-    {% endif %}
-</p>
+            <!-- 3. 検定名とバッジ -->
+            <div class="mb-5">
+                <p class="text-muted mb-1">受講した検定</p>
+                <h3 class="fw-bold mb-4">{{ exam.title }}</h3>
 
-{% if is_passed and exam.badge %}
-    <p>獲得したバッジ: <strong>{{ exam.badge.name }}</strong></p>
-{% endif %}
+                {% if is_passed and exam.badge %}
+                    <div class="p-4 rounded-4 bg-light d-inline-block shadow-sm">
+                        <p class="small fw-bold text-warning mb-2">🎖️ NEW BADGE!</p>
+                        {% if exam.badge.icon %}
+                            <img src="{{ exam.badge.icon.url }}" alt="Badge" class="img-fluid mb-2" style="max-height: 100px;">
+                        {% endif %}
+                        <h5 class="fw-bold mb-0">{{ exam.badge.name }}</h5>
+                    </div>
+                {% endif %}
+            </div>
 
-<hr>
-<p>（{{ total }} 問中 {{ correct_count }} 問正解）</p>
+            <!-- 4. ボタンエリア -->
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'enrollments:exam_list_user' %}" class="btn btn-outline-secondary btn-lg px-4">
+                    検定一覧へ戻る
+                </a>
+                {% if not is_passed %}
+                    <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-primary btn-lg px-4 shadow">
+                        もう一度挑戦する
+                    </a>
+                {% endif %}
+            </div>
 
-<br>
-<a href="{% url 'enrollments:exam_list_user' %}" style="padding: 10px; background: #eee; text-decoration: none; border: 1px solid #ccc;">一覧に戻る</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 画面全体を少し柔らかい印象にする設定（任意） */
+    body {
+        background-color: #ffffff;
+    }
+    .display-4 {
+        letter-spacing: -1px;
+    }
+</style>
 {% endblock %}
