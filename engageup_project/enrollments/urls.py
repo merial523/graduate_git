@@ -4,7 +4,6 @@ from . import views
 app_name = 'enrollments' 
 
 urlpatterns = [
-    path("", views.EnrollmentsIndexView.as_view(), name="enrollmentsIndex"),
     path("exam_history/", views.EnrollmentsHistoryView.as_view(), name="enrollmentsHistory"),
     path('exams/', views.ExamListView.as_view(), name='exam_list'),
     path('exams/add/', views.ExamCreateView.as_view(), name='exam_add'),
