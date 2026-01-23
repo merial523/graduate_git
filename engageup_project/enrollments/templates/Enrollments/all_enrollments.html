@@ -108,10 +108,11 @@
                                 {% endif %}
 
                                 <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">問題管理</a>
-
+                                {% if exam.badge %}
                                 <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('削除済みへ移動しますか？')">
                                     削除
                                 </button>
+                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>
