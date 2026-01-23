@@ -7,7 +7,7 @@
 <div class="welcome-banner mb-4">
     <div class="d-flex align-items-center">
         {% if request.user.avatar %}
-            <img src="{{ request.user.avatar.url }}" class="rounded-circle border" style="width: 100px; height: 100px; object-fit: cover;">
+            <img src="{{ request.user.avatar.url }}" class="rounded-circle border" style="width: 80px; height: 80px; object-fit: cover;">
         {% else %}
             <!-- 写真がない場合のデフォルト表示 -->
             <div class="avatar-wrapper me-3">👤</div>

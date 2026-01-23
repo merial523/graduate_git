@@ -56,6 +56,7 @@ class SequentialUserCreateView(
 ):
     template_name = "moderator/mo_create_user.html"
     form_class = SequentialUserCreateForm
+    
 
     PASSWORD_LENGTH = 12
     PASSWORD_CHARS = (
@@ -66,8 +67,8 @@ class SequentialUserCreateView(
 
     def get_success_url(self):
         return AuthoritySet.authority_two(
-            "administer", "administer_index",
-            "moderator", "moderator_index",
+            "administer", "user_list",
+            "moderator", "user_list",
             self.request.user.rank
         )
 
@@ -195,6 +196,8 @@ class NewsCreateView(
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
     success_url = reverse_lazy("moderator:news_list")
+    is_continue_url = "moderator:news_list"
+    is_continue = True
 
     def form_valid(self, form):
         form.instance.is_active = True
