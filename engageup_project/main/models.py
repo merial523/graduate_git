@@ -68,10 +68,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):  # ユーザーのランク
     RANK_CHOICES = [
-        ("administer", "管理者"),
-        ("moderator", "モデレーター"),
-        ("staff", "社員"),
-        ("visitor", "訪問者"),
+        ("administer", "administer"),
+        ("moderator", "moderator"),
+        ("staff", "staff"),
+        ("visitor", "visitor"),
     ]
 
     rank = models.CharField(  # ユーザーのランクを選ぶ
