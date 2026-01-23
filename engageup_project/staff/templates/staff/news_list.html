@@ -13,10 +13,8 @@
                     <span class="badge bg-primary-subtle text-primary rounded-pill px-3">NEWS</span>
                     <small class="text-muted">{{ news.created_at|date:"Y/m/d H:i" }}</small>
                 </div>
-                {% for news in news_list %}
-                <h4>{{ news.title }}</h4>
+                <h4 class="fw-bold mb-3">{{ news.title }}</h4>
                 <div style="white-space: pre-wrap; line-height: 1.8; color: #444;">{{ news.content }}</div>
-                {% endfor %}
             </div>
         </div>
     {% empty %}
