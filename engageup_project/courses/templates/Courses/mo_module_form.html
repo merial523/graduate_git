@@ -4,109 +4,137 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-9 col-lg-7">
-            <div class="card shadow-sm mt-4">
-                <!-- カードヘッダー -->
+        <div class="col-md-9 col-lg-8">
+            <div class="card shadow-sm mt-4 border-0 rounded-4">
+                <!-- 1. ヘッダー -->
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h2 class="h5 mb-0 text-dark">
+                    <h2 class="h5 mb-0 text-dark fw-bold">
                         <i class="bi bi-play-circle-fill me-2 text-primary"></i>
                         {% if object %}研修の編集{% else %}新規研修の追加 (コース: {{ course.subject }}){% endif %}
                     </h2>
-                    <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary btn-sm">戻る</a>
+                    <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">戻る</a>
                 </div>
 
                 <div class="card-body p-4">
-                    <!-- ファイル送信のため enctype が必須 -->
+                    <!-- A. 通常の保存フォーム -->
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
 
                         {% if form.errors %}
-                            <div class="alert alert-danger py-2 small">
-                                <strong>入力内容にエラーがあります。</strong>
-                                {{ form.errors }}
-                            </div>
+                            <div class="alert alert-danger py-2 small">入力内容を確認してください。</div>
                         {% endif %}
 
                         <div class="form-container">
-                            <!-- 1. 研修タイトル -->
                             <div class="mb-4">
-                                <label class="form-label fw-bold">研修タイトル</label>
+                                <label class="form-label fw-bold small text-secondary">研修タイトル</label>
                                 {{ form.title }}
                             </div>
 
-                            <!-- 2. 研修動画 (★ここが抜けていました) -->
+                            <!-- 動画 -->
                             <div class="mb-4 p-3 bg-light rounded-3 border">
-                                <label class="form-label fw-bold">📹 研修動画</label>
+                                <label class="form-label fw-bold small text-secondary">📹 研修動画</label>
                                 {{ form.video }}
-                                <div class="form-text small">MP4形式などの動画ファイルを選択してください。</div>
                             </div>
 
-                            <!-- 3. 教材資料セクション -->
+                            <!-- 教材（検定との共通） -->
                             <div class="mb-4 p-3 rounded-3 border border-primary-subtle bg-primary-subtle bg-opacity-10">
-                                <label class="form-label fw-bold text-primary">📖 教材資料 (AI要約の元データ)</label>
-                                
+                                <label class="form-label fw-bold text-primary small">📖 教材資料 (AI要約の元データ)</label>
                                 <div class="mb-3">
-                                    <label class="small text-secondary">過去のライブラリから選ぶ場合:</label>
+                                    <label class="small text-muted">過去のライブラリから選ぶ:</label>
                                     {{ form.existing_file }}
                                 </div>
-
                                 <div class="text-center my-2"><span class="badge bg-white text-secondary border fw-normal">または</span></div>
-
                                 <div class="mb-2">
-                                    <label class="small text-secondary">新しくアップロード:</label>
+                                    <label class="small text-muted">新しくアップロード:</label>
                                     {{ form.training_file }}
                                 </div>
                             </div>
 
-                            <!-- 4. 時間と順番 -->
                             <div class="row g-3 mb-4">
                                 <div class="col-6">
-                                    <label class="form-label fw-bold small">推奨学習時間 (分)</label>
+                                    <label class="form-label fw-bold small text-secondary">推奨学習時間 (分)</label>
                                     {{ form.estimated_time }}
                                 </div>
                                 <div class="col-6">
-                                    <label class="form-label fw-bold small">表示順</label>
+                                    <label class="form-label fw-bold small text-secondary">表示順</label>
                                     {{ form.order }}
                                 </div>
                             </div>
 
-                            <!-- 5. 研修テキスト -->
+                            <!-- 研修テキスト：AIの結果がここに書き込まれます -->
                             <div class="mb-3">
-                                <label class="form-label fw-bold">研修テキスト</label>
+                                <label class="form-label fw-bold small text-secondary">研修テキスト</label>
                                 {{ form.content_text }}
-                                <div class="form-text small text-muted">※AI要約機能は保存後の編集画面で使えます。</div>
+                                <div class="form-text small text-muted">※下のAIアシスタントを使うと、ここが自動で入力されます。</div>
                             </div>
                         </div>
 
-                        <hr class="my-4">
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg shadow-sm py-2 fw-bold">
-                                保存して登録する
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-dark btn-lg py-2 fw-bold rounded-3">
+                                内容を保存する
                             </button>
                         </div>
                     </form>
-                </div> <!-- card-body end -->
-            </div> <!-- card end -->
+
+                    <!-- B. AIコンテンツ生成セクション（保存済みの場合のみ表示） -->
+                    {% if object %}
+                    <div class="mt-5 p-4 border border-primary rounded-4 bg-primary-subtle bg-opacity-10 shadow-sm">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="fs-4 me-2">✨</span>
+                            <h6 class="fw-bold m-0 text-primary">AIコンテンツ作成アシスタント</h6>
+                        </div>
+                        
+                        <p class="small text-muted mb-3">
+                            教材PDFを元に、最適な「要約テキスト」と「復習用例題」を自動生成します。
+                        </p>
+
+                        <form action="{% url 'courses:ai_full_generate' object.id %}" method="post" id="ai-gen-form">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">AIへのこだわり指示（任意）</label>
+                                <textarea name="user_instruction" class="form-control form-control-sm border-primary-subtle" 
+                                          rows="2" placeholder="例：新入社員向けに優しく、重要な箇所は箇条書きを多めにしてください。"></textarea>
+                            </div>
+
+                            <button type="submit" id="ai-generate-btn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" 
+                                    {% if not object.training_file %}disabled{% endif %}>
+                                AIに要約と例題をまるごとおまかせで作らせる
+                            </button>
+                            
+                            {% if not object.training_file %}
+                                <small class="text-danger mt-2 d-block text-center">※先に教材資料を保存してください。</small>
+                            {% endif %}
+                        </form>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* フォーム入力欄のスタイル一括適用 */
+    /* フォーム共通スタイル */
     .form-container input:not([type="checkbox"]), 
     .form-container select, 
     .form-container textarea {
-        display: block;
-        width: 100%;
-        padding: 0.6rem 0.75rem;
-        font-size: 1rem;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-        background-color: #fff;
+        display: block; width: 100%; padding: 0.6rem 0.75rem;
+        border: 1px solid #ced4da; border-radius: 0.5rem; background-color: #fff;
     }
     textarea { height: 150px; }
     
-    /* セレクトボックスの背景色 */
-    select { background-color: #ffffff; }
+    /* AI用テキストエリアは少し小さく */
+    #ai-gen-form textarea { height: 80px; }
 </style>
+
+<script>
+    // AI生成中にボタンを「考え中」にする
+    document.getElementById('ai-gen-form')?.addEventListener('submit', function() {
+        const btn = document.getElementById('ai-generate-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>AIが資料を読み込んで作成中...';
+    });
+</script>
 {% endblock %}
