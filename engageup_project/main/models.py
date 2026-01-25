@@ -33,6 +33,77 @@ class Course(models.Model):  # 講座
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+# --- ★新規追記：研修モジュール (コースの中身) ---
+class TrainingModule(models.Model):
+    # コースを消したら研修も消える(CASCADE)設定
+    course = models.ForeignKey(
+        Course, 
+        on_delete=models.CASCADE, 
+        related_name="modules",
+        verbose_name="所属コース"
+    )
+    title = models.CharField(verbose_name="研修名", max_length=100)
+    
+    # 動画アップロード
+    video = models.FileField(
+        verbose_name="研修動画", 
+        upload_to="training_videos/", 
+        null=True, 
+        blank=True
+    )
+    
+    # 教材資料（検定のexams_filesフォルダと共通）
+    training_file = models.FileField(
+        verbose_name="要約元資料(PDF/画像)", 
+        upload_to="exams_files/", 
+        null=True, 
+        blank=True
+    )
+    # ★ 推奨学習時間の項目を追加
+    estimated_time = models.PositiveIntegerField(
+        verbose_name="推奨学習時間(分)", 
+        default=30,
+        help_text="受講者がこの研修を終えるのにかかる目安の時間（分）です"
+    )
+    
+    # AIで生成したり手入力したりするメインテキスト
+    content_text = models.TextField(verbose_name="研修テキスト", blank=True)
+    
+    # 並べ替え用の順番
+    order = models.IntegerField(verbose_name="表示順", default=0)
+    
+    # 論理削除フラグ
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+
+    def __str__(self):
+        return f"{self.course.subject} - {self.title}"
+
+# --- ★新規追記：研修内の「例題」 ---
+class TrainingExample(models.Model):
+    module = models.ForeignKey(
+        TrainingModule, 
+        on_delete=models.CASCADE, 
+        related_name="examples",
+        verbose_name="対象研修"
+    )
+    text = models.TextField(verbose_name="例題文")
+    explanation = models.TextField(verbose_name="解説", blank=True)
+
+    def __str__(self):
+        return f"例題: {self.text[:20]}"
+
+class TrainingExampleChoice(models.Model):
+    example = models.ForeignKey(
+        TrainingExample, 
+        on_delete=models.CASCADE, 
+        related_name="choices"
+    )
+    text = models.CharField(verbose_name="選択肢", max_length=200)
+    is_correct = models.BooleanField(verbose_name="これが正解か", default=False)
+
+    def __str__(self):
+        return self.text
+
 
 class UserManager(BaseUserManager):
     use_in_migrations = True

@@ -1,257 +1,159 @@
 {% extends base_template %}
 {% load static %}
-{% block title %}コース管理 | EngageUp{% endblock %}
+{% block title %}コース・研修管理 | EngageUp{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4" style="background-color: #f8faf9; min-height: 100vh;">
-    <!-- 統計サマリー: 管理者のやる気を高め、現状を即座に把握 -->
+    <!-- 1. 統計サマリー -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-primary border-4">
                 <div class="text-muted small fw-bold">公開中のコース</div>
-                <div class="h3 m-0 fw-800 text-dark">24 <span class="fs-6 fw-normal text-muted">講座</span></div>
+                <div class="h3 m-0 fw-800 text-dark">{{ total_active_courses }} <span class="fs-6 fw-normal text-muted">講座</span></div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-success border-4">
-                <div class="text-muted small fw-bold">総動画数</div>
-                <div class="h3 m-0 fw-800 text-dark">158 <span class="fs-6 fw-normal text-muted">本</span></div>
+                <div class="text-muted small fw-bold">総動画（研修）数</div>
+                <div class="h3 m-0 fw-800 text-dark">{{ total_videos }} <span class="fs-6 fw-normal text-muted">本</span></div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-info border-4">
                 <div class="text-muted small fw-bold">総受講者数</div>
-                <div class="h3 m-0 fw-800 text-dark">1,204 <span class="fs-6 fw-normal text-muted">名</span></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-warning border-4">
-                <div class="text-muted small fw-bold">今月の新規視聴</div>
-                <div class="h3 m-0 fw-800 text-dark">+852 <span class="fs-6 fw-normal text-muted">回</span></div>
+                <div class="h3 m-0 fw-800 text-dark">{{ total_students }} <span class="fs-6 fw-normal text-muted">名</span></div>
             </div>
         </div>
     </div>
 
-    <!-- タイトルエリア -->
-    <div class="d-flex justify-content-between align-items-end mb-4">
-        <div>
-            <h1 class="h3 fw-800 m-0 text-dark">コース・動画管理</h1>
-        </div>
+    <!-- 2. タイトルエリア -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-800 m-0 text-dark">
+            {% if is_trash_mode %}🗑️ 削除済みコース管理{% else %}📖 コース・研修管理{% endif %}
+        </h1>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary rounded-pill px-3 btn-sm d-flex align-items-center gap-1">
-                <span class="material-icons size-18">delete_outline</span>
-                削除済みを表示
-            </button>
-            <button class="btn btn-primary rounded-pill px-4 shadow-sm d-flex align-items-center gap-1 fw-bold">
-                <span class="material-icons">add</span> 新規コース作成
-            </button>
+            {% if is_trash_mode %}
+                <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">← 通常一覧へ</a>
+            {% else %}
+                <a href="?show=deleted" class="btn btn-outline-danger rounded-pill px-3 btn-sm">削除済みを表示</a>
+                <a href="{% url 'courses:courses_add' %}" class="btn btn-primary rounded-pill px-4 fw-bold">+ 新規コース作成</a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- 検索・フィルタ -->
+    <!-- 3. 検索窓 -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-3">
-            <div class="row g-2">
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0"><span class="material-icons text-muted">search</span></span>
-                        <input type="text" class="form-control border-0 bg-light" placeholder="コース名、講師名、キーワードで検索...">
-                    </div>
+            <form method="get" class="row g-2">
+                <div class="col-md-10">
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control border-0 bg-light" placeholder="コース名で検索...">
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select border-0 bg-light text-muted">
-                        <option>カテゴリ：すべて</option>
-                        <option>新人研修</option>
-                        <option>服薬指導</option>
-                        <option>薬機法関連</option>
-                    </select>
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill">検索</button>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select border-0 bg-light text-muted">
-                        <option>新しい順</option>
-                        <option>動画数が多い順</option>
-                        <option>視聴数順</option>
-                    </select>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- リストエリア -->
-    <form method="post" id="course-bulk-form">
+    <!-- 4. コースリストエリア -->
+    <form method="post">
+        {% csrf_token %}
         <div class="course-list-container mb-5">
-            
-            <!-- Item 1: 新人研修 -->
-            <div class="course-item card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+            {% for course in courses %}
+            <div class="course-item card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
                 <div class="card-body p-0">
-                    <div class="d-flex align-items-center flex-wrap flex-md-nowrap">
-                        <div class="px-4 py-3 border-end bg-light-subtle d-flex align-items-center">
-                            <input type="checkbox" name="course_ids" value="1" class="form-check-input row-checkbox m-0">
+                    <!-- コースのメイン情報 -->
+                    <div class="d-flex align-items-center p-3 border-bottom bg-white">
+                        <div class="px-3 border-end">
+                            <input type="checkbox" name="course_ids" value="{{ course.id }}" class="form-check-input row-checkbox m-0">
                         </div>
-                        <div class="course-thumb ms-3 d-none d-md-block">
-                            <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=150&q=80" alt="" class="rounded-3 object-fit-cover" style="width: 120px; height: 70px;">
-                        </div>
-                        <div class="flex-grow-1 px-4 py-3">
+                        <div class="flex-grow-1 px-4">
                             <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-primary-subtle text-primary border-primary border fw-normal">新人研修</span>
-                                <span class="badge bg-success-subtle text-success border-success border fw-normal">公開中</span>
-                                <span class="text-muted small">ID: #1024</span>
+                                <span class="badge bg-primary-subtle text-primary border-primary border">{{ course.subject }}</span>
+                                <span class="text-muted small">設定数: {{ course.courseCount }}講座</span>
                             </div>
-                            <h5 class="fw-800 m-0">【2024年版】新人薬剤師のためのOTC薬販売基礎講座</h5>
-                            <div class="d-flex gap-3 mt-1 text-muted small">
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">ondemand_video</span> 動画 12本</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">people</span> 128名が受講中</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">update</span> 2024/01/15 更新</span>
-                            </div>
+                            <h5 class="fw-800 m-0 text-dark">{{ course.subject }}</h5>
                         </div>
-                        <div class="px-4 py-3 text-end d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3">構成管理</button>
-                            <button type="button" class="btn btn-light btn-sm rounded-circle p-2" data-bs-toggle="dropdown"><span class="material-icons size-20">more_vert</span></button>
+                        <div class="px-3">
+                            <a href="{% url 'courses:courses_edit' course.id %}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                ⚙️ コース設定
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- ★ 研修（モジュール）のリスト部分 -->
+                    <div class="p-4 bg-light-subtle">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-secondary"><i class="bi bi-collection-play me-2"></i>このコースの研修動画 ({{ course.modules.count }}本)</h6>
+                            <a href="{% url 'courses:module_add' course.id %}" class="btn btn-sm btn-success rounded-pill px-3">
+                                ＋ 新しい研修を追加
+                            </a>
+                        </div>
+
+                        <div class="row g-3">
+                            {% for module in course.modules.all %}
+                            <div class="col-12">
+                                <div class="bg-white border rounded-3 p-3 d-flex justify-content-between align-items-center shadow-sm">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                            <i class="bi bi-play-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ module.title }}</div>
+                                            <div class="small text-muted">
+                                                <i class="bi bi-clock me-1"></i>目安：{{ module.estimated_time }}分 | 
+                                                <i class="bi bi-file-earmark-text me-1"></i>{% if module.training_file %}教材あり{% else %}教材なし{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <!-- AI要約ボタン -->
+                                        <form action="{% url 'courses:ai_summary' module.id %}" method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-info rounded-pill px-3" {% if not module.training_file %}disabled title="教材がありません"{% endif %}>
+                                                ✨ AI要約
+                                            </button>
+                                        </form>
+                                        <!-- 編集ボタン -->
+                                        <a href="{% url 'courses:module_edit' module.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                            編集
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="col-12 text-center py-3 text-muted small">
+                                研修が登録されていません。上のボタンから動画研修を追加してください。
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Item 2: 服薬指導 -->
-            <div class="course-item card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
-                <div class="card-body p-0">
-                    <div class="d-flex align-items-center flex-wrap flex-md-nowrap">
-                        <div class="px-4 py-3 border-end bg-light-subtle d-flex align-items-center">
-                            <input type="checkbox" name="course_ids" value="2" class="form-check-input row-checkbox m-0">
-                        </div>
-                        <div class="course-thumb ms-3 d-none d-md-block">
-                            <img src="https://images.unsplash.com/photo-1585435557343-3b092031a831?auto=format&fit=crop&w=150&q=80" alt="" class="rounded-3 object-fit-cover" style="width: 120px; height: 70px;">
-                        </div>
-                        <div class="flex-grow-1 px-4 py-3">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-info-subtle text-info border-info border fw-normal">接遇</span>
-                                <span class="badge bg-success-subtle text-success border-success border fw-normal">公開中</span>
-                                <span class="text-muted small">ID: #1025</span>
-                            </div>
-                            <h5 class="fw-800 m-0">患者満足度を高める！クレーム対応とコミュニケーション術</h5>
-                            <div class="d-flex gap-3 mt-1 text-muted small">
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">ondemand_video</span> 動画 8本</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">people</span> 85名が受講中</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">update</span> 2023/12/20 更新</span>
-                            </div>
-                        </div>
-                        <div class="px-4 py-3 text-end d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3">構成管理</button>
-                            <button type="button" class="btn btn-light btn-sm rounded-circle p-2" data-bs-toggle="dropdown"><span class="material-icons size-20">more_vert</span></button>
-                        </div>
-                    </div>
-                </div>
+            {% empty %}
+            <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                <p class="text-muted">表示できるコースがありません。</p>
             </div>
-
-            <!-- Item 3: 法改正 (下書き) -->
-            <div class="course-item card border-0 shadow-sm rounded-4 mb-3 overflow-hidden border-start border-warning border-4">
-                <div class="card-body p-0">
-                    <div class="d-flex align-items-center flex-wrap flex-md-nowrap">
-                        <div class="px-4 py-3 border-end bg-light-subtle d-flex align-items-center">
-                            <input type="checkbox" name="course_ids" value="3" class="form-check-input row-checkbox m-0">
-                        </div>
-                        <div class="course-thumb ms-3 d-none d-md-block">
-                            <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=150&q=80" alt="" class="rounded-3 object-fit-cover" style="width: 120px; height: 70px;">
-                        </div>
-                        <div class="flex-grow-1 px-4 py-3">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-secondary-subtle text-secondary border-secondary border fw-normal">法改正</span>
-                                <span class="badge bg-warning-subtle text-warning border-warning border fw-normal">下書き</span>
-                                <span class="text-muted small">ID: #1026</span>
-                            </div>
-                            <h5 class="fw-800 m-0 text-muted">【速報】2024年度 診療報酬・調剤報酬改定のポイント解説</h5>
-                            <div class="d-flex gap-3 mt-1 text-muted small">
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">ondemand_video</span> 動画 0本 (編集中)</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">schedule</span> 最終保存: 2時間前</span>
-                            </div>
-                        </div>
-                        <div class="px-4 py-3 text-end d-flex gap-2">
-                            <button type="button" class="btn btn-warning btn-sm rounded-pill px-3">編集を再開</button>
-                            <button type="button" class="btn btn-light btn-sm rounded-circle p-2" data-bs-toggle="dropdown"><span class="material-icons size-20">more_vert</span></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Item 4: 専門知識 -->
-            <div class="course-item card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
-                <div class="card-body p-0">
-                    <div class="d-flex align-items-center flex-wrap flex-md-nowrap">
-                        <div class="px-4 py-3 border-end bg-light-subtle d-flex align-items-center">
-                            <input type="checkbox" name="course_ids" value="4" class="form-check-input row-checkbox m-0">
-                        </div>
-                        <div class="course-thumb ms-3 d-none d-md-block">
-                            <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=150&q=80" alt="" class="rounded-3 object-fit-cover" style="width: 120px; height: 70px;">
-                        </div>
-                        <div class="flex-grow-1 px-4 py-3">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-primary-subtle text-primary border-primary border fw-normal">疾患知識</span>
-                                <span class="badge bg-success-subtle text-success border-success border fw-normal">公開中</span>
-                                <span class="text-muted small">ID: #1027</span>
-                            </div>
-                            <h5 class="fw-800 m-0 text-dark">糖尿病療養指導：最新の注射製剤とデバイスの使い方</h5>
-                            <div class="d-flex gap-3 mt-1 text-muted small">
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">ondemand_video</span> 動画 5本</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">people</span> 42名が受講中</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">update</span> 2023/11/10 更新</span>
-                            </div>
-                        </div>
-                        <div class="px-4 py-3 text-end d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3">構成管理</button>
-                            <button type="button" class="btn btn-light btn-sm rounded-circle p-2" data-bs-toggle="dropdown"><span class="material-icons size-20">more_vert</span></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Item 5: 店舗運営 -->
-            <div class="course-item card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
-                <div class="card-body p-0">
-                    <div class="d-flex align-items-center flex-wrap flex-md-nowrap">
-                        <div class="px-4 py-3 border-end bg-light-subtle d-flex align-items-center">
-                            <input type="checkbox" name="course_ids" value="5" class="form-check-input row-checkbox m-0">
-                        </div>
-                        <div class="course-thumb ms-3 d-none d-md-block">
-                            <img src="https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&w=150&q=80" alt="" class="rounded-3 object-fit-cover" style="width: 120px; height: 70px;">
-                        </div>
-                        <div class="flex-grow-1 px-4 py-3">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-dark-subtle text-dark border-dark border fw-normal">管理・運営</span>
-                                <span class="badge bg-success-subtle text-success border-success border fw-normal">公開中</span>
-                                <span class="text-muted small">ID: #1028</span>
-                            </div>
-                            <h5 class="fw-800 m-0 text-dark">効率的な在庫管理と不動在庫を減らすための発注テクニック</h5>
-                            <div class="d-flex gap-3 mt-1 text-muted small">
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">ondemand_video</span> 動画 6本</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">people</span> 12名が受講中</span>
-                                <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">update</span> 2023/10/05 更新</span>
-                            </div>
-                        </div>
-                        <div class="px-4 py-3 text-end d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3">構成管理</button>
-                            <button type="button" class="btn btn-light btn-sm rounded-circle p-2" data-bs-toggle="dropdown"><span class="material-icons size-20">more_vert</span></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            {% endfor %}
         </div>
 
-        <!-- 固定アクションバー（選択時のみ浮かび上がるイメージ） -->
+        <!-- 5. 固定アクションバー -->
         <div class="action-bar-container">
             <div class="action-bar-inner shadow-lg mx-3 mb-3 rounded-pill border-0 bg-dark text-white">
                 <div class="container-fluid px-4 py-2">
                     <div class="row align-items-center">
                         <div class="col-md-auto">
                             <div class="selection-count py-1">
-                                <span class="material-icons text-primary me-2">check_circle</span>
-                                <span id="selected-count-display" class="fw-bold fs-5">0</span> 件のコースを選択中
+                                <span id="selected-count-display" class="fw-bold fs-5">0</span> 件選択中
                             </div>
                         </div>
                         <div class="col text-end">
                             <div class="d-flex gap-2 justify-content-end">
-                                <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3 border-secondary">非公開</button>
-                                <button type="button" class="btn btn-danger btn-sm rounded-pill px-3">一括削除</button>
+                                {% if is_trash_mode %}
+                                    <button type="submit" name="action" value="restore" class="btn btn-success btn-sm rounded-pill px-4">一括復元</button>
+                                {% else %}
+                                    <button type="submit" name="action" value="delete" class="btn btn-danger btn-sm rounded-pill px-4">一括削除</button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -262,72 +164,15 @@
 </div>
 
 <style>
-    /* ねこねこ薬局 オリジナルスタイル */
-    :root {
-        --primary-color: #76b19d;
-        --secondary-bg: #f8faf9;
-    }
-    
     .fw-800 { font-weight: 800; }
-    .size-14 { font-size: 14px; }
-    .size-18 { font-size: 18px; }
-    .size-20 { font-size: 20px; }
-
-    /* カードのホバーエフェクト */
-    .course-item {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid transparent !important;
-    }
-    .course-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 24px rgba(118, 177, 157, 0.15) !important;
-        border-color: var(--primary-color) !important;
-    }
-
-    /* 選択中のスタイル */
-    .course-item.table-selected {
-        background-color: #f0f7f4 !important;
-        border: 1px solid var(--primary-color) !important;
-    }
-
-    /* 統計カード */
-    .stats-card {
-        border: none;
-        transition: transform 0.3s;
-    }
-    .stats-card:hover { transform: translateY(-2px); }
-
-    /* バッジのカスタマイズ */
-    .badge {
-        padding: 0.5em 0.8em;
-        border-radius: 6px;
-    }
-
-    /* 下部アクションバー（フローティングデザイン） */
+    .course-item { transition: transform 0.3s; border: 1px solid #eee !important; }
     .action-bar-container {
-        position: fixed;
-        bottom: 0;
-        left: var(--sidebar-width, 260px); 
-        width: calc(100% - var(--sidebar-width, 260px));
-        z-index: 1000;
-        transition: all 0.4s;
-        transform: translateY(100px); /* 初期は隠す */
-        opacity: 0;
+        position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000;
+        transition: all 0.4s; transform: translateY(100px); opacity: 0;
     }
-    .action-bar-container.active {
-        transform: translateY(0);
-        opacity: 1;
-    }
-    .action-bar-inner {
-        background: #2d3436 !important; /* ダークな配色で引き締める */
-    }
-
-    @media (max-width: 991px) {
-        .action-bar-container {
-            left: 0;
-            width: 100%;
-        }
-    }
+    .action-bar-container.active { transform: translateY(0); opacity: 1; }
+    .action-bar-inner { background: #2d3436 !important; }
+    .stats-card { border: none; }
 </style>
 
 <script>
@@ -336,36 +181,12 @@
         const actionBar = document.querySelector(".action-bar-container");
         const countDisplay = document.getElementById("selected-count-display");
 
-        function updateActionBar() {
-            const checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
-            countDisplay.innerText = checkedCount;
-            
-            if (checkedCount > 0) {
-                actionBar.classList.add("active");
-            } else {
-                actionBar.classList.remove("active");
-            }
-        }
-
         checkboxes.forEach(cb => {
             cb.addEventListener("change", function() {
-                const card = this.closest(".course-item");
-                if (this.checked) {
-                    card.classList.add("table-selected");
-                } else {
-                    card.classList.remove("table-selected");
-                }
-                updateActionBar();
-            });
-        });
-
-        // カード全体をクリックしてもチェックできるようにする
-        document.querySelectorAll(".course-item").forEach(item => {
-            item.addEventListener("click", function(e) {
-                if (e.target.type === "checkbox" || e.target.tagName === "BUTTON" || e.target.tagName === "A") return;
-                const cb = this.querySelector(".row-checkbox");
-                cb.checked = !cb.checked;
-                cb.dispatchEvent(new Event('change'));
+                const checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
+                countDisplay.innerText = checkedCount;
+                if (checkedCount > 0) { actionBar.classList.add("active"); } 
+                else { actionBar.classList.remove("active"); }
             });
         });
     });
