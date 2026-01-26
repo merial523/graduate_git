@@ -154,3 +154,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # 環境変数からAPIキーを取得
+
+
+# 開発用: メールをコンソールに出力
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
