@@ -60,18 +60,37 @@ class ExamListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
         context['q'] = self.request.GET.get('q', '')
         return context
 
+
 class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreateView):
     model = Exam
     template_name = "enrollments/exam_create.html"
-    success_url = reverse_lazy("enrollments:exam_list") 
     form_class = ExamForm
-    is_continue_url = "enrollments:exam_list"
     is_continue = True
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['prerequisite'].queryset = Exam.objects.filter(exam_type='mock', is_deleted=False)
         return form
+
+    def form_valid(self, form):
+        # 1. 新規アップロードがあるか確認
+        new_file = self.request.FILES.get('exams_file')
+        # 2. 過去のファイル選択（プルダウン）の値を確認
+        past_file_name = form.cleaned_data.get('exam_file')
+
+        if new_file:
+            # 新規があればそのまま（Djangoが自動保存）
+            pass
+        elif past_file_name:
+            # 新規がなく、過去のファイルが選択されていれば、そのパスをセット
+            # ※ ファイルパスは 'exams_files/ファイル名' の形式で保存されます
+            form.instance.exams_file.name = f"exams_files/{past_file_name}"
+        
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
+
 
 class ExamUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
     model = Exam
@@ -87,6 +106,19 @@ class ExamUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateVie
             exam_type='mock', is_deleted=False
         ).exclude(id=self.object.id)
         return form
+
+    def form_valid(self, form):
+        # 編集時も同様のロジック（新規があれば上書き、なければ既存維持）
+        new_file = self.request.FILES.get('exams_file')
+        past_file_name = form.cleaned_data.get('exam_file')
+
+        if new_file:
+            pass
+        elif past_file_name:
+            # プルダウンで別の過去ファイルを選び直した場合
+            form.instance.exams_file.name = f"exams_files/{past_file_name}"
+            
+        return super().form_valid(form)
 
 
 # --- 問題管理 ---
