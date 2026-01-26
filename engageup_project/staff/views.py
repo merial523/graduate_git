@@ -10,8 +10,33 @@ from common.views import BaseTemplateMixin
 from moderator.views import BadgeRankingMixin 
 
 
-class StaffIndexView(TemplateView):
+class StaffIndexView(TemplateView, 
+                    BadgeRankingMixin,
+                    BaseTemplateMixin):
     template_name = "staff/staff_index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        if user.is_authenticated:
+            # 1. 🏆 ランキングデータを取得 (Mixinの機能を使用)
+            badge_ranking = self.get_badge_ranking_data()
+            context['badge_ranking'] = badge_ranking
+
+            # 2. 🔔 最新のニュース（プレビュー用：3件）
+            context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
+
+            # 3. 📊 自分の学習統計（本物の数字を計算）
+            # 合格した検定の総数
+            context['completed_count'] = UserExamStatus.objects.filter(
+                user=user, is_passed=True, exam__is_active=True
+            ).count()
+            # 獲得したバッジの総数（本試験のみ）
+            context['badges_count'] = UserExamStatus.objects.filter(
+                user=user, is_passed=True, exam__exam_type='main', exam__is_active=True
+            ).count()
+
+        return context
 class UserListView(
     AdminOrModeratorOrStaffRequiredMixin,
     BaseTemplateMixin,
@@ -36,53 +61,14 @@ class UserListView(
 
         if ids:
             if action == "delete":
-                User.objects.filter(id__in=ids).update(is_active=False)
+                User.objects.filter(member_num__in=ids).update(is_active=False)
             elif action == "restore":
-                User.objects.filter(id__in=ids).update(is_active=True)
+                User.objects.filter(member_num__in=ids).update(is_active=True)
 
         return redirect(request.get_full_path())
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-
-        if user.is_authenticated:
-            # 1. 🏆 ランキングデータを取得 (Mixinの機能を使用)
-            context['badge_ranking'] = self.get_badge_ranking_data()
-
-            # 2. 🔔 最新のニュース（プレビュー用：3件）
-            context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
-
-            # 3. 📊 自分の学習統計（本物の数字を計算）
-            # 合格した検定の総数
-            context['completed_count'] = UserExamStatus.objects.filter(
-                user=user, is_passed=True, exam__is_active=True
-            ).count()
-            # 獲得したバッジの総数（本試験のみ）
-            context['badges_count'] = UserExamStatus.objects.filter(
-                user=user, is_passed=True, exam__exam_type='main', exam__is_active=True
-            ).count()
-
-        return context
     
-    def get_badge_ranking_data(self):
-        """
-        バッジ獲得数ランキング（上位5ユーザー）
-        """
-        return (
-            UserExamStatus.objects
-            .filter(
-                is_passed=True,
-                exam__exam_type='main',
-                exam__is_active=True
-            )
-            .values(
-            'user__member_num',   # ← 主キー
-            'user__username',     # ← 表示名
-            'user__name'          # ← 氏名（使うなら）
-            )
-            .annotate(badge_count=Count('id'))
-            .order_by('-badge_count')[:3]
-        )
+    
+    
 
 class StaffNewsListView(BaseTemplateMixin, ListView):
     """受講者用お知らせ一覧画面"""
