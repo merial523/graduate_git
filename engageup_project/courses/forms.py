@@ -26,7 +26,7 @@ class TrainingModuleForm(forms.ModelForm):
 
     class Meta:
         model = TrainingModule
-        fields = ["title", "video", "training_file", "content_text", "estimated_time", "order"]
+        fields = ["title", "video", "training_file", "content_text", "estimated_time"]
         
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -34,7 +34,6 @@ class TrainingModuleForm(forms.ModelForm):
             'training_file': forms.FileInput(attrs={'class': 'form-control'}), 
             'content_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'estimated_time': forms.NumberInput(attrs={'class': 'form-control'}),
-            'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):

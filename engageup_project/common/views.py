@@ -26,6 +26,7 @@ class BaseCreateView(CreateView):
         elif rank == "vistor":
             return reverse_lazy("vistor:vistor_index")
 
+
 class BaseTemplateMixin:
     """
     ログインユーザーの rank に応じて
