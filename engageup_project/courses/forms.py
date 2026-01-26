@@ -17,7 +17,6 @@ class CourseForm(forms.ModelForm):
 
 # 2. 研修モジュール（動画・テキスト）作成・編集用
 class TrainingModuleForm(forms.ModelForm):
-    # ★ 名前を 'existing_file' に固定します
     existing_file = forms.ChoiceField(
         choices=[], 
         required=False, 
@@ -27,13 +26,12 @@ class TrainingModuleForm(forms.ModelForm):
 
     class Meta:
         model = TrainingModule
-        # ★ モデルの項目名は 'training_file' です。一字一句合わせてください。
         fields = ["title", "video", "training_file", "content_text", "estimated_time", "order"]
         
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'video': forms.FileInput(attrs={'class': 'form-control'}),
-            'training_file': forms.FileInput(attrs={'class': 'form-control'}), # ★ ここを修正
+            'training_file': forms.FileInput(attrs={'class': 'form-control'}), 
             'content_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'estimated_time': forms.NumberInput(attrs={'class': 'form-control'}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
