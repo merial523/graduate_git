@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 from django.views.generic import ListView,TemplateView
 from common.views import AdminOrModeratorOrStaffRequiredMixin, BaseTemplateMixin
 from main.models import User
+from django.db.models import Count
 
 from django.views.generic import TemplateView, ListView
 from main.models import News, UserExamStatus
@@ -62,6 +63,26 @@ class UserListView(
             ).count()
 
         return context
+    
+    def get_badge_ranking_data(self):
+        """
+        バッジ獲得数ランキング（上位5ユーザー）
+        """
+        return (
+            UserExamStatus.objects
+            .filter(
+                is_passed=True,
+                exam__exam_type='main',
+                exam__is_active=True
+            )
+            .values(
+            'user__member_num',   # ← 主キー
+            'user__username',     # ← 表示名
+            'user__name'          # ← 氏名（使うなら）
+            )
+            .annotate(badge_count=Count('id'))
+            .order_by('-badge_count')[:3]
+        )
 
 class StaffNewsListView(BaseTemplateMixin, ListView):
     """受講者用お知らせ一覧画面"""
