@@ -1,135 +1,314 @@
 {% extends base_template %}
-
 {% load static %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'enrollments:exam_list' %}" class="text-decoration-none">検定管理</a></li>
+<li class="breadcrumb-item"><a href="{% url 'enrollments:question_list' exam_id %}" class="text-decoration-none">問題管理</a></li>
+<li class="breadcrumb-item active">{% if is_edit %}問題編集{% else %}問題追加{% endif %}</li>
+{% endblock %}
+
 {% block content %}
-<h2>{% if is_edit %}問題を編集{% else %}問題を追加{% endif %}</h2>
+<div class="container pb-5">
+    <!-- ヘッダーエリア -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="fw-800 text-dark m-0 fw-bold">{% if is_edit %}問題編集{% else %}問題追加{% endif %}</h1>
+        </div>
 
-<!-- ★ ここにAI生成へのリンクボタンを追加 -->
-<div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
-    <a href="{% url 'enrollments:question_list' exam_id %}" style="text-decoration: none; color: #666;">
-        ← 問題一覧に戻る
-    </a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'enrollments:question_list' exam_id %}" class="btn btn-outline-secondary btn-rounded-cute px-3">
+                <span class="material-icons size-18 align-middle">arrow_back</span> 一覧に戻る
+            </a>
+            {% if not is_edit %}
+            <a href="{% url 'enrollments:exam_ai_add' exam_id %}" class="btn btn-ai-sparkle btn-rounded-cute px-4 fw-bold shadow-sm">
+                <span class="material-icons size-18 align-middle">auto_awesome</span> AIで自動生成
+            </a>
+            {% endif %}
+        </div>
+    </div>
 
-    {% if not is_edit %}
-        <span style="color: #ccc;">|</span>
-        <a href="{% url 'enrollments:exam_ai_add' exam_id %}" 
-           style="background-color: #4CAF50; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.9em;">
-            ✨ AIで問題を自動生成する
-        </a>
-    {% endif %}
+    <form method="post" id="question-form">
+        {% csrf_token %}
+
+        <div class="row g-4">
+            <!-- 左側：問題文 -->
+            <div class="col-lg-12">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4">
+                    <label class="form-label fw-800 text-dark d-flex align-items-center mb-3">
+                        <span class="material-icons text-primary me-2">help_outline</span>
+                        問題文
+                        <span class="badge bg-danger ms-2" style="font-size: 0.6rem;">必須</span>
+                    </label>
+                    <div class="question-textarea-wrapper">
+                        {{ form.text }}
+                    </div>
+                    {% if form.text.errors %}
+                    <div class="text-danger small mt-2">{{ form.text.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 下側：選択肢管理 -->
+            <div class="col-lg-12">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="material-icons text-primary me-2">grid_view</span>
+                        <label class="form-label fw-800 text-dark m-0">選択肢の設定（4択）※必ず正解を1つ選択してください</label>
+                    </div>
+
+                    {{ formset.management_form }}
+
+                    <div class="row g-3"> <!-- 2x2のグリッド -->
+                        {% for choice_form in formset %}
+                        <div class="col-md-6">
+                            <div class="choice-tile p-4 rounded-5 border-2 transition-all {% if choice_form.is_correct.value %}is-correct-card{% endif %}">
+                                {{ choice_form.id }}
+                                
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <!-- 番号バッジ -->
+                                    <div class="choice-number-badge shadow-sm">
+                                        {{ forloop.counter }}
+                                    </div>
+                                    
+                                    <!-- 正解スイッチ：デザインを強化 -->
+                                    <div class="form-check custom-bubble-toggle">
+                                        {{ choice_form.is_correct }}
+                                        <label class="toggle-label" for="{{ choice_form.is_correct.id_for_label }}">
+                                            <span class="toggle-inner"></span>
+                                            <span class="text-off">正解に設定</span>
+                                            <span class="text-on">正解！</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- テキスト入力 -->
+                                <div class="choice-input-wrapper">
+                                    {{ choice_form.text }}
+                                </div>
+
+                                {# DELETE用（四択固定なので非表示で保持） #}
+                                <div class="d-none">
+                                    {{ choice_form.DELETE }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 下部：アクション -->
+            <div class="col-12 text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-rounded-cute px-5 py-3 fw-800 shadow-sm" style="min-width: 250px;">
+                    問題と選択肢を登録する
+                    <span class="material-icons align-middle ms-1">check_circle</span>
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
 
+<style>
+    .fw-800 { font-weight: 800; }
+    .extra-small { font-size: 0.7rem; }
+    .size-18 { font-size: 18px; }
+    .transition-all { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
+    /* 問題文入力エリア */
+    .question-textarea-wrapper textarea {
+        width: 100%;
+        height: 120px !important;      /* 固定の高さを指定 */
+        min-height: 120px !important;  /* 最小高さも合わせる */
+        padding: 15px;
+        border: 2px solid #f0f0f0;
+        border-radius: 20px;
+        background-color: #fcfcfc;
+        resize: vertical;
+        font-size: 1.1rem;
+        transition: 0.3s;
+    }
+    .question-textarea-wrapper textarea:focus {
+        outline: none;
+        border-color: #76b19d;
+        background-color: #fff;
+        box-shadow: 0 5px 15px rgba(118, 177, 157, 0.1);
+    }
 
-<hr>
+    /* 2x2タイルの基本スタイル */
+    .choice-tile {
+        background-color: #fdfdfd;
+        border: 2px solid #f0f0f0;
+        position: relative;
+    }
+    .choice-tile:hover {
+        border-color: #76b19d;
+        transform: translateY(-3px);
+    }
 
-<form method="post">
-    {% csrf_token %}
+    /* 番号バッジ：A,B,C,D風に丸く可愛く */
+    .choice-number-badge {
+        width: 36px;
+        height: 36px;
+        background: #76b19d;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.1rem;
+    }
 
-    {{ form.as_p }}
+    /* 入力フィールド：タイル内に馴染ませる */
+    .choice-input-wrapper textarea,
+    .choice-input-wrapper input[type="text"] {
+        width: 100%;
+        border: 1px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 12px;
+        background: white;
+        font-size: 0.95rem;
+    }
+    .choice-input-wrapper input:focus {
+        outline: none;
+        border-color: #76b19d;
+        box-shadow: 0 4px 12px rgba(118, 177, 157, 0.1);
+    }
 
-    <h3>選択肢</h3>
+    /* --- 正解時の演出 --- */
+    .is-correct-card {
+        background-color: #f0fdf4 !important; /* 薄い緑色 */
+        border-color: #2ecc71 !important;
+        box-shadow: 0 8px 20px rgba(46, 204, 113, 0.15) !important;
+    }
+    .is-correct-card .choice-number-badge {
+        background: #2ecc71 !important;
+        transform: scale(1.1);
+    }
 
-    {% if formset.non_form_errors %}
-    <div style="color: red; font-weight: bold; margin-bottom: 10px;">
-        {{ formset.non_form_errors }}
-    </div>
-    {% endif %}
+    /* 正解トグルスイッチの装飾 */
+    .custom-bubble-toggle {
+        padding: 0;
+        margin: 0;
+        display: inline-block;
+        cursor: pointer;
+    }
 
-    {{ formset.management_form }}
+    /* 本物のチェックボックスは隠す */
+    .custom-bubble-toggle input[type="checkbox"] {
+        display: none;
+    }
 
-    <div id="choices">
-        {% for choice_form in formset %}
-            <div class="choice-form">
-                {{ choice_form.id }}
+    /* トグルの土台（レール） */
+    .toggle-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 800;
+        transition: 0.3s;
+    }
 
-                <div>
-                    <label>選択肢</label>
-                    {{ choice_form.text }}
-                </div>
+    /* スイッチ本体 */
+    .toggle-inner {
+        position: relative;
+        width: 60px;
+        height: 30px;
+        background-color: #dee2e6; /* OFFの時の色 */
+        border-radius: 30px;
+        margin-bottom: 5px;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
 
-                <div>
-                    <label>正解</label>
-                    {{ choice_form.is_correct }}
-                </div>
+    /* スイッチ内の「丸」 */
+    .toggle-inner::before {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        width: 24px;
+        height: 24px;
+        background-color: white;
+        border-radius: 50%;
+        transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
 
-                {# DELETEはhiddenで保持（文字も出さない） #}
-                {{ choice_form.DELETE.as_hidden }}
+    /* --- ON状態（チェック時）のスタイル --- */
+    /* レールの色を鮮やかなグリーンに */
+    input[type="checkbox"]:checked + .toggle-label .toggle-inner {
+        background-color: #2ecc71;
+    }
 
-                <button type="button" class="remove-choice">削除</button>
-                <hr>
-            </div>
-        {% endfor %}
-    </div>
+    /* 丸ボタンを右へ移動 + 少し横に伸ばして「ぷるん」感を出す */
+    input[type="checkbox"]:checked + .toggle-label .toggle-inner::before {
+        left: 32px;
+        transform: scale(1.1);
+    }
 
-    <button type="button" id="add-choice">＋選択肢を追加</button>
+    /* ラベルテキストの切り替え演出 */
+    .text-on { display: none; color: #2ecc71; }
+    .text-off { display: block; color: #adb5bd; }
 
-    <br><br>
-    <button type="submit">
-        {% if is_edit %}更新{% else %}登録{% endif %}
-    </button>
-    <a href="{% url 'enrollments:question_list' exam_id %}" style="text-decoration: none; color: #666;">
-        ← 問題一覧に戻る
-    </a>
-</form>
+    input[type="checkbox"]:checked + .toggle-label .text-on { display: block; }
+    input[type="checkbox"]:checked + .toggle-label .text-off { display: none; }
 
-<!-- ===== formset用 JS（完全版） ===== -->
+    /* ホバー時に少し大きくして「押しやすそう」にする */
+    .choice-tile:hover .toggle-inner {
+        transform: scale(1.05);
+    }
+    /* AIボタン */
+    .btn-ai-sparkle {
+        background: linear-gradient(135deg, #4CAF50 0%, #2ecc71 100%);
+        color: white;
+        border: none;
+    }
+    .btn-ai-sparkle:hover {
+        background: linear-gradient(135deg, #43a047 0%, #27ae60 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-rounded-cute {
+        border-radius: 50px;
+        transition: 0.3s;
+    }
+
+    .bg-light-green { background-color: #f0fdf4; }
+</style>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
-    const choicesDiv = document.getElementById("choices");
-    const addButton = document.getElementById("add-choice");
-    const totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
-    const prefix = totalForms.name.replace("-TOTAL_FORMS", "");
-
-    addButton.addEventListener("click", function () {
-        const index = parseInt(totalForms.value);
-
-        const html = `
-        <div class="choice-form">
-            <input type="hidden" name="${prefix}-${index}-id" id="${prefix}-${index}-id">
-
-            <div>
-                <label>選択肢</label>
-                <input type="text"
-                       name="${prefix}-${index}-text"
-                       id="id_${prefix}-${index}-text">
-            </div>
-
-            <div>
-                <label>正解</label>
-                <input type="checkbox"
-                       name="${prefix}-${index}-is_correct"
-                       id="id_${prefix}-${index}-is_correct">
-            </div>
-
-            <input type="hidden"
-                   name="${prefix}-${index}-DELETE"
-                   id="id_${prefix}-${index}-DELETE">
-
-            <button type="button" class="remove-choice">削除</button>
-            <hr>
-        </div>
-        `;
-
-        choicesDiv.insertAdjacentHTML("beforeend", html);
-        totalForms.value = parseInt(index) + 1;
-    });
-
-    choicesDiv.addEventListener("click", function (e) {
-        if (e.target.classList.contains("remove-choice")) {
-            const formDiv = e.target.closest(".choice-form");
-            const deleteInput = formDiv.querySelector(
-                'input[name$="-DELETE"]'
-            );
-            if (deleteInput) {
-                deleteInput.value = "on";
+    // すべての正解スイッチを取得
+    const switches = document.querySelectorAll('.custom-bubble-toggle input[type="checkbox"]');
+    
+    switches.forEach(sw => {
+        sw.addEventListener('change', function() {
+            const currentCard = this.closest('.choice-tile');
+            
+            if (this.checked) {
+                // 【択一ロジック】他のすべてのスイッチをOFFにする
+                switches.forEach(otherSw => {
+                    if (otherSw !== this) {
+                        otherSw.checked = false;
+                        // 他のカードの「正解色」を解除
+                        const otherCard = otherSw.closest('.choice-tile');
+                        if (otherCard) {
+                            otherCard.classList.remove('is-correct-card');
+                        }
+                    }
+                });
+                // クリックしたカードを「正解色」にする
+                currentCard.classList.add('is-correct-card');
+            } else {
+                // 自分でOFFにした場合は色を消す
+                currentCard.classList.remove('is-correct-card');
             }
-            formDiv.style.display = "none";
-        }
+        });
     });
 });
 </script>
-
 {% endblock %}

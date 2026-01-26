@@ -210,6 +210,8 @@ class ExamBulkActionView(AdminOrModeratorRequiredMixin, View):
 # --- AI自動生成 ---
 
 class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ContextMixin, View):
+    """AIによる問題自動生成（セーフティフィルター緩和・エラー対策済み版）"""
+    
     def get(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
         context = self.get_context_data(exam=exam)
@@ -217,15 +219,24 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
 
     def post(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
+        
+        # 教材の存在チェック
         if not exam.exams_file:
             context = self.get_context_data(error='教材が登録されていません。', exam_id=exam_id)
             return render(request, 'enrollments/enrollments_error.html', context) 
+        
         num_questions = request.POST.get('count', 5)
         difficulty = request.POST.get('difficulty', '中級')
+
         try:
+            # 1. 教材データを読み込み
             with exam.exams_file.open('rb') as f:
                 file_data = f.read()
+
+            # 2. AIの設定
             genai.configure(api_key=settings.GEMINI_API_KEY)
+            
+            # ★ 修正ポイント：セーフティ設定を追加して「回答拒否」を防ぐ
             model = genai.GenerativeModel(
                 model_name="gemini-flash-latest",
                 safety_settings={
@@ -235,23 +246,78 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
                     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
                 }
             )
-            prompt = f"教材内容から4択問題({num_questions}問、難易度:{difficulty})をJSON形式で作成してください..."
-            response = model.generate_content([prompt, {'mime_type': 'application/pdf', 'data': file_data}])
+            
+            # 3. 厳格なプロンプトの定義
+            prompt = f"""
+                以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
+                問題の難易度は「{difficulty}」にしてください。
+
+                【重要：JSONの構造ルール】
+                出力は必ず、以下の構造を持つJSON形式のリストのみで返してください。
+                キーの名前（text, choices, is_correct）は、一字一句違わず以下の通りに指定すること。
+
+                [
+                {{
+                    "text": "問題文をここに書く",
+                    "choices": [
+                    {{"text": "正解の選択肢", "is_correct": true}},
+                    {{"text": "間違いの選択肢1", "is_correct": false}},
+                    {{"text": "間違いの選択肢2", "is_correct": false}},
+                    {{"text": "間違いの選択肢3", "is_correct": false}}
+                    ]
+                }}
+                ]
+
+                【禁止事項】
+                1. JSON以外の説明文、挨拶などは一切含めないこと。
+                2. 正解（is_correct: true）の位置は、ランダムに配置すること。
+            """
+
+            # 4. AIへのリクエスト
+            response = model.generate_content([
+                prompt, 
+                {'mime_type': 'application/pdf', 'data': file_data}
+            ])
+
+            # 5. 解析処理（JSONのクリーニング）
             raw_text = response.text.replace('```json', '').replace('```', '').strip()
             quiz_data = json.loads(raw_text)
-            if isinstance(quiz_data, dict): quiz_data = quiz_data.get('questions', [quiz_data])
-            for item in quiz_data:
-                q_text = item.get('text') or item.get('question')
-                if q_text:
-                    q = Question.objects.create(exam=exam, text=q_text)
-                    choices = item.get('choices', [])
-                    random.shuffle(choices)
-                    for c in choices:
-                        Choice.objects.create(question=q, text=c.get('text'), is_correct=c.get('is_correct', False))
-            return redirect('enrollments:question_list', exam_id=exam.id)
-        except Exception as e:
-            return render(request, 'enrollments/enrollments_error.html', self.get_context_data(error=str(e), exam_id=exam_id))
 
+            # データが単一辞書ならリストに包む（型エラー対策）
+            if isinstance(quiz_data, dict):
+                quiz_data = quiz_data.get('questions', [quiz_data])
+
+            # 6. データベースへの保存
+            for item in quiz_data:
+                # 'text'がなくても 'question' 等で探す（KeyError対策）
+                q_text = item.get('text') or item.get('question') or item.get('question_text')
+                if not q_text:
+                    continue
+
+                q = Question.objects.create(exam=exam, text=q_text)
+
+                # 選択肢の取得
+                choices_data = item.get('choices') or item.get('options')
+                if not choices_data:
+                    continue
+
+                # シャッフルして保存
+                random.shuffle(choices_data)
+                for c in choices_data:
+                    c_text = c.get('text') or c.get('content') or c.get('option')
+                    if c_text:
+                        Choice.objects.create(
+                            question=q, 
+                            text=c_text, 
+                            is_correct=c.get('is_correct', False)
+                        )
+            
+            return redirect('enrollments:question_list', exam_id=exam.id)
+
+        except Exception as e:
+            # エラーの詳細を error.html に送る
+            context = self.get_context_data(error=str(e), exam_id=exam_id)
+            return render(request, 'enrollments/enrollments_error.html', context)
 
 # --- 受講者用 ---
 

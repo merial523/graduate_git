@@ -1,46 +1,195 @@
 {% extends base_template %}
+{% load static %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'enrollments:exam_list' %}" class="text-decoration-none">検定管理</a></li>
+<li class="breadcrumb-item active">問題管理-{{ exam.title }}-</li>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'enrollments:exam_list' %}">検定一覧</a></li>
-            <li class="breadcrumb-item active">{{ exam.title }} の問題管理</li>
-        </ol>
-    </nav>
+<div class="user-management-container pb-5">
+    <!-- ヘッダーエリア -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="page-title text-dark m-0 fw-800">問題管理-{{ exam.title }}-</h1>
+            <p class="text-muted mt-1 mb-0">現在の登録問題数：{{ questions.count }}問</p>
+        </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ exam.title }} - 問題一覧</h2>
-        <a href="{% url 'enrollments:add_question' exam.id %}" class="btn btn-success">＋新規問題を追加</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'enrollments:exam_list' %}" class="btn btn-outline-secondary btn-rounded-cute px-3 shadow-sm bg-white">
+                <span class="material-icons size-18 align-middle">arrow_back</span> 検定一覧に戻る
+            </a>
+            <a href="{% url 'enrollments:add_question' exam.id %}" class="btn btn-primary btn-rounded-cute px-4 fw-bold shadow">
+                <span class="material-icons size-18 align-middle">add</span> 新規問題を追加
+            </a>
+        </div>
     </div>
 
-    {% for question in questions %}
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong>問 {{ forloop.counter }}</strong>
-            <div>
-                <a href="{% url 'enrollments:edit_question' question.id %}" class="btn btn-sm btn-primary">編集</a>
-                <!-- 削除ボタン（簡易版） -->
-                <form action="{% url 'enrollments:delete_question' question.id %}" method="post" style="display:inline;" onsubmit="return confirm('本当に削除しますか？');">
+    <!-- 問題リスト -->
+    <div class="question-list">
+        {% for question in questions %}
+        <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 mb-4 position-relative exam-card-accent {% if exam.exam_type == 'mock' %}accent-mock{% else %}accent-main{% endif %}">
+            <div class="row g-3 align-items-start">
+                <!-- メイン内容 -->
+                <div class="col">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge-cute {% if exam.exam_type == 'mock' %}badge-mock{% else %}badge-main{% endif %}">
+                            問 {{ forloop.counter }}
+                        </span>
+                        <span class="text-muted extra-small">ID: #{{ question.id }}</span>
+                    </div>
+
+                    <p class="fw-800 text-dark fs-5 mb-4 line-height-base">{{ question.text }}</p>
+
+                    <!-- 選択肢 2x2 表示 -->
+                    <div class="row g-2">
+                        {% for choice in question.choices.all %}
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 border d-flex align-items-center gap-3 {% if choice.is_correct %}choice-correct-box{% else %}bg-light border-0 opacity-75{% endif %}">
+                                <div class="choice-num-small {% if choice.is_correct %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ forloop.counter }}
+                                </div>
+                                <span class="small fw-bold {% if choice.is_correct %}text-success{% else %}text-muted{% endif %}">
+                                    {{ choice.text }}
+                                </span>
+                                {% if choice.is_correct %}
+                                <span class="material-icons text-success ms-auto size-18">check_circle</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 操作ボタン（常時表示） -->
+                <div class="col-auto border-start ps-3 d-flex flex-column gap-2">
+                    <a href="{% url 'enrollments:edit_question' question.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold d-flex align-items-center">
+                        <span class="material-icons size-18 me-1">edit</span> 編集
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-bold d-flex align-items-center delete-question-trigger" 
+                            data-url="{% url 'enrollments:delete_question' question.id %}"
+                            data-q-num="{{ forloop.counter }}">
+                        <span class="material-icons size-18 me-1">delete_outline</span> 削除
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-5 text-center">
+            <span class="material-icons fs-1 text-muted opacity-25 mb-3">quiz</span>
+            <h5 class="fw-800 text-muted">まだ問題が登録されていません</h5>
+            <a href="{% url 'enrollments:add_question' exam.id %}" class="btn btn-primary btn-rounded-cute px-4 fw-bold mt-2 shadow-sm">
+                最初の問題を追加する
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 削除確認ポップアップモーダル -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-800 text-danger d-flex align-items-center">
+                    <span class="material-icons me-2">warning</span> 削除の確認
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4">
+                <p class="mb-0">問 <span id="target-q-num" class="fw-bold"></span> を完全に削除してもよろしいですか？</p>
+                <p class="text-muted extra-small mt-2">※この操作は取り消せません。</p>
+            </div>
+            <div class="modal-footer border-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">キャンセル</button>
+                <form id="delete-question-form" method="post">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-danger">削除</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">削除を実行する</button>
                 </form>
             </div>
         </div>
-        <div class="card-body">
-            <p class="card-text fw-bold">{{ question.text }}</p>
-            <ul class="list-group list-group-flush">
-                {% for choice in question.choices.all %}
-                <li class="list-group-item {% if choice.is_correct %}list-group-item-success{% endif %}">
-                    {{ choice.text }} {% if choice.is_correct %}<span class="badge bg-success ms-2">正解</span>{% endif %}
-                </li>
-                {% endfor %}
-            </ul>
+    </div>
+</div>
+
+<!-- 処理中ポップアップモーダル (指定のティール色ぐるぐる) -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary" id="loading-text">問題を削除しています...</h5>
+                    <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+                </div>
+            </div>
         </div>
     </div>
-    {% empty %}
-    <div class="alert alert-info">まだ問題が登録されていません。</div>
-    {% endfor %}
 </div>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    .extra-small { font-size: 0.7rem; }
+    .size-18 { font-size: 18px; }
+    .line-height-base { line-height: 1.6; }
+
+    /* カードアクセント */
+    .exam-card-accent { border-left: 8px solid transparent !important; }
+    .accent-mock { border-left-color: #007bff !important; }
+    .accent-main { border-left-color: #dc3545 !important; }
+
+    /* バッジ */
+    .badge-cute { font-size: 0.7rem; padding: 4px 12px; border-radius: 10px; font-weight: bold; }
+    .badge-mock { background: #eef7ff; color: #007bff; }
+    .badge-main { background: #fff5f5; color: #dc3545; }
+
+    /* 選択肢表示 */
+    .choice-correct-box { background-color: #f0fdf4; border: 2px solid #2ecc71 !important; }
+    .choice-num-small {
+        width: 24px; height: 24px; color: white; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 900;
+    }
+
+    /* ボタン・ローダー */
+    .btn-rounded-cute { border-radius: 50px; transition: 0.3s; }
+    .btn-primary { background-color: #76b19d; border: none; }
+    .btn-primary:hover { background-color: #5fa089; transform: translateY(-2px); }
+
+    .custom-loader {
+        width: 50px; height: 50px; display: grid; border: 4px solid #0000; border-radius: 50%; border-right-color: #76b19d;
+        animation: l15 1s infinite linear; margin: 0 auto;
+    }
+    .custom-loader::before, .custom-loader::after { content: ""; grid-area: 1/1; margin: 2px; border: inherit; border-radius: 50%; animation: l15 2s infinite; }
+    .custom-loader::after { margin: 8px; animation-duration: 3s; }
+    @keyframes l15{ 100%{transform: rotate(1turn)} }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const deleteForm = document.getElementById('delete-question-form');
+    const targetQNumDisplay = document.getElementById('target-q-num');
+
+    // 削除ボタンクリック時
+    document.querySelectorAll('.delete-question-trigger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.dataset.url;
+            const qNum = this.dataset.qNum;
+            
+            // フォームの送信先URLと表示用の問題番号をセット
+            deleteForm.action = url;
+            targetQNumDisplay.innerText = qNum;
+            
+            deleteConfirmModal.show();
+        });
+    });
+
+    // 削除実行（フォーム送信）時
+    deleteForm.addEventListener('submit', function() {
+        deleteConfirmModal.hide();
+        statusModal.show();
+    });
+});
+</script>
 {% endblock %}
