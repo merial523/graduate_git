@@ -30,7 +30,7 @@
                     <th style="width:40px;">
                         <input type="checkbox" id="select-all">
                     </th>
-                    <th>会員番号</th>
+                    <!-- <th>会員番号</th> -->
                     <th>名前</th>
                     <th>Email</th>
                     <th>権限</th>
@@ -43,8 +43,8 @@
                     <td>
                         <input type="checkbox" name="user_ids" value="{{ user.id }}">
                     </td>
-                    <td>{{ user.member_num }}</td>
-                    <td>{{ user.name }}</td>
+                    <!-- <td>{{ user.member_num }}</td> -->
+                    <td>{{ user.username }}</td>
                     <td>{{ user.email }}</td>
                     <td>{{ user.rank }}</td>
                     <td>
