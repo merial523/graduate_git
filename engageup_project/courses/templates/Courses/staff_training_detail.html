@@ -1,131 +1,129 @@
 {% extends base_template %}
 {% block content %}
 <div class="container py-4" style="max-width: 1100px;">
-    
-    <!-- 1. パンくずリスト -->
+
+    <!-- パンくず -->
     <nav class="mb-2">
         <a href="{% url 'courses:staff_course_list' %}" class="text-decoration-none small" style="color: #0d6efd;">研修一覧</a>
         <span class="small text-muted"> / {{ module.course.subject }}</span>
     </nav>
 
-    <!-- 2. メインタイトル -->
-    <h1 class="fw-bold mb-4" style="font-size: 2rem;">{{ module.title }}</h1>
-
-    <div class="row g-4">
-        <!-- 左側：メインコンテンツ -->
-        <div class="col-lg-7">
-            <!-- 動画プレイヤー -->
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-dark">
-                {% if module.video %}
-                    <video controls class="w-100" style="max-height: 450px;">
-                        <source src="{{ module.video.url }}" type="video/mp4">
-                    </video>
-                {% else %}
-                    <div class="text-white d-flex align-items-center justify-content-center" style="height: 350px;">
-                        <p class="mb-0">動画準備中</p>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- 研修テキスト -->
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>研修テキスト・要約</h5>
-                    <hr>
-                    <div class="training-content" style="line-height: 1.7; color: #333;">
-                        {{ module.content_text|safe|default:"テキスト情報はありません。" }}
-                    </div>
-                </div>
-            </div>
+    <!-- タイトル＋学習時間 -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
+        <h1 class="fw-bold mb-2" style="font-size: 2rem;">
+            {{ module.title }}
+        </h1>
+        <div class="badge rounded-pill bg-primary fs-6 px-3 py-2">
+            ⏱ {{ module.estimated_time }}分
         </div>
+    </div>
 
-        <!-- 右側：サイドバー -->
-        <div class="col-lg-5">
-            <!-- 学習時間の目安（画像に近いデザイン） -->
-            <div class="card border-0 shadow-sm rounded-4 mb-3 text-center text-white" style="background-color: #0d6efd;">
-                <div class="card-body py-3">
-                    <div class="small opacity-75">学習時間の目安</div>
-                    <div class="display-5 fw-bold">{{ module.estimated_time }}分</div>
-                </div>
-            </div>
+    <!-- 動画（横いっぱい） -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-dark">
+        {% if module.video %}
+        <video controls class="w-100" style="max-height: 480px;">
+            <source src="{{ module.video.url }}" type="video/mp4">
+        </video>
+        {% else %}
+        <div class="text-white d-flex align-items-center justify-content-center" style="height: 380px;">
+            <p class="mb-0">動画準備中</p>
+        </div>
+        {% endif %}
+    </div>
 
-            <!-- 理解度チェック（画像に近いデザイン） -->
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4">💡 理解度チェック</h5>
-                    
-                    {% for example in module.examples.all %}
-                    <div class="example-section mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
-                        <p class="text-primary fw-bold small mb-1">例題 {{ forloop.counter }}</p>
-                        <p class="fw-bold mb-3" style="font-size: 1.05rem;">{{ example.text }}</p>
-                        
-                        <div class="d-grid gap-2">
-                            {% for choice in example.choices.all %}
-                            <button class="btn btn-outline-secondary text-start py-2 px-3 small-choice" 
-                                    style="font-size: 0.9rem; border-color: #dee2e6;"
-                                    onclick="checkAnswer(this, {{ choice.is_correct|yesno:'true,false' }})">
-                                {{ choice.text }}
-                            </button>
-                            {% endfor %}
-                        </div>
-
-                        <!-- 正解・解説エリア（初期は非表示） -->
-                        <div class="explanation-area d-none mt-3 p-3 rounded-3 border bg-light" style="font-size: 0.85rem;">
-                            <div class="result-msg fw-bold mb-1"></div>
-                            <div class="text-secondary"><strong>【解説】</strong><br>{{ example.explanation }}</div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted small">この研修に例題はありません。</p>
-                    {% endfor %}
-                </div>
+    <!-- テキスト（横いっぱい・スクロール） -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>研修テキスト・要約</h5>
+            <hr>
+            <div class="training-content"
+                 style="line-height: 1.7; color: #333; max-height: 280px; overflow-y: auto; padding-right: 8px;">
+                {{ module.content_text|safe|default:"テキスト情報はありません。" }}
             </div>
         </div>
     </div>
+
+    <!-- 理解度チェック（横いっぱい） -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4">💡 理解度チェック</h5>
+
+            {% for example in module.examples.all %}
+            <div class="example-section mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
+                <p class="text-primary fw-bold small mb-1">例題 {{ forloop.counter }}</p>
+                <p class="fw-bold mb-3" style="font-size: 1.05rem;">{{ example.text }}</p>
+
+                <div class="row g-2">
+                    {% for choice in example.choices.all %}
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-secondary w-100 text-start py-2 px-3 small-choice"
+                                onclick="checkAnswer(this, {{ choice.is_correct|yesno:'true,false' }})">
+                            {{ choice.text }}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 解説（高さ固定＋スクロール） -->
+                <div class="explanation-area d-none mt-3 p-3 rounded-3 border bg-light"
+                style="font-size: 1rem; max-height: 140px; overflow-y: auto; line-height: 1.7;">
+                    <div class="result-msg fw-bold mb-1"></div>
+                    <div class="text-secondary">
+                        <strong>【解説】</strong><br>{{ example.explanation }}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted small">この研修に例題はありません。</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 完了・保存ボタン -->
+
 </div>
 
 <script>
-    function checkAnswer(button, isCorrect) {
-        const parent = button.closest('.example-section');
-        const explanation = parent.querySelector('.explanation-area');
-        const resultMsg = parent.querySelector('.result-msg');
-        const allButtons = parent.querySelectorAll('.small-choice');
+function checkAnswer(button, isCorrect) {
+    const parent = button.closest('.example-section');
+    const explanation = parent.querySelector('.explanation-area');
+    const resultMsg = parent.querySelector('.result-msg');
+    const allButtons = parent.querySelectorAll('.small-choice');
 
-        // すべてのボタンを無効化
-        allButtons.forEach(btn => btn.classList.add('disabled'));
+    // 全ボタン無効化
+    allButtons.forEach(btn => btn.classList.add('disabled'));
 
-        if (isCorrect) {
-            button.classList.replace('btn-outline-secondary', 'btn-success');
-            button.classList.add('text-white');
-            resultMsg.innerHTML = '<span class="text-success">✨ 正解！</span>';
-        } else {
-            button.classList.replace('btn-outline-secondary', 'btn-danger');
-            button.classList.add('text-white');
-            resultMsg.innerHTML = '<span class="text-danger">❌ 残念！</span>';
-        }
-
-        // 解説を表示
-        explanation.classList.remove('d-none');
+    if (isCorrect) {
+        button.classList.replace('btn-outline-secondary', 'btn-success');
+        button.classList.add('text-white');
+        resultMsg.innerHTML = '<span class="text-success">✨ 正解！</span>';
+    } else {
+        button.classList.replace('btn-outline-secondary', 'btn-danger');
+        button.classList.add('text-white');
+        resultMsg.innerHTML = '<span class="text-danger">❌ 残念！</span>';
     }
+
+    explanation.classList.remove('d-none');
+}
 </script>
 
 <style>
-    /* 全体フォントの調整 */
-    body { background-color: #f0f2f5; font-family: sans-serif; }
-    
-    /* 選択肢が縦に長くなりすぎないように調整 */
-    .small-choice {
-        transition: all 0.2s;
-        border-radius: 10px;
-    }
-    .small-choice:hover:not(.disabled) {
-        background-color: #f8f9fa;
-        border-color: #0d6efd;
-        color: #0d6efd;
-    }
-    
-    /* 研修テキスト内のリストなどの余白 */
-    .training-content ul { padding-left: 1.2rem; }
-    .training-content p { margin-bottom: 1rem; }
+body {
+    background-color: #f0f2f5;
+    font-family: sans-serif;
+}
+
+.small-choice {
+    transition: all 0.2s;
+    border-radius: 10px;
+}
+.small-choice:hover:not(.disabled) {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.training-content ul { padding-left: 1.2rem; }
+.training-content p { margin-bottom: 1rem; }
 </style>
 {% endblock %}

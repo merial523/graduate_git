@@ -14,7 +14,7 @@
     <div class="display-toggle">
       {% if show_all %}
       <a href="{% url 'administer:user_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-        有効ユーザーのみ
+        <span class="material-icons fw-bold small align-middle">visibility</span>有効ユーザーのみ
       </a>
       {% else %}
       <a href="{% url 'administer:user_list' %}?show=all" class="btn btn-outline-dark btn-sm rounded-pill px-3">

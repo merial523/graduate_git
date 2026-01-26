@@ -311,7 +311,6 @@ body {
   color: #fff !important;
 }
 .btn-outline-secondary::before {
-  content: "visibility";
   font-family: "Material Icons";
 }
 /* 「戻る」ボタン用（もしクラスが特定できれば） */
