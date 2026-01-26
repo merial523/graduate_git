@@ -1,76 +1,78 @@
 {% extends base_template %}
 {% block content %}
-<div class="container py-5">
-    <!-- ヘッダー -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'courses:staff_course_list' %}">研修一覧</a></li>
-            <li class="breadcrumb-item active">{{ module.course.subject }}</li>
-        </ol>
+<div class="container py-4" style="max-width: 1100px;">
+    
+    <!-- 1. パンくずリスト -->
+    <nav class="mb-2">
+        <a href="{% url 'courses:staff_course_list' %}" class="text-decoration-none small" style="color: #0d6efd;">研修一覧</a>
+        <span class="small text-muted"> / {{ module.course.subject }}</span>
     </nav>
-    <h2 class="fw-bold mb-4">{{ module.title }}</h2>
+
+    <!-- 2. メインタイトル -->
+    <h1 class="fw-bold mb-4" style="font-size: 2rem;">{{ module.title }}</h1>
 
     <div class="row g-4">
-        <!-- 左側：動画エリア -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <!-- 左側：メインコンテンツ -->
+        <div class="col-lg-7">
+            <!-- 動画プレイヤー -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-dark">
                 {% if module.video %}
-                    <video controls class="w-100" style="background: #000; max-height: 500px;">
+                    <video controls class="w-100" style="max-height: 450px;">
                         <source src="{{ module.video.url }}" type="video/mp4">
-                        お使いのブラウザは動画再生に対応していません。
                     </video>
                 {% else %}
-                    <div class="bg-dark text-white d-flex align-items-center justify-content-center" style="height: 400px;">
-                        <p>動画準備中</p>
+                    <div class="text-white d-flex align-items-center justify-content-center" style="height: 350px;">
+                        <p class="mb-0">動画準備中</p>
                     </div>
                 {% endif %}
             </div>
 
-            <!-- 下：AI要約テキスト -->
+            <!-- 研修テキスト -->
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2">📖 研修テキスト・要約</h5>
-                    <div class="training-content" style="line-height: 1.8;">
-                        <!-- AIが生成したHTMLを安全に表示するために |safe を使います -->
+                    <h5 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>研修テキスト・要約</h5>
+                    <hr>
+                    <div class="training-content" style="line-height: 1.7; color: #333;">
                         {{ module.content_text|safe|default:"テキスト情報はありません。" }}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 右側：例題・サイド情報 -->
-        <div class="col-lg-4">
-            <!-- 学習時間目安 -->
-            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-primary text-white">
-                <div class="card-body text-center py-3">
-                    <small>学習時間の目安</small>
-                    <div class="h3 m-0 fw-bold">{{ module.estimated_time }}分</div>
+        <!-- 右側：サイドバー -->
+        <div class="col-lg-5">
+            <!-- 学習時間の目安（画像に近いデザイン） -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3 text-center text-white" style="background-color: #0d6efd;">
+                <div class="card-body py-3">
+                    <div class="small opacity-75">学習時間の目安</div>
+                    <div class="display-5 fw-bold">{{ module.estimated_time }}分</div>
                 </div>
             </div>
 
-            <!-- ✍️ 例題セクション -->
+            <!-- 理解度チェック（画像に近いデザイン） -->
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2">💡 理解度チェック</h5>
+                    <h5 class="fw-bold mb-4">💡 理解度チェック</h5>
                     
                     {% for example in module.examples.all %}
-                    <div class="mb-5">
-                        <p class="fw-bold small text-primary mb-2">例題 {{ forloop.counter }}</p>
-                        <p class="mb-3 fw-bold">{{ example.text }}</p>
+                    <div class="example-section mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
+                        <p class="text-primary fw-bold small mb-1">例題 {{ forloop.counter }}</p>
+                        <p class="fw-bold mb-3" style="font-size: 1.05rem;">{{ example.text }}</p>
                         
-                        <div class="list-group mb-3">
+                        <div class="d-grid gap-2">
                             {% for choice in example.choices.all %}
-                            <button class="list-group-item list-group-item-action small py-2 example-choice" 
-                                    onclick="checkExample(this, {{ choice.is_correct|yesno:'true,false' }})">
+                            <button class="btn btn-outline-secondary text-start py-2 px-3 small-choice" 
+                                    style="font-size: 0.9rem; border-color: #dee2e6;"
+                                    onclick="checkAnswer(this, {{ choice.is_correct|yesno:'true,false' }})">
                                 {{ choice.text }}
                             </button>
                             {% endfor %}
                         </div>
 
-                        <!-- 解説エリア（最初は隠しておく） -->
-                        <div class="explanation-box d-none mt-2 p-3 bg-light rounded-3 small border">
-                            <strong>【解説】</strong><br>
-                            {{ example.explanation }}
+                        <!-- 正解・解説エリア（初期は非表示） -->
+                        <div class="explanation-area d-none mt-3 p-3 rounded-3 border bg-light" style="font-size: 0.85rem;">
+                            <div class="result-msg fw-bold mb-1"></div>
+                            <div class="text-secondary"><strong>【解説】</strong><br>{{ example.explanation }}</div>
                         </div>
                     </div>
                     {% empty %}
@@ -83,21 +85,23 @@
 </div>
 
 <script>
-    // 例題の正解チェックと解説表示を行うスクリプト
-    function checkExample(button, isCorrect) {
-        const parent = button.closest('.mb-5');
-        const explanation = parent.querySelector('.explanation-box');
-        const allChoices = parent.querySelectorAll('.example-choice');
+    function checkAnswer(button, isCorrect) {
+        const parent = button.closest('.example-section');
+        const explanation = parent.querySelector('.explanation-area');
+        const resultMsg = parent.querySelector('.result-msg');
+        const allButtons = parent.querySelectorAll('.small-choice');
 
-        // 他の選択肢をクリック不可にする
-        allChoices.forEach(btn => btn.classList.add('disabled'));
+        // すべてのボタンを無効化
+        allButtons.forEach(btn => btn.classList.add('disabled'));
 
         if (isCorrect) {
-            button.classList.add('bg-success', 'text-white', 'border-success');
-            button.innerHTML += ' ✨ 正解！';
+            button.classList.replace('btn-outline-secondary', 'btn-success');
+            button.classList.add('text-white');
+            resultMsg.innerHTML = '<span class="text-success">✨ 正解！</span>';
         } else {
-            button.classList.add('bg-danger', 'text-white', 'border-danger');
-            button.innerHTML += ' ❌ 残念！';
+            button.classList.replace('btn-outline-secondary', 'btn-danger');
+            button.classList.add('text-white');
+            resultMsg.innerHTML = '<span class="text-danger">❌ 残念！</span>';
         }
 
         // 解説を表示
@@ -106,7 +110,22 @@
 </script>
 
 <style>
+    /* 全体フォントの調整 */
+    body { background-color: #f0f2f5; font-family: sans-serif; }
+    
+    /* 選択肢が縦に長くなりすぎないように調整 */
+    .small-choice {
+        transition: all 0.2s;
+        border-radius: 10px;
+    }
+    .small-choice:hover:not(.disabled) {
+        background-color: #f8f9fa;
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+    
+    /* 研修テキスト内のリストなどの余白 */
     .training-content ul { padding-left: 1.2rem; }
-    .example-choice { font-size: 0.9em; border-radius: 8px !important; margin-bottom: 5px; }
+    .training-content p { margin-bottom: 1rem; }
 </style>
 {% endblock %}
