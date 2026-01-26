@@ -1,154 +1,566 @@
-{% extends 'administer/administer_base.html' %}
+{% extends base_template %}
 {% load static %}
+{% block breadcrumb %}<li class="breadcrumb-item active">検定管理</li>{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <!-- 一括操作（一括削除・復元）のためのフォーム -->
-    <form action="{% url 'enrollments:bulk_action_exam' %}" method="post" id="bulk-form">
-        {% csrf_token %}
-        
-        <!-- ヘッダーエリア：タイトル、並べ替え、モード切替ボタン -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                {% if is_trash_mode %}
-                    <h2 class="text-secondary">検定削除済みを見る</h2>
-                {% else %}
-                    <h2>検定一覧</h2>
-                {% endif %}
-            </div>
+<div class="user-management-container pb-5">
+  <!-- タイトルエリア -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title text-dark m-0 fw-bold">
+      検定管理
+    </h1>
 
-            <div class="d-flex align-items-center gap-2">
-                <!-- 並べ替え設定 -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        並べ替え: 
-                        {% if current_sort == 'oldest' %}古い順
-                        {% elif current_sort == 'title' %}名前順
-                        {% else %}新しい順{% endif %}
-                    </button>
-                    <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
-                        <li><a class="dropdown-item" href="?sort=newest{% if is_trash_mode %}&show=deleted{% endif %}">新しい順</a></li>
-                        <li><a class="dropdown-item" href="?sort=oldest{% if is_trash_mode %}&show=deleted{% endif %}">古い順</a></li>
-                        <li><a class="dropdown-item" href="?sort=title{% if is_trash_mode %}&show=deleted{% endif %}">名前順 (A-Z)</a></li>
-                    </ul>
-                </div>
+    <div class="display-toggle">
+      {% if is_trash_mode %}
+      <a href="{% url 'enrollments:exam_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        有効な検定のみ
+      </a>
+      {% else %}
+      <a href="{% url 'enrollments:exam_list' %}?show=deleted" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+        <span class="material-icons fw-bold small align-middle">visibility_off</span> 削除済みを表示
+      </a>
+      {% endif %}
+    </div>
+  </div>
 
-                <!-- モード別のアクションボタン（削除・復元など） -->
-                {% if is_trash_mode %}
-                    <input type="hidden" name="action" value="restore">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('選択した検定を復元しますか？')">選択した項目を復元</button>
-                    <a href="{% url 'enrollments:exam_list' %}" class="btn btn-outline-secondary">通常一覧に戻る</a>
-                {% else %}
-                    <input type="hidden" name="action" value="delete">
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('選択した検定を削除済みへ移動しますか？')">選択した項目を削除</button>
-                    <a href="{% url 'enrollments:exam_list' %}?show=deleted" class="btn btn-outline-danger">検定削除済みを見る</a>
-                    <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary">+ 新規作成</a>
-                {% endif %}
-            </div>
+  <!-- コントロールパネル：検索 | 並べ替え | フィルタ | 作成 | ガイド -->
+  <div class="row g-3 mb-4 align-items-center">
+    <div class="col-xl-12 col-lg-12">
+      <form method="get" action="{% url 'enrollments:exam_list' %}" id="filter-form" class="d-flex gap-2 align-items-center flex-wrap">
+        <!-- 検索 -->
+        <div class="search-input-group shadow-sm bg-white border" style="width: 280px;">
+          <span class="material-icons text-muted">search</span>
+          <input type="text" name="q" placeholder="検定名で検索..." value="{{ q }}" />
         </div>
 
-        <!-- 検定リストテーブル -->
-        <table class="table table-hover border shadow-sm bg-white">
-            <thead class="table-dark">
-                <tr>
-                    <th style="width: 40px;">
-                        <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;">
-                    </th>
-                    <th>検定名</th>
-                    <th>問題数</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for exam in exams %}
-                    <tr class="{% if is_trash_mode %}table-light text-muted{% endif %}">
-                        <!-- チェックボックス -->
-                        <td>
-                            <input type="checkbox" name="selected_exams" value="{{ exam.id }}" class="exam-check form-check-input" style="cursor: pointer;">
-                        </td>
+        <!-- 並べ替え -->
+        <select name="sort" class="form-select border shadow-sm rounded-pill px-3" style="width: 130px;" onchange="this.form.submit()">
+            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>新しい順</option>
+            <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>古い順</option>
+            <option value="title" {% if current_sort == 'title' %}selected{% endif %}>名前順</option>
+        </select>
 
-                        <!-- 検定タイトルと試験タイプ -->
-                        <td>
-                            <div style="font-size: 1.1em; font-weight: bold;">{{ exam.title }}</div>
-                            <div class="mt-1">
-                                {% if exam.exam_type == 'mock' %}
-                                    <span class="badge bg-light text-info border border-info" style="font-weight: normal;">
-                                        【仮試験】
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-light text-danger border border-danger" style="font-weight: normal;">
-                                        【本試験】
-                                    </span>
-                                    {% if exam.prerequisite %}
-                                        <small class="text-muted ms-1">(前提: {{ exam.prerequisite.title }})</small>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </td>
+        <!-- 試験種別フィルタ (可愛いセグメントコントロール) -->
+        <div class="segment-filter shadow-sm bg-white border p-1 d-flex">
+            <input type="radio" name="type" value="all" id="type-all" class="d-none" onchange="this.form.submit()" {% if current_type == 'all' %}checked{% endif %}>
+            <label for="type-all" class="segment-item">全て</label>
+            
+            <input type="radio" name="type" value="mock" id="type-mock" class="d-none" onchange="this.form.submit()" {% if current_type == 'mock' %}checked{% endif %}>
+            <label for="type-mock" class="segment-item">仮試験</label>
+            
+            <input type="radio" name="type" value="main" id="type-main" class="d-none" onchange="this.form.submit()" {% if current_type == 'main' %}checked{% endif %}>
+            <label for="type-main" class="segment-item">本試験</label>
+        </div>
 
-                        <!-- 問題数表示 -->
-                        <td>{{ exam.questions.count }} 問</td>
+        {% if is_trash_mode %}<input type="hidden" name="show" value="deleted" />{% endif %}
 
-                        <!-- 各種ボタン -->
-                        <td>
-                            {% if is_trash_mode %}
-                                <!-- 復元のみ -->
-                                <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-success" onclick="return confirm('復元しますか？')">
-                                    復元
-                                </button>
-                            {% else %}
-                                <!-- 通常モード時：管理メニュー一式 -->
-                                <div class="mb-1 small">
-                                    教材：{% if exam.exams_file %}<span class="text-success">あり</span>{% else %}<span class="text-danger">未登録</span>{% endif %}
-                                </div>
-                                
-                                <a href="{% url 'enrollments:exam_edit' exam.id %}" class="btn btn-sm btn-outline-primary">編集・教材</a>
-                                {% if exam.badge %}
-                                    <a href="{% url 'moderator:badge_edit' exam.badge.id %}" class="btn btn-sm btn-warning">バッジ</a>
-                                {% endif %}
+        <!-- 右寄せエリア：作成 & ガイド -->
+        <div class="ms-auto d-flex align-items-center">
+          {% if not is_trash_mode %}
+          <a href="{% url 'enrollments:exam_add' %}" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold me-3">
+            <span class="material-icons">add</span> 新規作成
+          </a>
+          {% endif %}
+          
+          <a href="javascript:void(0)" class="text-muted small text-decoration-none d-inline-flex align-items-center help-trigger" data-bs-toggle="modal" data-bs-target="#helpModal">
+            <span class="material-icons size-18 me-1">help_outline</span> ヘルプ
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
 
-                                <a href="{% url 'enrollments:question_list' exam.id %}" class="btn btn-sm btn-info text-white">問題管理</a>
+  <!-- リストエリア -->
+  <form action="{% url 'enrollments:bulk_action_exam' %}" method="post" id="exam-bulk-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="bulk-action-input" value="">
+    <input type="hidden" name="restore_prerequisite" id="restore-prerequisite-input" value="false">
 
-                                <button type="submit" name="selected_exams" value="{{ exam.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('削除済みへ移動しますか？')">
-                                    削除
-                                </button>
+    <div class="exam-grid">
+      {% for exam in exams %}
+      <div class="exam-list-item user-row {% if not exam.is_active and not is_trash_mode %}inactive-item{% endif %} mb-3" data-id="{{ exam.id }}">
+          <div class="admin-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 position-relative exam-card-accent {% if exam.exam_type == 'mock' %}accent-mock{% else %}accent-main{% endif %}">
+              <div class="row align-items-center g-3">
+                  <!-- チェック -->
+                  <div class="col-auto">
+                      <div class="pe-2">
+                          <input type="checkbox" name="selected_exams" value="{{ exam.id }}" class="form-check-input row-checkbox" />
+                      </div>
+                  </div>
+
+                  <!-- 内容 -->
+                  <div class="col">
+                      <div class="d-flex align-items-center gap-2 mb-1">
+                          <span class="badge-cute {% if exam.exam_type == 'mock' %}badge-mock{% else %}badge-main{% endif %}">
+                              {% if exam.exam_type == 'mock' %}仮試験{% else %}本試験{% endif %}
+                          </span>
+                          <span class="badge-cute badge-status-active {% if not exam.is_active %}d-none{% endif %}">公開中</span>
+                          <span class="badge-cute badge-status-inactive {% if exam.is_active %}d-none{% endif %}">非公開</span>
+                          <span class="text-muted extra-small ms-1">ID: #{{ exam.id }}</span>
+                      </div>
+                      
+                      <h3 class="h6 fw-bold text-dark mb-2">{{ exam.title }}</h3>
+                      
+                      <div class="d-flex gap-3 text-muted extra-small">
+                          <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">description</span>問題 {{ exam.questions.count }}件</span>
+                          <span class="d-flex align-items-center"><span class="material-icons size-14 me-1">update</span>{{ exam.created_at|date:"Y/m/d" }} 作成</span>
+                          {% if exam.exam_type == 'main' and exam.prerequisite %}
+                            <span class="text-primary d-flex align-items-center fw-bold">
+                                <span class="material-icons size-14 me-1">link</span>前提: {{ exam.prerequisite.title }}
+                            </span>
+                          {% endif %}
+                      </div>
+                  </div>
+
+                  <!-- トグル -->
+                  <div class="col-auto">
+                    {% if not is_trash_mode %}
+                    <div class="toggle-center-container px-3">
+                        <div class="form-check form-switch custom-switch-cute">
+                            <input class="form-check-input toggle-active-switch" type="checkbox" 
+                                   data-url="{% url 'enrollments:exam_toggle_active' exam.id %}"
+                                   {% if exam.is_active %}checked{% endif %}>
+                            <label class="status-label fw-bold {% if exam.is_active %}text-success{% else %}text-muted{% endif %}">
+                                {% if exam.is_active %}公開中{% else %}非公開{% endif %}
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+                  </div>
+
+                  <!-- メニュー -->
+                  <div class="col-auto border-start ps-3">
+                    {% if not is_trash_mode %}
+                    <div class="dropdown">
+                        <button class="btn btn-light rounded-circle p-2 border shadow-sm" type="button" data-bs-toggle="dropdown">
+                            <span class="material-icons">more_vert</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
+                            <li><a class="dropdown-item py-2 fw-bold text-primary" href="{% url 'enrollments:question_list' exam.id %}"><span class="material-icons size-18 me-2">list</span>問題管理</a></li>
+                            {% if exam.exam_type == 'main' and exam.badge %}
+                            <li><a class="dropdown-item py-2" href="{% url 'moderator:badge_edit' exam.badge.id %}"><span class="material-icons size-18 me-2">military_tech</span>バッジ管理</a></li>
                             {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <!-- データがない場合の表示 -->
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">
-                            {% if is_trash_mode %}削除済みは空です。{% else %}検定が登録されていません。{% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </form>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item py-2" href="{% url 'enrollments:exam_edit' exam.id %}"><span class="material-icons size-18 me-2">settings</span>基本設定</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <span class="badge bg-danger text-white px-3 fw-bold">削除済み</span>
+
+                    {% endif %}
+                  </div>
+              </div>
+          </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- フローティング・アクションバー -->
+    <div class="action-bar-container" id="floating-action-bar">
+        <div class="action-bar-inner shadow-lg mx-3 mb-3 rounded-pill border-0 bg-dark text-white">
+            <div class="container-fluid px-4 py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-auto">
+                        <div class="selection-count py-1 d-flex align-items-center">
+                            <span class="material-icons text-primary me-2">how_to_reg</span>
+                            <span id="selected-count-display" class="fw-bold fs-5 me-2">0</span> 件を選択中
+                        </div>
+                    </div>
+                    <div class="col text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                            {% if is_trash_mode %}
+                            <button type="button" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold action-trigger" 
+                                    data-action="restore" data-msg="検定を復元しています...">
+                                <span class="material-icons align-middle size-18">settings_backup_restore</span> 一括復元
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold action-trigger" 
+                                    data-action="make_public" data-msg="一括公開しています...">一括公開</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold action-trigger" 
+                                    data-action="make_private" data-msg="一括非公開しています...">一括非公開</button>
+                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold action-trigger" 
+                                    data-action="delete" data-msg="検定を削除しています...">
+                                <span class="material-icons align-middle size-18">delete_outline</span> 一括削除
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </form>
 </div>
 
-<!-- 全選択/解除のJavaScript -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const selectAll = document.getElementById('selectAll');
-        const checkboxes = document.querySelectorAll('.exam-check');
+<!-- ヘルプモーダル -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
 
-        if (selectAll) {
-            selectAll.addEventListener('change', function() {
-                checkboxes.forEach(cb => {
-                    cb.checked = this.checked;
-                });
-            });
-        }
-    });
-</script>
+      <!-- ヘッダー -->
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold d-flex align-items-center">
+          <span class="material-icons me-2">help_outline</span>
+          ユーザーの削除・復元方法
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- 本文 -->
+      <div class="modal-body px-4 py-3">
+
+        <!-- 削除説明 -->
+        <section class="mb-4">
+          <h6 class="fw-bold text-danger d-flex align-items-center mb-2">
+            <span class="material-icons me-2">delete_outline</span>
+            検定を削除する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              削除したい検定の行をクリック、または左側のチェックボックスを選択します。
+            </li>
+            <li class="mb-1">
+              画面下部に黒い <b>アクションバー</b> が表示されます。
+            </li>
+            <li>
+              <b>「一括削除」</b> ボタンを押すと、検定はゴミ箱へ移動します。
+            </li>
+          </ol>
+        </section>
+
+        <hr class="my-3">
+
+        <!-- 復元説明 -->
+        <section class="mb-4">
+          <h6 class="fw-bold text-warning d-flex align-items-center mb-2">
+            <span class="material-icons me-2">settings_backup_restore</span>
+            検定を復元する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              画面上部の <b>「削除済みを表示」</b> ボタンを押して、ゴミ箱を表示します。
+            </li>
+            <li class="mb-1">
+              復元したい検定を選択します。
+            </li>
+            <li>
+              <b>「一括復元」</b> ボタンを押すと、通常の一覧に戻ります。
+            </li>
+          </ol>
+        </section>
+
+        <hr class="my-3">
+
+        <!-- 公開 / 非公開説明 -->
+        <section class="mb-3">
+          <h6 class="fw-bold text-primary d-flex align-items-center mb-2">
+            <span class="material-icons me-2">visibility</span>
+            検定を公開・非公開にする場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              検定一覧の右側にある <b>公開 / 非公開スイッチ</b> を切り替えます。
+            </li>
+            <li>
+              非公開にすると、検定は <b>一覧には残ったまま</b>、受験者からは表示されなくなります。
+            </li>
+            <p>※行選択をすることで・非公開を切り替えることができます。</p>
+          </ol>
+        </section>
+
+        <!-- 補足説明 -->
+        <div class="mt-3 p-2 rounded bg-light">
+          <p class="mb-1 small fw-bold text-muted">
+            公開 / 非公開 と 削除 / 復元 の違い
+          </p>
+          <ul class="small text-muted ps-3 mb-0">
+            <li>
+              <b>公開 / 非公開</b>：「今はメンテナンス中だから一時的に隠したい」などの<b>運営のコントロール</b>
+            </li>
+            <li>
+              <b>削除 / 復元</b>：「該当年度のモノはもう不要だから消したい」などの<b>データ整理・断捨離</b>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- フッター -->
+      <div class="modal-footer border-0 p-3">
+        <button type="button"
+                class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100"
+                data-bs-dismiss="modal">
+          閉じる
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- 確認用ポップアップモーダル (指定されたデザイン) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-800" id="confirmTitle">確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4" id="confirmBody">
+                <!-- メッセージが動的に挿入されます -->
+            </div>
+            <div class="modal-footer border-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="confirm-execute-btn">実行する</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 処理中/完了ポップアップモーダル (指定されたデザイン) -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary" id="loading-text">処理しています...</h5>
+                    <p class="text-muted small mb-0">そのまま少々お待ちください</p>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success" style="font-size: 80px;">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">完了しました！</h5>
+                    <p class="text-muted small mb-0">リストを更新しています...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
-    /* 削除済みの時にタイトルを少し薄くする */
-    .table-light.text-muted strong { color: #adb5bd; }
-    /* ボタンの余白調整 */
-    .btn-sm { margin-bottom: 2px; }
-    .gap-2 { gap: 0.5rem !important; }
+  /* 共通 */
+  .fw-bold { font-weight: 700; }
+  .extra-small { font-size: 0.72rem; }
+  .size-14 { font-size: 14px; }
+  .size-18 { font-size: 18px; }
+
+  /* コントロール */
+  .search-input-group { border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.1); }
+  .search-input-group input { border: none; outline: none; background: transparent; margin-left: 8px; width: 100%; }
+  
+  /* セグメントフィルタ (仮試験は青) */
+  .segment-filter { border-radius: 50px; }
+  .segment-item { 
+      padding: 6px 18px; border-radius: 50px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: 0.2s;
+      margin: 0 2px;
+  }
+  #type-all:checked + label { background: #555; color: white; }
+  #type-mock:checked + label { background: #007bff; color: white; } /* 仮試験は青 */
+  #type-main:checked + label { background: #dc3545; color: white; } /* 本試験は赤 */
+  .segment-item:hover { background: rgba(0,0,0,0.05); }
+
+  /* カード */
+  .exam-list-item { cursor: pointer; transition: 0.2s; }
+  .table-selected .admin-card { background-color: #f1f9f6 !important; border: 1.5px solid #76b19d !important; }
+  .exam-card-accent { overflow: hidden; border-left-width: 8px !important; }
+  .accent-mock { border-left-color: #007bff !important; } /* 仮試験アクセント：青 */
+  .accent-main { border-left-color: #dc3545 !important; } /* 本試験アクセント：赤 */
+
+  /* バッジ */
+  .badge-cute { font-size: 0.7rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
+  .badge-mock { background: #eef7ff; color: #007bff; border: 1px solid #cce5ff; }
+  .badge-main { background: #fff5f5; color: #dc3545; border: 1px solid #ffdcdc; }
+  .badge-status-active { background: #e8fcf1; color: #2ecc71; border: 1px solid #d4f7e4; }
+  .badge-status-inactive { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+
+  /* アクションバー */
+  .action-bar-container {
+    position: fixed; bottom: 0; left: 260px; width: calc(100% - 260px);
+    z-index: 1000; transition: 0.4s; transform: translateY(100px); opacity: 0;
+  }
+  .action-bar-container.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .sidebar-collapsed .action-bar-container { left: 88px; width: calc(100% - 88px); }
+
+  /* スイッチ */
+  .toggle-center-container { display: flex; justify-content: center; align-items: center; min-width: 60px; }
+  .custom-switch-cute { padding: 0 !important; margin: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; }
+  .custom-switch-cute .form-check-input {
+      width: 3rem !important; height: 1.5rem !important; margin: 0 0 4px 0 !important;
+      cursor: pointer; float: none !important; border-radius: 2rem !important;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='white'/%3e%3c/svg%3e") !important;
+  }
+  .custom-switch-cute .form-check-input:checked { background-color: #76b19d !important; border-color: #76b19d !important; }
+  .status-label { font-size: 0.75rem; margin: 0 !important; white-space: nowrap; line-height: 1; }
+  
+  .fw-800 { font-weight: 800; }
+  
+  /* ローダーアニメーション (指定コード準拠) */
+  .custom-loader {
+    width: 50px; height: 50px; display: grid; border: 4px solid #0000; border-radius: 50%; border-right-color: var(--primary-color, #76b19d);
+    animation: l15 1s infinite linear; margin: 0 auto;
+  }
+  .custom-loader::before, .custom-loader::after {    
+    content: ""; grid-area: 1/1; margin: 2px; border: inherit; border-radius: 50%; animation: l15 2s infinite;
+  }
+  .custom-loader::after { margin: 8px; animation-duration: 3s; }
+  @keyframes l15{ 100%{transform: rotate(1turn)} }
+
+  @media (max-width: 991px) { .action-bar-container { left: 0; width: 100%; } }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionBar = document.getElementById('floating-action-bar');
+    const countDisplay = document.getElementById('selected-count-display');
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    
+    const confirmBody = document.getElementById('confirmBody');
+    const confirmExecuteBtn = document.getElementById('confirm-execute-btn');
+    const bulkForm = document.getElementById('exam-bulk-form');
+
+    // 選択状態の更新
+    function updateSelection() {
+        const checked = document.querySelectorAll('.row-checkbox:checked');
+        if (countDisplay) countDisplay.innerText = checked.length;
+        if (actionBar) {
+            if (checked.length > 0) actionBar.classList.add('active');
+            else actionBar.classList.remove('active');
+        }
+    }
+
+    // 行クリックで選択
+    document.querySelectorAll('.exam-list-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.closest('.dropdown') || e.target.closest('.form-switch') || e.target.tagName === 'A') return;
+            const cb = this.querySelector('.row-checkbox');
+            if (cb) {
+                cb.checked = !cb.checked;
+                this.classList.toggle('table-selected', cb.checked);
+                updateSelection();
+            }
+        });
+    });
+
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            this.closest('.exam-list-item').classList.toggle('table-selected', this.checked);
+            updateSelection();
+        });
+    });
+
+    // リアルタイムトグル
+    document.querySelectorAll('.toggle-active-switch').forEach(sw => {
+        sw.addEventListener('change', function() {
+            const url = this.dataset.url;
+            const card = this.closest('.exam-list-item');
+            const label = this.closest('.custom-switch-cute').querySelector('.status-label');
+            const activeBadge = card.querySelector('.badge-status-active');
+            const inactiveBadge = card.querySelector('.badge-status-inactive');
+            
+            const isActive = this.checked;
+            label.innerText = isActive ? "公開中" : "非公開";
+            label.className = `status-label fw-bold ${isActive ? 'text-success' : 'text-muted'}`;
+            
+            if (isActive) {
+                activeBadge.classList.remove('d-none');
+                inactiveBadge.classList.add('d-none');
+            } else {
+                activeBadge.classList.add('d-none');
+                inactiveBadge.classList.remove('d-none');
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+            });
+        });
+    });
+
+    // アクションバーのボタンクリック時の処理
+    const runBulkAction = (action, text) => {
+        const selected = document.querySelectorAll('.row-checkbox:checked');
+        let hasMock = false;
+        let hasMain = false;
+        selected.forEach(cb => {
+            const row = cb.closest('.exam-list-item');
+            const typeText = row.querySelector('.badge-cute').innerText;
+            if (typeText.includes('仮')) hasMock = true;
+            if (typeText.includes('本')) hasMain = true;
+        });
+
+        // 削除確認モーダルの内容
+        if (action === 'delete') {
+            let html = `<p>選択した検定をゴミ箱へ移動しますか？</p>`;
+            if (hasMock) {
+                html += "<p class='small text-danger fw-bold'>※仮試験が含まれています。紐づく本試験も削除されます。</p>";
+            }
+            confirmBody.innerHTML = html;
+            document.getElementById('bulk-action-input').value = action;
+            confirmExecuteBtn.className = "btn btn-danger rounded-pill px-4 fw-bold";
+            confirmModal.show();
+            return;
+        }
+
+        // 復元確認モーダルの内容
+        if (action === 'restore') {
+            let html = `<p>選択した検定を復元しますか？</p>`;
+            if (hasMain) {
+                html += `
+                <div class='alert alert-info small py-2'>
+                    <p class='mb-2'><b>本試験</b>が含まれています。前提となる仮試験も一緒に復元しますか？</p>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input ms-0" type="checkbox" id="sync-restore-check" checked>
+                        <label class="form-check-label fw-bold" for="sync-restore-check">前提の仮試験も一緒に復元する</label>
+                    </div>
+                </div>`;
+            }
+            confirmBody.innerHTML = html;
+            document.getElementById('bulk-action-input').value = action;
+            confirmExecuteBtn.className = "btn btn-warning rounded-pill px-4 fw-bold";
+            confirmModal.show();
+            return;
+        }
+
+        // 公開・非公開は確認なしで実行
+        executeBulk(action, text);
+    };
+
+    // 処理中モーダルの表示とフォーム送信
+    const executeBulk = (action, text) => {
+        document.getElementById('loading-text').innerText = text;
+        document.getElementById('bulk-action-input').value = action;
+        statusModal.show();
+        setTimeout(() => {
+            document.getElementById('modal-loading').style.display = 'none';
+            document.getElementById('modal-success').style.display = 'block';
+            setTimeout(() => bulkForm.submit(), 800);
+        }, 1200);
+    };
+
+    // アクションバーのボタンにイベントを付与
+    document.querySelectorAll('.action-trigger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            runBulkAction(this.dataset.action, this.dataset.msg);
+        });
+    });
+
+    // モーダル内の「実行する」ボタンが押された時の処理
+    document.getElementById('confirm-execute-btn').onclick = function() {
+        const action = document.getElementById('bulk-action-input').value;
+        const syncCheck = document.getElementById('sync-restore-check');
+        if (syncCheck) {
+            document.getElementById('restore-prerequisite-input').value = syncCheck.checked;
+        }
+        confirmModal.hide();
+        executeBulk(action, action === 'delete' ? 'ゴミ箱へ移動中...' : '復元処理中...');
+    };
+});
+</script>
 {% endblock %}

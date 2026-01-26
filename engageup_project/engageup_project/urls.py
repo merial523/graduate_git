@@ -29,7 +29,7 @@ urlpatterns = [
     path("mylist/", include("mylist.urls")),  # トップページは Mylist アプリに委譲
     path("moderator/", include("moderator.urls", namespace="moderator")),#トップページはmoderatorアプリに委譲
     path('accounts/', include('accounts.urls', namespace='accounts')),  # トップページはaccountsに譲渡
-    path("staff/",include("staff.urls",namespace = "staff")),
+    path("staff/", include("staff.urls", namespace="staff")),  # トップページは staff アプリに委譲
 ]
 
 # 開発環境（DEBUG=True）の場合のみメディアファイルを配信する設定

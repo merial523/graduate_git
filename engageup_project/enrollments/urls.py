@@ -4,7 +4,6 @@ from . import views
 app_name = 'enrollments' 
 
 urlpatterns = [
-    path("", views.EnrollmentsIndexView.as_view(), name="enrollmentsIndex"),
     path("exam_history/", views.EnrollmentsHistoryView.as_view(), name="enrollmentsHistory"),
     path('exams/', views.ExamListView.as_view(), name='exam_list'),
     path('exams/add/', views.ExamCreateView.as_view(), name='exam_add'),
@@ -20,4 +19,5 @@ urlpatterns = [
     path('exam_list/', views.UserExamListView.as_view(), name='exam_list_user'),
     path('exam/<int:exam_id>/take/', views.ExamTakeView.as_view(), name='exam_take'),
     path('exam/<int:exam_id>/grade/', views.ExamGradeView.as_view(), name='exam_grade'),
+    path('exams/<int:exam_id>/toggle-active/', views.ExamToggleActiveView.as_view(), name='exam_toggle_active'),
 ]

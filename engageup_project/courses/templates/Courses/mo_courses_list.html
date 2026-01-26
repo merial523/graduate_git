@@ -1,383 +1,224 @@
 {% extends base_template %}
 {% load static %}
-{% block title %}コース一覧 |EngageUp{% endblock %}
-{% block breadcrumb %}
-<li class="breadcrumb-item active" aria-current="page">コース一覧</li>
-{% endblock %}
+{% block title %}コース・研修管理 | EngageUp{% endblock %}
+
 {% block content %}
-<div class="user-management-container pb-5">
-  <!-- ヘッダーエリア -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="page-title text-dark m-0 fw-800">コース・動画管理</h1>
-
-    <div class="display-toggle">
-      {% if request.GET.show == 'deleted' %}
-      <a
-        href="{% url 'courses:courses_list' %}"
-        class="btn btn-light btn-sm border rounded-pill px-3"
-      >
-        <span class="material-icons small align-middle">visibility</span>
-        有効コースのみ
-      </a>
-      {% else %}
-      <a
-        href="{% url 'courses:courses_list' %}?show=deleted"
-        class="btn btn-light btn-sm border rounded-pill px-3"
-      >
-        <span class="material-icons small align-middle">visibility_off</span>
-        削除済みを表示
-      </a>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- 検索 & アクションボタン -->
-  <div class="row g-3 mb-4 align-items-center">
-    <!-- 検索バー -->
-    <div class="col-xl-4 col-lg-5">
-      <form
-        method="get"
-        action="{% url 'courses:courses_list' %}"
-        class="d-flex gap-2"
-      >
-        <div class="search-input-group shadow-sm flex-grow-1">
-          <span class="material-icons text-muted">search</span>
-          <input
-            type="text"
-            name="q"
-            placeholder="科目名で検索..."
-            value="{{ request.GET.q|default:'' }}"
-          />
-        </div>
-        {% if request.GET.show %}<input
-          type="hidden"
-          name="show"
-          value="{{ request.GET.show }}"
-        />{% endif %}
-      </form>
-    </div>
-
-    <!-- 右側ボタン -->
-    <div class="col-xl-8 col-lg-7 text-end">
-      <div
-        class="d-flex gap-2 justify-content-end align-items-center flex-nowrap"
-      >
-        <a
-          href="{% url 'courses:courses_create' %}"
-          class="btn btn-primary shadow-sm text-nowrap"
-        >
-          <span class="material-icons">add_circle</span> 新規コース作成
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- リストテーブル -->
-  <form method="post" id="course-bulk-form">
-    {% csrf_token %}
-    <input type="hidden" name="action" id="bulk-action-input" value="" />
-
-    <div
-      class="table-responsive admin-card border-0 shadow-sm overflow-hidden p-0"
-    >
-      <table class="table table-hover align-middle mb-0 emphasized-table">
-        <thead class="bg-light">
-          <tr style="border-bottom: 3px solid var(--primary-color)">
-            <th class="text-center" style="width: 70px">選択</th>
-            <th style="width: 100px">ID</th>
-            <th>科目名</th>
-            <th>受講回数</th>
-            <th>ステータス</th>
-            <th class="text-center" style="width: 120px">詳細編集</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for course in courses %}
-          <tr
-            class="user-row {% if not course.is_active %}opacity-50 is-deleted{% endif %}"
-          >
-            <td class="text-center">
-              <input
-                type="checkbox"
-                name="course_ids"
-                value="{{ course.id }}"
-                class="form-check-input row-checkbox"
-              />
-            </td>
-            <td class="text-muted small">#{{ course.id }}</td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <span
-                  class="material-icons text-primary"
-                  style="font-size: 20px"
-                  >layers</span
-                >
-                <span class="fw-bold text-dark">{{ course.subject }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="badge bg-light text-dark border px-2 fw-normal">
-                <span
-                  class="material-icons align-middle small"
-                  style="font-size: 14px"
-                  >event_repeat</span
-                >
-                {{ course.courseCount }} 回
-              </span>
-            </td>
-            <td>
-              {% if course.is_active %}
-              <span class="badge bg-success rounded-pill px-3">有効</span>
-              {% else %}
-              <span class="badge bg-secondary rounded-pill px-3">削除済み</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              {% if course.is_active %}
-              <a
-                href="{% url 'courses:courses_update' course.id %}"
-                class="btn btn-light btn-sm border shadow-none rounded-pill px-3"
-              >
-                <span class="material-icons small align-middle">edit</span> 変更
-              </a>
-              {% else %}
-              <span class="text-muted small">-</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6" class="text-center py-5 text-muted bg-white">
-              <span class="material-icons fs-1 d-block mb-2">auto_stories</span>
-              該当するコースは見つかりませんでした。
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- 余白調整 -->
-    <div style="height: 100px"></div>
-
-    <!-- ボトム・アクション・バー（下部固定） -->
-    <div class="action-bar-container">
-      <div class="action-bar-inner shadow-lg">
-        <div class="container-fluid px-4">
-          <div class="row align-items-center">
-            <div class="col-auto">
-              <div class="selection-count text-primary fw-800">
-                <span class="material-icons">how_to_reg</span>
-                <span id="selected-count-display">0</span> 件を選択中
-              </div>
+<div class="container-fluid py-4" style="background-color: #f8faf9; min-height: 100vh;">
+    <!-- 1. 統計サマリー -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-primary border-4">
+                <div class="text-muted small fw-bold">公開中のコース</div>
+                <div class="h3 m-0 fw-800 text-dark">{{ total_active_courses }} <span class="fs-6 fw-normal text-muted">講座</span></div>
             </div>
-            <div class="col text-end">
-              {% if request.GET.show == 'deleted' %}
-              <button
-                type="button"
-                class="btn btn-warning action-trigger"
-                data-action="restore"
-                data-msg="コースを復元しています..."
-              >
-                <span class="material-icons">settings_backup_restore</span>
-                選択したコースを復元
-              </button>
-              {% else %}
-              <button
-                type="button"
-                class="btn btn-danger action-trigger"
-                data-action="delete"
-                data-msg="コースを削除しています..."
-              >
-                <span class="material-icons">delete_outline</span>
-                選択したコースを削除
-              </button>
-              {% endif %}
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-success border-4">
+                <div class="text-muted small fw-bold">総動画（研修）数</div>
+                <div class="h3 m-0 fw-800 text-dark">{{ total_videos }} <span class="fs-6 fw-normal text-muted">本</span></div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  </form>
-</div>
-
-<!-- ポップアップモーダル群 -->
-<div
-  class="modal fade"
-  id="statusModal"
-  tabindex="-1"
-  data-bs-backdrop="static"
-  data-bs-keyboard="false"
->
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-5 text-center p-5">
-      <div id="modal-loading">
-        <div class="custom-loader mb-4"></div>
-        <h5 class="fw-800 text-primary" id="loading-text">処理中...</h5>
-      </div>
-      <div id="modal-success" style="display: none">
-        <div class="success-icon-wrapper mb-4">
-          <span class="material-icons text-success" style="font-size: 80px"
-            >check_circle</span
-          >
+        <div class="col-md-3">
+            <div class="stats-card p-3 shadow-sm rounded-4 bg-white border-start border-info border-4">
+                <div class="text-muted small fw-bold">総受講者数</div>
+                <div class="h3 m-0 fw-800 text-dark">{{ total_students }} <span class="fs-6 fw-normal text-muted">名</span></div>
+            </div>
         </div>
-        <h5 class="fw-800 text-dark">完了しました！</h5>
-      </div>
     </div>
-  </div>
+
+    <!-- 2. タイトルエリア -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-800 m-0 text-dark">
+            {% if is_trash_mode %}🗑️ 削除済みコース管理{% else %}📖 コース・研修管理{% endif %}
+        </h1>
+        <div class="d-flex gap-2">
+            {% if is_trash_mode %}
+                <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">← 通常一覧へ</a>
+            {% else %}
+                <a href="?show=deleted" class="btn btn-outline-danger rounded-pill px-3 btn-sm">削除済みを表示</a>
+                <a href="{% url 'courses:courses_add' %}" class="btn btn-primary rounded-pill px-4 fw-bold">+ 新規コース作成</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. 検索窓 -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2">
+                <div class="col-md-10">
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control border-0 bg-light" placeholder="コース名で検索...">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill">検索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. メインエリア（一括操作フォーム） -->
+    <form action="{% url 'courses:bulk_action_course' %}" method="post">
+        {% csrf_token %}
+        <div class="course-list-container mb-5">
+            {% for course in courses %}
+            <div class="course-item card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <!-- コース情報 -->
+                    <div class="d-flex align-items-center p-3 border-bottom bg-white">
+                        <div class="px-3 border-end">
+                            <input type="checkbox" name="course_ids" value="{{ course.id }}" class="form-check-input row-checkbox m-0">
+                        </div>
+                        <div class="flex-grow-1 px-4">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-primary-subtle text-primary border-primary border">{{ course.subject }}</span>
+                                <span class="text-muted small">設定数: {{ course.courseCount }}講座</span>
+                            </div>
+                            <h5 class="fw-800 m-0 text-dark">{{ course.subject }}</h5>
+                        </div>
+                        <div class="px-3">
+                            <a href="{% url 'courses:courses_edit' course.id %}" class="btn btn-sm btn-outline-secondary rounded-pill">⚙️ 設定変更</a>
+                        </div>
+                    </div>
+
+                    <!-- 研修（モジュール）リスト -->
+                    <div class="p-4 bg-light-subtle">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-secondary">
+                                <i class="bi bi-collection-play me-2"></i>
+                                {% if is_trash_mode %}削除済みの研修{% else %}研修動画 ({{ course.modules.count }}本){% endif %}
+                            </h6>
+                            {% if not is_trash_mode %}
+                            <a href="{% url 'courses:module_add' course.id %}" class="btn btn-sm btn-success rounded-pill px-3">＋ 研修を追加</a>
+                            {% endif %}
+                        </div>
+
+                        <div class="row g-3">
+                            {% for module in course.modules.all %}
+                                
+                                {% if is_trash_mode %}
+                                    {# --- ゴミ箱モード時：削除されている研修のみ表示 --- #}
+                                    {% if not module.is_active %}
+                                    <div class="col-12">
+                                        <div class="bg-white border rounded-3 p-3 d-flex justify-content-between align-items-center shadow-sm">
+                                            <div class="text-muted">
+                                                <i class="bi bi-eye-slash me-2"></i><strong>{{ module.title }}</strong> (非公開中)
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3"
+                                                    onclick="postAction('{% url 'courses:module_restore' module.id %}')">
+                                                復元する
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                {% else %}
+                                    {# --- 通常モード時：有効な研修のみ表示 --- #}
+                                    {% if module.is_active %}
+                                    <div class="col-12">
+                                        <div class="bg-white border rounded-3 p-3 d-flex justify-content-between align-items-center shadow-sm">
+                                            <div class="d-flex align-items-center">
+                                                <div class="text-primary me-3"><i class="bi bi-play-circle-fill fs-5"></i></div>
+                                                <div>
+                                                    <div class="fw-bold text-dark">{{ module.title }}</div>
+                                                    <div class="small text-muted">目安：{{ module.estimated_time }}分</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <a href="{% url 'courses:module_edit' module.id %}" class="btn btn-sm btn-primary rounded-pill px-3">編集</a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" 
+                                                        data-url="{% url 'courses:module_delete' module.id %}" 
+                                                        data-title="{{ module.title|escapejs }}"
+                                                        onclick="confirmDelete(this)">
+                                                    削除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+
+                            {% empty %}
+                                <div class="col-12 text-center py-2 text-muted small">登録されている研修はありません。</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                <p class="text-muted">表示できるデータはありません。</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 一括操作アクションバー -->
+        <div class="action-bar-container">
+            <div class="action-bar-inner shadow-lg mx-3 mb-3 rounded-pill border-0 bg-dark text-white p-3">
+                <div class="d-flex justify-content-between align-items-center px-4">
+                    <div><span id="selected-count-display" class="fw-bold fs-5">0</span> 件選択中</div>
+                    <div>
+                        {% if is_trash_mode %}
+                            <button type="submit" name="action" value="restore" class="btn btn-success btn-sm rounded-pill px-4">一括復元</button>
+                        {% else %}
+                            <button type="submit" name="action" value="delete" class="btn btn-danger btn-sm rounded-pill px-4">一括削除</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
-<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content border-0 shadow-lg rounded-5 p-4 text-center">
-      <div class="mb-3">
-        <span class="material-icons text-warning" style="font-size: 64px"
-          >warning_amber</span
-        >
-      </div>
-      <h5 class="fw-800 mb-3">確認が必要です</h5>
-      <p class="text-muted small" id="alert-modal-msg">
-        対象を選択してください
-      </p>
-      <button
-        type="button"
-        class="btn btn-primary rounded-pill w-100"
-        data-bs-dismiss="modal"
-      >
-        了解
-      </button>
-    </div>
-  </div>
-</div>
-
+<!-- JavaScript -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const rows = document.querySelectorAll(".user-row"); // 行クリック
-    const bulkForm = document.getElementById("course-bulk-form");
-    const actionInput = document.getElementById("bulk-action-input");
-    const countDisplay = document.getElementById("selected-count-display");
-    const statusModal = new bootstrap.Modal(
-      document.getElementById("statusModal"),
-    );
-    const alertModal = new bootstrap.Modal(
-      document.getElementById("alertModal"),
-    );
+// 共通の送信関数（削除・復元 両方で使います）
+function postAction(url) {
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = url;
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = '{{ csrf_token }}';
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+}
 
-    // 1. 行クリック選択
-    rows.forEach((row) => {
-      row.addEventListener("click", function (e) {
-        if (e.target.type === "checkbox" || e.target.tagName === "A") return;
-        const cb = this.querySelector(".row-checkbox");
-        if (cb) {
-          cb.checked = !cb.checked;
-          this.classList.toggle("table-selected", cb.checked);
-          updateCount();
-        }
-      });
-    });
-
-    // 2. チェックボックス単体操作
-    document.querySelectorAll(".row-checkbox").forEach((cb) => {
-      cb.addEventListener("change", function () {
-        this.closest("tr").classList.toggle("table-selected", this.checked);
-        updateCount();
-      });
-    });
-
-    function updateCount() {
-      countDisplay.innerText = document.querySelectorAll(
-        ".row-checkbox:checked",
-      ).length;
+// 削除確認
+function confirmDelete(button) {
+    const url = button.getAttribute('data-url');
+    const title = button.getAttribute('data-title');
+    if (confirm(`研修「${title}」を非公開にしますか？`)) {
+        postAction(url);
     }
+}
 
-    // 3. アクション実行
-    document.querySelectorAll(".action-trigger").forEach((btn) => {
-      btn.addEventListener("click", function () {
-        const action = this.dataset.action;
-        const checkedCount = document.querySelectorAll(
-          ".row-checkbox:checked",
-        ).length;
+// チェックボックスとアクションバーの制御
+document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = document.querySelectorAll(".row-checkbox");
+    const actionBar = document.querySelector(".action-bar-container");
+    const countDisplay = document.getElementById("selected-count-display");
 
-        if (checkedCount === 0) {
-          document.getElementById("alert-modal-msg").innerText =
-            "操作するコースを選択してください。";
-          alertModal.show();
-          return;
-        }
-
-        document.getElementById("loading-text").innerText = this.dataset.msg;
-        actionInput.value = action;
-        statusModal.show();
-
-        setTimeout(() => {
-          document.getElementById("modal-loading").style.display = "none";
-          document.getElementById("modal-success").style.display = "block";
-          setTimeout(() => {
-            bulkForm.submit();
-          }, 800);
-        }, 1200);
-      });
+    checkboxes.forEach(cb => {
+        cb.addEventListener("change", function() {
+            const card = this.closest(".course-item");
+            if (this.checked) { card.classList.add("table-selected"); } 
+            else { card.classList.remove("table-selected"); }
+            
+            const checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
+            countDisplay.innerText = checkedCount;
+            if (checkedCount > 0) { actionBar.classList.add("active"); } 
+            else { actionBar.classList.remove("active"); }
+        });
     });
-  });
+});
 </script>
 
 <style>
-  .fw-800 {
-    font-weight: 800;
-  }
-  .emphasized-table thead th {
-    padding: 1.2rem 1rem !important;
-    border: none;
-  }
-  .emphasized-table td {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 1rem !important;
-  }
-  .table-selected {
-    background-color: rgba(118, 177, 157, 0.08) !important;
-  }
-
-  /* 下部固定バー */
-  .action-bar-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding-left: var(--sidebar-width, 260px);
-    z-index: 1040;
-    transition: padding 0.4s ease;
-  }
-  .sidebar-collapsed .action-bar-container {
-    padding-left: var(--sidebar-collapsed-width, 88px);
-  }
-  .action-bar-inner {
-    background-color: var(--card-bg);
-    border-top: 2px solid var(--primary-color);
-    padding: 15px 0;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
-  }
-
-  .custom-loader {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid var(--primary-color);
-    border-radius: 50%;
-    display: inline-block;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-  @media (max-width: 991px) {
-    .action-bar-container {
-      padding-left: 0 !important;
-    }
-  }
+    .fw-800 { font-weight: 800; }
+    .action-bar-container { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; transition: all 0.4s; transform: translateY(100px); opacity: 0; }
+    .action-bar-container.active { transform: translateY(0); opacity: 1; }
+    .course-item.table-selected { background-color: #f0f7f4 !important; border: 1px solid #76b19d !important; }
+    .stats-card { border: none; }
 </style>
 {% endblock %}

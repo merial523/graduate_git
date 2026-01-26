@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from administer.views import UserListView
 
 app_name = "moderator"
 urlpatterns = [
@@ -9,6 +10,8 @@ urlpatterns = [
         views.SequentialUserCreateView.as_view(),
         name="moderator_create_user",
     ),  # ユーザーを作成する
+    #ユーザー一覧画面(administerアプリのuser_listビューを使用)
+    path("user-list/", UserListView.as_view(), name="user_list"),
     # バッジ管理一覧画面
     # reverse_lazy("moderator:moderatorBadge") と対応させる
     path("badges/", views.BadgeManageView.as_view(), name="moderatorBadge"),

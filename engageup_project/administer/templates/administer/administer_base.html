@@ -64,7 +64,7 @@
           <!-- 試験管理 -->
           <a class="menu-item {% if 'exam' in request.path or 'enrollments' in request.path %}active{% endif %}" href="{% url 'enrollments:exam_list' %}">
             <span class="material-icons">assignment</span>
-            <span class="menu-text">試験管理</span>
+            <span class="menu-text">検定管理</span>
           </a>
 
           <!-- コース・動画管理 -->
@@ -165,7 +165,7 @@
             <div class="user-profile d-flex align-items-center gap-2">
               <div class="user-role-badge">Admin</div>
               <span class="fw-bold small user-name-text"
-                >{{ user.last_name }} 管理員</span
+                >{{ request.user }}</span
               >
             </div>
           </div>

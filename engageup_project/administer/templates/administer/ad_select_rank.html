@@ -1,7 +1,6 @@
 {% extends base_template %}
 {% load static %}
 
-{% block title %}権限変更 | EngageUp{% endblock %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'administer:user_list' %}">ユーザー管理</a></li>
@@ -11,10 +10,10 @@
 {% block content %}
 <div class="user-management-container pb-5">
     <div class="mb-4">
-        <h1 class="page-title text-dark m-0 fw-800">権限変更</h1>
-    </div>
+            <h1 class="page-title text-dark m-0 fw-800">権限変更</h1>
+        </div>
 
-    <!-- ★追加：フィルタ ＆ 検索バー -->
+    <!-- 検索 & フィルタバー -->
     <div class="row g-3 mb-4 align-items-center">
         <div class="col-lg-7">
             <form method="get" class="d-flex gap-2">
@@ -39,99 +38,153 @@
 
         <div class="admin-card border-0 shadow-sm mb-4 overflow-hidden">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="user-table">
+            <table class="table table-hover align-middle mb-0" id="user-table">
                     <thead class="bg-light">
-                        <tr>
-                            <th class="text-center" style="width: 70px;">選択</th>
-                            <th style="width: 140px;">現在のランク</th>
-                            <th>ユーザー名</th>
-                            <th>メールアドレス</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user_item in users %}
+                    <tr>
+                        <th class="text-center" style="width: 70px;">選択</th>
+                        <th style="width: 140px;">現在のランク</th>
+                        <th>ユーザー名</th>
+                        <th>メールアドレス</th>
+                        <th class="text-center" style="width: 100px;">状態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_item in users %}
                         <tr class="user-row {% if user_item == request.user %}is-self{% endif %} {% if not user_item.is_active %}is-deleted{% endif %}" data-user-id="{{ user_item.pk }}">
-                            <td class="text-center">
+                        <td class="text-center">
+                            {% if user_item == request.user %}
+                                <span class="material-icons text-muted" style="font-size: 18px;" title="自分自身は変更できません">lock</span>
+                            {% else %}
+                                <input type="checkbox" name="selected_user" value="{{ user_item.pk }}" class="form-check-input row-checkbox">
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if user_item.rank == 'administer' %}bg-dark{% elif user_item.rank == 'moderator' %}bg-primary{% else %}bg-secondary-subtle text-dark border{% endif %} rounded-pill px-3 fw-normal">
+                                {{ user_item.rank }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-dark">{{ user_item.username }}</span>
                                 {% if user_item == request.user %}
-                                    <span class="material-icons text-muted" style="font-size: 18px;">lock</span>
-                                {% else %}
-                                    <input type="checkbox" name="selected_user" value="{{ user_item.pk }}" class="form-check-input row-checkbox">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary small" style="font-size: 0.7rem">あなた</span>
                                 {% endif %}
-                            </td>
-                            <td><span class="user-role-badge">{{ user_item.rank }}</span></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold text-dark">{{ user_item.username }}</span>
-                                    {% if user_item == request.user %}
-                                        <span class="badge bg-soft-blue text-primary small py-1 px-2 border border-primary border-opacity-10">あなた</span>
-                                    {% endif %}
-                                    <!-- ★削除済みインジケーター -->
-                                    {% if not user_item.is_active %}
-                                        <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;">削除済み</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="text-muted small">{{ user_item.email }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ user_item.email }}</td>
+                        <td class="text-center">
+                            {% if user_item.is_active %}
+                                <span class="material-icons text-success" title="有効">check_circle</span>
+                            {% else %}
+                                <span class="text-danger material-icons" title="削除済み">block</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
                                 <div class="mb-3">
                                 <span class="material-icons" style="font-size: 48px; opacity: 0.3;">search_off</span>
                                 </div>
                                 <p class="mb-1 fw-bold">該当するユーザーが見つかりません</p>
                                 <p class="small mb-0">条件を変えて再度お試しください</p>
-                            </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         </div>
 
+        <!-- ページネーション (admin-cardの外に移動) -->
         {% if is_paginated %}
-        <nav class="mb-5">
-            <ul class="pagination justify-content-center">
+            <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center align-items-center gap-2">
+                
+                {# 前へボタン #}
                 {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_left</span></a></li>
+                <li class="page-item">
+                <a class="page-link pagination-circle shadow-sm" 
+                    href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if show_all %}&show=all{% endif %}{% if request.GET.rank %}&rank={{ request.GET.rank }}{% endif %}{% if request.GET.rank_filter %}&rank_filter={{ request.GET.rank_filter }}{% endif %}" aria-label="Previous">
+                        <span class="material-icons">chevron_left</span>
+                    </a>
+                </li>
                 {% endif %}
-                <li class="page-item active"><span class="page-link shadow-sm rounded-circle mx-1">{{ page_obj.number }}</span></li>
+
+                {# ページ番号 #}
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active" aria-current="page">
+                    <span class="page-link pagination-circle shadow-sm fw-bold">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link pagination-circle shadow-sm text-dark" 
+                    href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if show_all %}&show=all{% endif %}{% if request.GET.rank %}&rank={{ request.GET.rank }}{% endif %}{% if request.GET.rank_filter %}&rank_filter={{ request.GET.rank_filter }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {# 次へボタン #}
                 {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link shadow-sm rounded-circle mx-1" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_rank != 'all' %}&rank_filter={{ current_rank }}{% endif %}"><span class="material-icons">chevron_right</span></a></li>
+                <li class="page-item">
+                <a class="page-link pagination-circle shadow-sm" 
+                    href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if show_all %}&show=all{% endif %}{% if request.GET.rank %}&rank={{ request.GET.rank }}{% endif %}{% if request.GET.rank_filter %}&rank_filter={{ request.GET.rank_filter }}{% endif %}" aria-label="Next">
+                        <span class="material-icons">chevron_right</span>
+                    </a>
+                </li>
                 {% endif %}
+
             </ul>
         </nav>
+
+            <div class="text-center mt-3">
+                <p class="pagination-info text-muted">
+                    {{ page_obj.start_index }} - {{ page_obj.end_index }}件目 / 全 {{ paginator.count }} 件
+                </p>
+            </div>
         {% endif %}
 
-        <!-- ボトム・アクション・バー（透過なし） -->
-        <div class="action-bar-container">
-            <div class="action-bar-inner shadow-lg">
-                <div class="container">
+    
+
+        <!-- フローティング・アクションバー -->
+        <div class="action-bar-container" id="floating-action-bar">
+            <div class="action-bar-inner shadow-lg mx-3 mb-3 rounded-pill border-0 bg-dark text-white">
+                <div class="container-fluid px-4 py-2">
                     <div class="row align-items-center">
-                        <div class="col-md-auto d-none d-lg-block">
-                            <div class="selection-count">
-                                <span class="material-icons text-primary">how_to_reg</span>
-                                <span id="selected-count-display">0</span> 名を選択中
+                        <!-- 選択件数 -->
+                        <div class="col-xl-2 col-lg-2 d-none d-lg-block">
+                            <div class="selection-count py-1 d-flex align-items-center">
+                                <span class="material-icons text-primary me-2">how_to_reg</span>
+                                <span id="selected-count-display" class="fw-bold fs-5 me-2">0</span> <span class="small">名を選択中</span>
                             </div>
                         </div>
-                        <div class="col-md">
-                            <div class="custom-radio-group">
-                                <ul class="d-flex justify-content-center justify-content-md-start">
-                                    {% for radio in form.rank %}
-                                    <li>
-                                        <label>
-                                            {{ radio.tag }}
-                                            <span class="choice-label">{{ radio.choice_label }}</span>
-                                        </label>
-                                    </li>
-                                    {% endfor %}
-                                </ul>
+
+                        <!-- 権限選択（中央） -->
+                        <div class="col-xl-7 col-lg-6 col-md-7">
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <span class="small text-white-50 fw-bold text-nowrap">変更後:</span>
+                                <div class="custom-radio-group">
+                                    <ul class="d-flex m-0 p-0 gap-2 list-unstyled">
+                                        {% for radio in form.rank %}
+                                        <li>
+                                            <label class="rank-choice-card">
+                                                {{ radio.tag }}
+                                                <span class="choice-label">{{ radio.choice_label }}</span>
+                                            </label>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-auto">
-                            <button type="button" id="submit-trigger" class="btn btn-success btn-lg shadow-sm fw-800 px-5">
-                                 権限を更新する
-                            </button>
+
+                        <!-- アクションボタン（右側） -->
+                        <div class="col-xl-3 col-lg-4 col-md-5">
+                            <div class="d-flex gap-2 justify-content-end">                                <button type="button" id="submit-trigger" class="btn btn-success rounded-pill px-4 fw-800 shadow-sm flex-grow-1">
+                                    権限を更新する
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -162,48 +215,133 @@
     </div>
 </div>
 
+<style>
+    .fw-800 { font-weight: 800; }
+    .size-18 { font-size: 18px; }
+
+    /* 行選択スタイル */
+    .user-row { cursor: pointer; transition: background-color 0.2s; }
+    .user-row.is-self { cursor: default; }
+    .table-selected { background-color: rgba(118, 177, 157, 0.1) !important; }
+
+    /* 検索バー */
+    .search-input-group { border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.05); }
+    .search-input-group input { border: none; outline: none; background: transparent; margin-left: 8px; width: 100%; }
+
+    /* アクションバー */
+    .action-bar-container {
+        position: fixed;
+        bottom: 0;
+        left: var(--sidebar-width, 260px); 
+        width: calc(100% - var(--sidebar-width, 260px));
+        z-index: 1000;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(120px);
+        opacity: 0;
+        pointer-events: none;
+    }
+    .action-bar-container.active {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .action-bar-inner { background: #2d3436 !important; }
+
+    /* 権限選択チップ（ボタン） */
+    .rank-choice-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 8px 12px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        margin: 0;
+        min-width: 105px; 
+        height: 40px;
+        white-space: nowrap; 
+    }
+
+    .rank-choice-card input[type="radio"] {
+        margin-right: 6px;
+        accent-color: var(--primary-color);
+    }
+
+    li:has(input:checked) .rank-choice-card {
+        background: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(118, 177, 157, 0.4);
+    }
+
+    /* ローディング等 */
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* サイドバー対応 */
+    .sidebar-collapsed .action-bar-container {
+        left: var(--sidebar-collapsed-width, 88px);
+        width: calc(100% - var(--sidebar-collapsed-width, 88px));
+    }
+
+    @media (max-width: 991px) {
+        .action-bar-container { left: 0; width: 100%; }
+        .action-bar-inner { border-radius: 0 !important; margin: 0 !important; }
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const rows = document.querySelectorAll('.user-row');
         const checkboxes = document.querySelectorAll('.row-checkbox');
         const countDisplay = document.getElementById('selected-count-display');
+        const actionBar = document.getElementById('floating-action-bar');
         const submitBtn = document.getElementById('submit-trigger');
         const form = document.getElementById('rank-update-form');
         const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
 
+        function updateActionBar() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            if (countDisplay) countDisplay.innerText = checkedCount;
+            
+            if (actionBar) {
+                if (checkedCount > 0) {
+                    actionBar.classList.add('active');
+                } else {
+                    actionBar.classList.remove('active');
+                }
+            }
+        }
+
         rows.forEach(row => {
             row.addEventListener('click', function(e) {
-                if (this.classList.contains('is-self') || e.target.type === 'checkbox') return;
-                const checkbox = this.querySelector('.row-checkbox');
-                if (checkbox) {
-                    checkbox.checked = !checkbox.checked;
-                    updateRowHighlight(this, checkbox.checked);
-                    updateCount();
+                if (this.classList.contains('is-self') || e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+                const cb = this.querySelector('.row-checkbox');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                    this.classList.toggle('table-selected', cb.checked);
+                    updateActionBar();
                 }
             });
         });
 
         checkboxes.forEach(cb => {
             cb.addEventListener('change', function() {
-                updateRowHighlight(this.closest('.user-row'), this.checked);
-                updateCount();
+                this.closest('tr').classList.toggle('table-selected', this.checked);
+                updateActionBar();
             });
         });
 
-        function updateRowHighlight(row, isChecked) {
-            isChecked ? row.classList.add('table-primary-soft') : row.classList.remove('table-primary-soft');
-        }
-
-        function updateCount() {
-            countDisplay.innerText = document.querySelectorAll('.row-checkbox:checked').length;
-        }
-
         submitBtn.addEventListener('click', function() {
-            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
             const rankSelected = document.querySelector('input[name="rank"]:checked');
-
-            if (checkedCount === 0) { alert("変更対象のユーザーを選択してください。"); return; }
-            if (!rankSelected) { alert("変更後のランクを選択してください。"); return; }
+            if (!rankSelected) {
+                alert("変更後のランクを選択してください。");
+                return;
+            }
 
             statusModal.show();
             setTimeout(() => {
@@ -214,96 +352,4 @@
         });
     });
 </script>
-
-<style>
-    .fw-800 { font-weight: 800; }
-    
-    /* 削除済み行のスタイル */
-    .user-row.is-deleted {
-        background-color: #fafafa;
-        opacity: 0.7;
-    }
-
-    /* ローディングアニメーション */
-    .custom-loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .success-icon-wrapper span { font-size: 80px; animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-    .search-input-group { background: var(--card-bg); border-radius: 16px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(0,0,0,0.05); }
-    .search-input-group input { border: none; outline: none; background: transparent; width: 100%; color: var(--text-color); }
-    .user-row { cursor: pointer; transition: 0.2s; }
-    .table-primary-soft { background-color: rgba(118, 177, 157, 0.1) !important; }
-
-    /* --- アクションバーの重なり解消設定 --- */
-    .action-bar-container {
-        position: fixed;
-        bottom: 0;
-        /* left: 0 をやめて、サイドバーの幅（変数）を起点にする */
-        left: var(--sidebar-width, 260px); 
-        /* 幅は「100% - サイドバーの幅」にする */
-        width: calc(100% - var(--sidebar-width, 260px));
-        
-        /* z-indexをサイドバー（通常1000〜1050）より低く設定して背面に回す */
-        z-index: 900; 
-        
-        padding-left: 0 !important; /* paddingでの調整は不要になるので0に */
-        transition: left 0.4s cubic-bezier(0.4, 0.4, 0, 1), width 0.4s cubic-bezier(0.4, 0.4, 0, 1);
-    }
-
-    /* サイドバーが閉じている時（アイコン状態）の連動設定 */
-    .sidebar-collapsed .action-bar-container {
-        left: var(--sidebar-collapsed-width, 88px);
-        width: calc(100% - var(--sidebar-collapsed-width, 88px));
-    }
-
-    .action-bar-inner {
-        background-color: var(--bg-color) !important;
-        opacity: 1 !important;
-        border-top: 2px solid var(--primary-color);
-        padding: 12px 0;
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.12);
-    }
-
-    /* モバイル対応：スマホではサイドバーが消えるため全幅に戻す */
-    @media (max-width: 991px) {
-        .action-bar-container {
-            left: 0 !important;
-            width: 100% !important;
-            z-index: 1050; /* スマホでは最前面に出す */
-        }
-        .action-bar-inner {
-            padding: 10px;
-        }
-    }
-
-    /* ラジオボタン（チップ）が背景色と同化して見えにくい場合の調整 */
-    .custom-radio-group label {
-        /* チップ自体の背景をカードと同じ白にすることで、バーの上で目立たせる */
-        background-color: var(--card-bg); 
-        padding: 8px 16px; 
-        border-radius: 12px; 
-        cursor: pointer; 
-        transition: 0.2s; 
-        border: 2px solid transparent; 
-        font-weight: bold; 
-        font-size: 0.85rem; 
-        display: flex; 
-        align-items: center; 
-        color: var(--text-color);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .selection-count { font-weight: 800; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
-    .custom-radio-group ul { list-style: none; padding: 0; margin: 0; gap: 8px; }
-    .custom-radio-group label { background: var(--bg-color); padding: 8px 16px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; color: var(--text-color); }
-    .custom-radio-group input[type="radio"] { margin-right: 8px; accent-color: var(--primary-color); }
-    .custom-radio-group li:has(input:checked) label { background: #fff; border-color: var(--primary-color); color: var(--primary-color); box-shadow: 0 4px 10px rgba(118, 177, 157, 0.15); }
-    
-    @media (max-width: 767px) {
-        .action-bar-container { padding-left: 0 !important; }
-        .action-bar-inner { padding: 10px; }
-        .action-bar-inner .btn { width: 100%; }
-    }
-</style>
 {% endblock %}

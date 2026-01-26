@@ -33,6 +33,77 @@ class Course(models.Model):  # 講座
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+# --- ★新規追記：研修モジュール (コースの中身) ---
+class TrainingModule(models.Model):
+    # コースを消したら研修も消える(CASCADE)設定
+    course = models.ForeignKey(
+        Course, 
+        on_delete=models.CASCADE, 
+        related_name="modules",
+        verbose_name="所属コース"
+    )
+    title = models.CharField(verbose_name="研修名", max_length=100)
+    
+    # 動画アップロード
+    video = models.FileField(
+        verbose_name="研修動画", 
+        upload_to="training_videos/", 
+        null=True, 
+        blank=True
+    )
+    
+    # 教材資料（検定のexams_filesフォルダと共通）
+    training_file = models.FileField(
+        verbose_name="要約元資料(PDF/画像)", 
+        upload_to="exams_files/", 
+        null=True, 
+        blank=True
+    )
+    # ★ 推奨学習時間の項目を追加
+    estimated_time = models.PositiveIntegerField(
+        verbose_name="推奨学習時間(分)", 
+        default=30,
+        help_text="受講者がこの研修を終えるのにかかる目安の時間（分）です"
+    )
+    
+    # AIで生成したり手入力したりするメインテキスト
+    content_text = models.TextField(verbose_name="研修テキスト", blank=True)
+    
+    # 並べ替え用の順番
+    order = models.IntegerField(verbose_name="表示順", default=0)
+    
+    # 論理削除フラグ
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+
+    def __str__(self):
+        return f"{self.course.subject} - {self.title}"
+
+# --- ★新規追記：研修内の「例題」 ---
+class TrainingExample(models.Model):
+    module = models.ForeignKey(
+        TrainingModule, 
+        on_delete=models.CASCADE, 
+        related_name="examples",
+        verbose_name="対象研修"
+    )
+    text = models.TextField(verbose_name="例題文")
+    explanation = models.TextField(verbose_name="解説", blank=True)
+
+    def __str__(self):
+        return f"例題: {self.text[:20]}"
+
+class TrainingExampleChoice(models.Model):
+    example = models.ForeignKey(
+        TrainingExample, 
+        on_delete=models.CASCADE, 
+        related_name="choices"
+    )
+    text = models.CharField(verbose_name="選択肢", max_length=200)
+    is_correct = models.BooleanField(verbose_name="これが正解か", default=False)
+
+    def __str__(self):
+        return self.text
+
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -68,10 +139,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):  # ユーザーのランク
     RANK_CHOICES = [
-        ("administer", "管理者"),
-        ("moderator", "モデレーター"),
-        ("staff", "社員"),
-        ("visitor", "訪問者"),
+        ("administer", "administer"),
+        ("moderator", "moderator"),
+        ("staff", "staff"),
+        ("visitor", "visitor"),
     ]
 
     rank = models.CharField(  # ユーザーのランクを選ぶ
@@ -137,7 +208,9 @@ class Exam(models.Model):  # 検定
     description = models.TextField(verbose_name="説明・研修テキスト", blank=True)
     passing_score = models.IntegerField(verbose_name="合格基準点", default=80) # 自動採点に必要
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日") # 管理用
-    is_active = models.BooleanField(default=True, verbose_name="有効フラグ") # 検定が有効かどうか
+    # is_active = models.BooleanField(default=True, verbose_name="有効フラグ") # 検定が有効かどうか
+    is_deleted = models.BooleanField(default=False, verbose_name="削除フラグ")
+    is_active = models.BooleanField(default=True, verbose_name="公開状態")
     
     # ★追加：仮試験か本試験か
     exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='mock', verbose_name="試験タイプ")
@@ -194,6 +267,10 @@ class News(models.Model):
     title = models.CharField(verbose_name="お知らせ名",max_length=100)
     content = models.TextField(verbose_name="内容")
     is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
+    created_at = models.DateTimeField(
+        verbose_name="投稿日", 
+        auto_now_add=True  # 最初に保存された時の日時を自動で入れる
+    )
     
 
 # ★新規追加：ユーザーがどの試験に合格したかを記録する

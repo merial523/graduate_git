@@ -158,3 +158,12 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # 環境変数からAPIキーを�
 
 # 開発用: メールをコンソールに出力
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# キャッシュ設定
+CACHES = {
+    'default': {
+        # 「パソコンのメモリ（RAM）を倉庫として使います」という指定
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        # 複数のキャッシュを区別するための名前（適当な名前でOK）
+        'LOCATION': 'unique-snowflake',
+    }
+}

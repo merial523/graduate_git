@@ -6,7 +6,9 @@
 {% block content %}
 <div class="user-management-container pb-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="page-title text-dark m-0 fw-bold">ユーザー管理</h1>
+    <div class="d-flex align-items-center">
+      <h1 class="page-title text-dark m-0 fw-bold">ユーザー管理</h1>
+    </div>
 
     {% if request.user.rank == 'administer' %}
     <div class="display-toggle">
@@ -37,7 +39,7 @@
 
     <div class="col-xl-8 col-lg-7 text-end">
       <div class="d-flex gap-2 justify-content-end align-items-center flex-nowrap">
-        <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary shadow-sm text-nowrap">
+        <a href="{% url 'moderator:moderator_create_user'%}" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold">
           <span class="material-icons">person_add</span> ユーザー作成
         </a>
         
@@ -45,35 +47,31 @@
         <a href="{% url 'administer:select_rank'%}" class="btn btn-success shadow-sm text-nowrap">
           <span class="material-icons">published_with_changes</span> 権限変更
         </a>
-
-        {% if show_all %}
-        <button type="button" class="btn btn-warning shadow-sm action-trigger text-nowrap" data-action="restore" data-msg="ユーザーを復元しています...">
-          <span class="material-icons">settings_backup_restore</span> 一括復元
-        </button>
-        {% else %}
-        <button type="button" class="btn btn-danger shadow-sm action-trigger text-nowrap" data-action="soft_delete" data-msg="ユーザーを削除しています...">
-          <span class="material-icons">delete_outline</span> 一括削除
-        </button>
-        {% endif %}
+        <!-- ヘルプボタンの追加 -->
+        <a href="javascript:void(0)" class="text-muted small text-decoration-none ms-3 d-inline-flex align-items-center help-trigger" data-bs-toggle="modal" data-bs-target="#helpModal">
+          <span class="material-icons size-18 me-1">help_outline</span> ヘルプ
+        </a>
         {% endif %}
       </div>
     </div>
   </div>
 
+  <!-- リストテーブル -->
   <form method="post" id="user-bulk-form">
     {% csrf_token %}
     <input type="hidden" name="action" id="bulk-action-input" value="">
     
-    <div class="table-responsive admin-card border-0 shadow-sm overflow-hidden">
+    <div class="table-responsive admin-card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
       <table class="table table-hover align-middle mb-0">
-        <thead class="bg-light">
+        <thead class="bg-light border-bottom">
           <tr>
             {% if request.user.rank == 'administer' %}
-            <th class="text-center" style="width: 80px">選択</th>
+            <th class="text-center" style="width: 70px">選択</th>
             {% endif %}
-            <th style="width: 150px">権限</th>
+            <th style="width: 140px">権限</th>
             <th>ユーザー名</th>
             <th>メールアドレス</th>
+            <th class="text-center" style="width: 100px">状態</th>
           </tr>
         </thead>
         <tbody>
@@ -88,15 +86,25 @@
               {% endif %}
             </td>
             {% endif %}
-            <td><span class="user-role-badge {% if not user_item.is_active %}bg-secondary{% endif %}">{{ user_item.rank }}</span></td>
+            <td>
+                <span class="badge {% if user_item.rank == 'administer' %}bg-dark{% elif user_item.rank == 'moderator' %}bg-primary{% else %}bg-secondary-subtle text-dark border{% endif %} rounded-pill px-3 fw-normal">
+                    {{ user_item.get_rank_display|default:user_item.rank }}
+                </span>
+            </td>
             <td>
               <div class="d-flex align-items-center gap-2">
                 <span class="fw-bold text-dark">{{ user_item.username }}</span>
                 {% if user_item == request.user %}<span class="badge bg-light text-primary border small" style="font-size: 0.7rem">あなた</span>{% endif %}
-                {% if not user_item.is_active %}<span class="badge rounded-pill bg-danger" style="font-size: 0.65rem">削除済み</span>{% endif %}
               </div>
             </td>
             <td class="text-muted small">{{ user_item.email }}</td>
+            <td class="text-center">
+                {% if user_item.is_active %}
+                    <span class="material-icons text-success" title="有効">check_circle</span>
+                {% else %}
+                    <span class="text-danger material-icons" title="削除済み">block</span>
+                {% endif %}
+            </td>
           </tr>
           {% empty %}
           <tr>
@@ -112,8 +120,166 @@
         </tbody>
       </table>
     </div>
+
+    {% if request.user.rank == 'administer' %}
+    <!-- フローティング・アクションバー（アドミンのみ表示） -->
+    <div class="action-bar-container" id="floating-action-bar">
+        <div class="action-bar-inner shadow-lg mx-3 mb-3 rounded-pill border-0 bg-dark text-white">
+            <div class="container-fluid px-4 py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-auto">
+                        <div class="selection-count py-1 d-flex align-items-center">
+                            <span class="material-icons text-primary me-2">how_to_reg</span>
+                            <span id="selected-count-display" class="fw-bold fs-5 me-2">0</span> 名を選択中
+                        </div>
+                    </div>
+                    <div class="col text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                            {% if show_all %}
+                            <button type="button" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold action-trigger" 
+                                    data-action="restore" data-msg="ユーザーを復元しています...">
+                                <span class="material-icons align-middle size-18">settings_backup_restore</span> 一括復元
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold action-trigger" 
+                                    data-action="soft_delete" data-msg="ユーザーを削除しています...">
+                                <span class="material-icons align-middle size-18">delete_outline</span> 一括削除
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
   </form>
+    
+  <!-- ページネーション -->
+  {% if is_paginated %}
+  <nav aria-label="Page navigation" class="mt-5">
+    <ul class="pagination justify-content-center align-items-center gap-2">
+      
+      {# 前へボタン：最初のページではない時のみ表示 #}
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link pagination-circle shadow-sm" 
+          href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if show_all %}&show=all{% endif %}{% if request.GET.rank %}&rank={{ request.GET.rank }}{% endif %}{% if request.GET.rank_filter %}&rank_filter={{ request.GET.rank_filter }}{% endif %}" aria-label="Previous">
+          <span class="material-icons">chevron_left</span>
+        </a>
+      </li>
+      {% endif %}
+
+      {# ページ番号 #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active" aria-current="page">
+          <span class="page-link pagination-circle shadow-sm fw-bold">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link pagination-circle shadow-sm text-dark" 
+            href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if show_all %}&show=all{% endif %}{% if request.GET.rank %}&rank={{ request.GET.rank }}{% endif %}{% if request.GET.rank_filter %}&rank_filter={{ request.GET.rank_filter }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+      {% endfor %}
+
+      {# 次へボタン：最後のページではない時のみ表示 #}
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link pagination-circle shadow-sm" 
+          href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if show_all %}&show=all{% endif %}{% if request.GET.rank %}&rank={{ request.GET.rank }}{% endif %}{% if request.GET.rank_filter %}&rank_filter={{ request.GET.rank_filter }}{% endif %}" aria-label="Next">
+          <span class="material-icons">chevron_right</span>
+        </a>
+      </li>
+      {% endif %}
+
+    </ul>
+  </nav>
+
+  <div class="text-center mt-3">
+      <p class="pagination-info text-muted">
+          {{ page_obj.start_index }} - {{ page_obj.end_index }}件目 / 全 {{ paginator.count }} 件
+      </p>
+  </div>
+  {% endif %}
 </div>
+
+<!-- ヘルプモーダル -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+
+      <!-- ヘッダー -->
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold d-flex align-items-center">
+          <span class="material-icons me-2">help_outline</span>
+          ユーザーの削除・復元方法
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- 本文 -->
+      <div class="modal-body px-4 py-3">
+
+        <!-- 削除 -->
+        <section class="mb-3">
+          <h6 class="fw-bold text-danger d-flex align-items-center mb-2">
+            <span class="material-icons me-2">delete_outline</span>
+            ユーザーを削除する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              リストから削除したいユーザーの行をクリック、または左側のチェックボックスを選択します。
+            </li>
+            <li class="mb-1">
+              画面下部に黒い <b>「アクションバー」</b> が表示されます。
+            </li>
+            <li>
+              <b>「一括削除」</b> ボタンを押すと、ユーザーはログイン不可状態（削除済み）になります。
+            </li>
+          </ol>
+        </section>
+
+        <hr class="my-3">
+
+        <!-- 復元 -->
+        <section>
+          <h6 class="fw-bold text-warning d-flex align-items-center mb-2">
+            <span class="material-icons me-2">settings_backup_restore</span>
+            ユーザーを復元する場合
+          </h6>
+          <ol class="small text-muted ps-3 mb-0">
+            <li class="mb-1">
+              画面上部の <b>「全ユーザー表示」</b> ボタンを押し、削除済みのユーザーを表示させます。
+            </li>
+            <li class="mb-1">
+              「削除済み」バッジがついたユーザーを選択します。
+            </li>
+            <li>
+              アクションバーの <b>「一括復元」</b> ボタンを押すと、再度ログインが可能になります。
+            </li>
+          </ol>
+        </section>
+
+      </div>
+
+      <!-- フッター -->
+      <div class="modal-footer border-0 pt-0 px-3 pb-3">
+        <button type="button"
+                class="btn btn-light rounded-pill px-4 shadow-sm fw-bold w-100"
+                data-bs-dismiss="modal">
+          閉じる
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
 <!-- 処理中/完了ポップアップモーダル -->
 <div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -137,102 +303,122 @@
     </div>
 </div>
 
-<!-- 2. 警告用ポップアップモーダル -->
-<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-5">
-            <div class="modal-body text-center p-5">
-                <div class="mb-4">
-                    <span class="material-icons text-warning" style="font-size: 64px;">warning_amber</span>
-                </div>
-                <h5 class="fw-800 text-dark mb-3">確認が必要です</h5>
-                <p class="text-muted small mb-4" id="alert-modal-msg">対象を選択してください</p>
-                <button type="button" class="btn rounded-pill px-5 shadow-sm" data-bs-dismiss="modal">了解</button>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+  .fw-800 { font-weight: 800; }
+  .size-18 { font-size: 18px; }
+  
+  /* 行選択スタイル */
+  .user-row { cursor: pointer; transition: background-color 0.2s; }
+  .table-selected { background-color: rgba(118, 177, 157, 0.1) !important; }
+
+  /* ヘルプボタンのスタイル */
+  .help-trigger {
+    transition: 0.2s;
+    opacity: 0.7;
+  }
+  .help-trigger:hover {
+    opacity: 1;
+    color: var(--primary-color) !important;
+  }
+
+  /* フローティング・アクションバーのスタイル */
+  .action-bar-container {
+    position: fixed;
+    bottom: 0;
+    left: var(--sidebar-width, 260px); 
+    width: calc(100% - var(--sidebar-width, 260px));
+    z-index: 1000;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(100px);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .action-bar-container.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .action-bar-inner { background: #2d3436 !important; }
+
+  /* サイドバー折りたたみ時との連動 */
+  .sidebar-collapsed .action-bar-container {
+    left: var(--sidebar-collapsed-width, 88px);
+    width: calc(100% - var(--sidebar-collapsed-width, 88px));
+  }
+
+  .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .search-input-group { border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.05); }
+  .search-input-group input { border: none; outline: none; background: transparent; margin-left: 8px; width: 100%; }
+
+  @media (max-width: 991px) {
+    .action-bar-container { left: 0; width: 100%; }
+  }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const rows = document.querySelectorAll('.user-row');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
     const bulkForm = document.getElementById('user-bulk-form');
     const actionInput = document.getElementById('bulk-action-input');
-    
-    // モーダルの初期化
-    const statusModalEl = document.getElementById('statusModal');
-    const alertModalEl = document.getElementById('alertModal');
-    const statusModal = statusModalEl ? new bootstrap.Modal(statusModalEl) : null;
-    const alertModal = alertModalEl ? new bootstrap.Modal(alertModalEl) : null;
-    
-    const loadingText = document.getElementById('loading-text');
-    const alertModalMsg = document.getElementById('alert-modal-msg');
+    const actionBar = document.getElementById('floating-action-bar');
+    const countDisplay = document.getElementById('selected-count-display');
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
 
-    // 行選択機能
+    // 選択状態とアクションバーの表示更新
+    function updateSelection() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        if (countDisplay) countDisplay.innerText = checkedCount;
+        
+        if (actionBar) {
+            if (checkedCount > 0) {
+                actionBar.classList.add('active');
+            } else {
+                actionBar.classList.remove('active');
+            }
+        }
+    }
+
+    // 行クリックで選択
     rows.forEach(row => {
         row.addEventListener('click', function(e) {
             if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
-            const checkbox = this.querySelector('.row-checkbox');
-            if (checkbox && !checkbox.disabled) {
-                checkbox.checked = !checkbox.checked;
-                checkbox.checked ? this.classList.add('table-selected') : this.classList.remove('table-selected');
+            const cb = this.querySelector('.row-checkbox');
+            if (cb) {
+                cb.checked = !cb.checked;
+                this.classList.toggle('table-selected', cb.checked);
+                updateSelection();
             }
         });
     });
 
-    // ボタンのクリックイベント（削除・復元）
+    // チェックボックス直接クリック
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            this.closest('tr').classList.toggle('table-selected', this.checked);
+            updateSelection();
+        });
+    });
+
+    // アクション実行
     document.querySelectorAll('.action-trigger').forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
             const msg = this.dataset.msg;
-            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            
+            document.getElementById('loading-text').innerText = msg;
+            actionInput.value = action;
+            statusModal.show();
 
-            if (checkedCount === 0) {
-                if (alertModal) {
-                    alertModalMsg.innerText = "操作するユーザーを一人以上選択してください。";
-                    alertModal.show();
-                }
-                return;
-            }
-
-            if (statusModal) {
-                loadingText.innerText = msg;
-                actionInput.value = action;
-                statusModal.show();
-
-                setTimeout(() => {
-                    document.getElementById('modal-loading').style.display = 'none';
-                    document.getElementById('modal-success').style.display = 'block';
-                    setTimeout(() => { bulkForm.submit(); }, 800);
-                }, 1200);
-            }
-        });
-    });
-
-    // チェックボックス直接操作のハイライト
-    document.querySelectorAll('.row-checkbox').forEach(cb => {
-        cb.addEventListener('change', function() {
-            const row = this.closest('tr');
-            this.checked ? row.classList.add('table-selected') : row.classList.remove('table-selected');
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                setTimeout(() => { bulkForm.submit(); }, 800);
+            }, 1200);
         });
     });
 });
 </script>
-
-<style>
-  .fw-800 { font-weight: 800; }
-  .table-selected { background-color: rgba(118, 177, 157, 0.08) !important; }
-  .text-nowrap { white-space: nowrap !important; }
-
-  /* ローディングアニメーション */
-  .custom-loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  
-  .success-icon-wrapper span { animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-  @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-  .pagination .page-link { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); }
-  .search-input-group { background: var(--card-bg); border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.05); }
-  .search-input-group input { border: none; outline: none; background: transparent; margin-left: 8px; width: 100%; color: var(--text-color); }
-</style>
 {% endblock %}

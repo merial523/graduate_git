@@ -1,0 +1,56 @@
+{% extends base_template %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="fw-bold mb-4">📖 受講可能な研修一覧</h2>
+
+    <div class="accordion shadow-sm" id="courseAccordion">
+        {% for course in courses %}
+        <div class="accordion-item border-0 mb-2 shadow-sm rounded-3 overflow-hidden">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#course{{ course.id }}">
+                    <div class="d-flex justify-content-between w-100 align-items-center">
+                        <span>{{ course.subject }}</span>
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill fw-normal me-3" style="font-size: 0.7em;">
+                            全 {{ course.modules.count }} 研修
+                        </span>
+                    </div>
+                </button>
+            </h2>
+            <div id="course{{ course.id }}" class="accordion-collapse collapse" data-bs-parent="#courseAccordion">
+                <div class="accordion-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for module in course.modules.all %}
+                            {% if module.is_active %}
+                            <a href="{% url 'courses:training_detail' module.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 px-4 border-0 border-bottom">
+                                <div>
+                                    <i class="bi bi-play-circle me-2 text-primary"></i>
+                                    {{ module.title }}
+                                </div>
+                                <small class="text-muted">{{ module.estimated_time }}分</small>
+                            </a>
+                            {% endif %}
+                        {% empty %}
+                            <div class="p-4 text-center text-muted small">現在、このコースに公開中の研修はありません。</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center py-5 text-muted">受講できるコースがありません。</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    /* アコーディオンのアイコンを調整 */
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+</style>
+{% endblock %}
