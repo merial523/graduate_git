@@ -83,6 +83,18 @@ class LoginRequiredCustomMixin:
         if not request.user.is_authenticated:
             return redirect(self.login_url)
         return super().dispatch(request, *args, **kwargs)
+class AdminOrModeratorOrStaffRequiredMixin(LoginRequiredCustomMixin):
+    """
+    administer または moderator または staff 以外はログインページへ戻す
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        user = request.user
+
+        if user.rank not in ["administer", "moderator","staff"]:
+            return redirect(self.login_url)
+
+        return super().dispatch(request, *args, **kwargs)
 
 class AdminOrModeratorRequiredMixin(LoginRequiredCustomMixin):
     """

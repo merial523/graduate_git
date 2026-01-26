@@ -1,0 +1,109 @@
+{% extends base_template %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-3">ユーザー一覧</h2>
+
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-2">
+            <button type="submit" name="action" value="delete"
+                class="btn btn-danger btn-sm"
+                onclick="return confirm('選択したユーザーを無効化しますか？')">
+                削除（論理削除）
+            </button>
+
+            <button type="submit" name="action" value="restore"
+                class="btn btn-success btn-sm"
+                onclick="return confirm('選択したユーザーを復元しますか？')">
+                復元
+            </button>
+        </div>
+
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:40px;">
+                        <input type="checkbox" id="select-all">
+                    </th>
+                    <th>会員番号</th>
+                    <th>名前</th>
+                    <th>Email</th>
+                    <th>権限</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="user_ids" value="{{ user.id }}">
+                    </td>
+                    <td>{{ user.member_num }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.rank }}</td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">有効</span>
+                        {% else %}
+                            <span class="badge bg-danger">無効</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">
+                        ユーザーが存在しません
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+
+    <!-- ページネーション -->
+    {% if is_paginated %}
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.previous_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">
+                        前へ
+                    </a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.next_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">
+                        次へ
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<script>
+    // 全選択チェックボックス
+    document.getElementById("select-all").addEventListener("change", function () {
+        const checks = document.querySelectorAll("input[name='user_ids']");
+        checks.forEach(ch => ch.checked = this.checked);
+    });
+</script>
+{% endblock %}

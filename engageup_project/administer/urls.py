@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 app_name = "administer"
+
 urlpatterns = [
     path('', views.AdministerIndexView.as_view(), name = "administer_index"), #アドミンのトップページ
     path('select-rank/', views.UserRankListView.as_view(), name='select_rank'), #ユーザーのリスト表示
