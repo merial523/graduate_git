@@ -45,7 +45,7 @@ class CourseListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView)
         context.update({
             'total_active_courses': Course.objects.filter(is_active=True).count(),
             'total_videos': TrainingModule.objects.filter(is_active=True).count(),
-            'total_students': User.objects.count(),
+            'total_students': User.objects.filter(rank="staff").count(),
             'is_trash_mode': self.request.GET.get("show") == "deleted",
             'search_query': self.request.GET.get("q", "")
         })
