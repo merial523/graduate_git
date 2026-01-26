@@ -152,6 +152,14 @@
               </div>
           </div>
       </div>
+      {% empty %}
+      <!-- 指定された「見つかりません」表示 -->
+      <div class="admin-card border-0 shadow-sm rounded-4 py-5 text-center text-muted bg-white">
+          <div class="mb-3">
+              <span class="material-icons" style="font-size: 48px; opacity: 0.3;">search_off</span>
+          </div>
+          <p class="mb-1 fw-bold">該当する検定が見つかりません</p>
+      </div>
       {% endfor %}
     </div>
 
