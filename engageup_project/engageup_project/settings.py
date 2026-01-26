@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "moderator",
     "visitor",
     "staff",
+    "mail",
 ]
 
 MIDDLEWARE = [
@@ -156,8 +157,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # 環境変数からAPIキーを取得
 
 
-# 開発用: メールをコンソールに出力
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # キャッシュ設定
 CACHES = {
     'default': {
@@ -167,3 +166,14 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+
+# 開発用: メールをコンソールに出力
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = "your@gmail.com"
+EMAIL_HOST_PASSWORD = "アプリパスワード"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

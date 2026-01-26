@@ -9,7 +9,7 @@ from common.views import BaseTemplateMixin
 from moderator.views import BadgeRankingMixin 
 
 
-class StaffIndex(TemplateView):
+class StaffIndexView(TemplateView):
     template_name = "staff/staff_index.html"
 class UserListView(
     AdminOrModeratorOrStaffRequiredMixin,
@@ -47,7 +47,7 @@ class UserListView(
         if user.is_authenticated:
             # 1. 🏆 ランキングデータを取得 (Mixinの機能を使用)
             context['badge_ranking'] = self.get_badge_ranking_data()
-            
+
             # 2. 🔔 最新のニュース（プレビュー用：3件）
             context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
 
