@@ -49,11 +49,12 @@ class UserListView(
 
     def get_queryset(self):
         show = self.request.GET.get("show")
-
+        staff_ps = User.objects.filter(rank="staff")
+        
         if show == "deleted":
-            return User.objects.filter(is_active=False).order_by("member_num")
+            return staff_ps.filter(is_active=False).order_by("member_num")
 
-        return User.objects.filter(is_active=True).order_by("member_num")
+        return staff_ps.filter(is_active=True).order_by("member_num")
 
     def post(self, request, *args, **kwargs):
         action = request.POST.get("action")
