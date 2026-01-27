@@ -176,96 +176,104 @@ class BadgeUpdateView(
 
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import ListView, CreateView, UpdateView
+from django.urls import reverse_lazy
+from django.db.models import Q
+from django.http import JsonResponse
+from django.views import View
+from common.views import AdminOrModeratorRequiredMixin, BaseTemplateMixin
+from main.models import News
+from .forms import NewsForm
+
 # =====================================================
-# News 管理
+# お知らせ管理
 # =====================================================
+
 class NewsListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
     model = News
     template_name = "moderator/mo_news_list.html"
-    context_object_name = "news_"
+    context_object_name = "news_list"
     paginate_by = 10
 
     def get_queryset(self):
-        # パラメータ取得
-        show = self.request.GET.get("show")
-        q = self.request.GET.get("q")
+        # ゴミ箱モード判定
+        self.is_trash_mode = self.request.GET.get("show") == "deleted"
         
-        # ベースのクエリ（ID降順＝新しい順が一般的）
-        qs = News.objects.order_by("-id")
+        qs = News.objects.all()
 
-        # 1. 削除済みか有効か
-        is_trash = (show == "deleted")
-        if is_trash:
-            qs = qs.filter(is_active=False)
-        else:
-            qs = qs.filter(is_active=True)
-
-        # 2. 検索機能
+        # 検索
+        q = self.request.GET.get("q")
         if q:
-            qs = qs.filter(
-                Q(title__icontains=q) | Q(content__icontains=q)
-            )
+            qs = qs.filter(Q(title__icontains=q) | Q(content__icontains=q))
 
+        # フィルタ（公開・非公開）
+        status = self.request.GET.get("status")
+        if status == "public":
+            qs = qs.filter(is_active=True)
+        elif status == "private":
+            qs = qs.filter(is_active=False)
+
+        # ソート
+        sort = self.request.GET.get("sort", "newest")
+        if sort == "newest":
+            qs = qs.order_by("-created_at")
+        elif sort == "oldest":
+            qs = qs.order_by("created_at")
+        elif sort == "important":
+            qs = qs.order_by("-is_important", "-created_at")
+            
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # テンプレート側で使う変数を渡す
-        context['is_trash_mode'] = (self.request.GET.get("show") == "deleted")
-        context['search_query'] = self.request.GET.get("q", "")
-        # バッジ表示用のカウントなど（任意）
-        context['total_active'] = News.objects.filter(is_active=True).count()
+        context.update({
+            'search_query': self.request.GET.get("q", ""),
+            'current_sort': self.request.GET.get("sort", "newest"),
+            'current_status': self.request.GET.get("status", "all"),
+            # 統計用
+            'total_count': News.objects.count(),
+        })
         return context
 
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get("action")
-        ids = request.POST.getlist("news_ids")
-
-        if ids:
-            qs = News.objects.filter(id__in=ids)
-            if action == "delete":
-                qs.update(is_active=False)
-            elif action == "restore":
-                qs.update(is_active=True)
-            # 復元時はゴミ箱ページへリダイレクトすると親切
-            if action == "restore":
-                 return redirect(request.path + "?show=deleted")
-
-        return redirect(request.path)
-
-
-class NewsCreateView(
-    AdminOrModeratorRequiredMixin,
-    BaseTemplateMixin,
-    BaseCreateView
-):
+class NewsCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, CreateView):
     model = News
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
     success_url = reverse_lazy("moderator:news_list")
-    is_continue_url = "moderator:news_list"
-    is_continue = True
 
     def form_valid(self, form):
-        # 公開設定の初期値
-        form.instance.is_active = True
-        # ★追加: ログイン中のユーザーを作成者として保存
-        form.instance.author = self.request.user
+        form.instance.author = self.request.user # 作成者を記録
         return super().form_valid(form)
 
-
-class NewsUpdateView(
-    AdminOrModeratorRequiredMixin,
-    BaseTemplateMixin,
-    UpdateView
-):
+class NewsUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
     model = News
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
     success_url = reverse_lazy("moderator:news_list")
 
-    def get_queryset(self):
-        return News.objects.filter(is_active=True)
+class NewsToggleActiveView(AdminOrModeratorRequiredMixin, View):
+    """Ajax用: 公開/非公開切り替え"""
+    def post(self, request, pk):
+        news = get_object_or_404(News, pk=pk)
+        news.is_active = not news.is_active
+        news.save()
+        return JsonResponse({'status': 'success', 'is_active': news.is_active})
+
+class NewsDeleteView(AdminOrModeratorRequiredMixin, View):
+    """削除処理（物理削除または論理削除）"""
+    def post(self, request, pk):
+        news = get_object_or_404(News, pk=pk)
+        news.delete() # または news.is_deleted = True
+        return redirect('moderator:news_list')
+
+class NewsBulkActionView(AdminOrModeratorRequiredMixin, View):
+    """一括削除"""
+    def post(self, request):
+        ids = request.POST.getlist("news_ids")
+        if ids:
+            News.objects.filter(id__in=ids).delete()
+        return redirect('moderator:news_list')
 
 
 # --- ランキング機能を提供するクラス ---
