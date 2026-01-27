@@ -378,10 +378,9 @@ body.sb-sidenav-toggled .action-bar-container {left: 0 !important; width: 100% !
     .pagination-circle { width: 40px; height: 40px; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; border: none; color: #2d3436; transition: 0.3s; background: #fff; padding: 0; }
     .page-item.active .pagination-circle { background-color: #76b19d !important; color: #fff !important; }
 
-    .custom-loader { width: 50px; height: 50px; display: grid; border: 4px solid #0000; border-radius: 50%; border-right-color: #76b19d; animation: l15 1s infinite linear; margin: 0 auto; }
-    .custom-loader::before, .custom-loader::after { content: ""; grid-area: 1/1; margin: 2px; border: inherit; border-radius: 50%; animation: l15 2s infinite; }
-    .custom-loader::after { margin: 8px; animation-duration: 3s; }
-    @keyframes l15 { 100%{transform: rotate(1turn)} }
+    /* ローディング画面 */
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     .inactive-item { filter: opacity(0.8); }
     .search-input-group { border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.1); background: white;}
@@ -407,6 +406,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
     const bulkForm = document.getElementById('course-bulk-form');
+    const actionInput = document.getElementById('bulk-action-input');
+    const confirmExecuteBtn = document.getElementById('confirm-execute-btn');
+
+    // 実行待ちの状態を保持する変数
+    let pendingAction = '';
+    let pendingMsg = '';
 
     function updateSelection() {
         const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
@@ -425,15 +430,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // courses/courseIndex.html の <script> 内
-
     // リアルタイムトグル（Ajax）
     document.querySelectorAll('.toggle-active-switch').forEach(sw => {
         sw.addEventListener('change', function() {
-            // HTMLの data-url 属性からURLを取得
             const url = this.dataset.url;
             
-            // 視覚的な切り替え処理（ここは現在のままでOK）
             const card = this.closest('.exam-list-item');
             const label = this.closest('.custom-switch-cute').querySelector('.status-label');
             const activeBadge = card.querySelector('.badge-status-active');
@@ -452,17 +453,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 inactiveBadge.classList.remove('d-none');
             }
 
-            // ★ここがサーバーへの保存処理です
             fetch(url, {
                 method: 'POST',
                 headers: { 
-                    'X-CSRFToken': '{{ csrf_token }}',  // これが必須
+                    'X-CSRFToken': '{{ csrf_token }}',
                     'Content-Type': 'application/json' 
                 }
             })
             .then(response => {
                 if (!response.ok) {
-                    // エラー時はアラートを出してスイッチを元に戻す
                     alert('保存に失敗しました。');
                     this.checked = !isActive;
                 }
@@ -473,45 +472,56 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // アクション実行の共通処理（ローディング表示）
-    function executeFinalAction(action, msg) {
-        document.getElementById('loading-text').innerText = msg || '処理しています...';
-        document.getElementById('bulk-action-input').value = action;
-        statusModal.show();
-        setTimeout(() => {
-            document.getElementById('modal-loading').style.display = 'none';
-            document.getElementById('modal-success').style.display = 'block';
-            setTimeout(() => bulkForm.submit(), 800);
-        }, 1200);
-    }
-
-    // 各ボタンのクリックイベント
+    // アクション実行ボタン（一括削除・復元・公開・非公開など）
     document.querySelectorAll('.action-trigger').forEach(btn => {
         btn.addEventListener('click', function() {
-            const action = this.dataset.action;
+            pendingAction = this.dataset.action;
+            pendingMsg = this.dataset.msg;
             const id = this.dataset.id;
+
+            // 個別操作の場合は、そのIDのチェックボックスだけを選択状態にする
+            if (id) {
+                document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+                const targetCb = document.querySelector(`.row-checkbox[value="${id}"]`);
+                if (targetCb) targetCb.checked = true;
+            }
             
-            if (action === 'delete') {
-                // 削除時のみ確認ポップアップを出す
-                document.getElementById('confirmTitle').innerText = "削除の確認";
+            // 確認モーダルのテキストを設定
+            if (pendingAction === 'delete') {
+                document.getElementById('confirmTitle').innerText = '削除の確認';
                 document.getElementById('confirmBody').innerHTML = `
                     <p class="mb-0 fw-bold">選択した項目をゴミ箱へ移動しますか？</p>
                 `;
-                document.getElementById('bulk-action-input').value = action;
+                // 確認モーダルを表示（実行はconfirmExecuteBtnのイベントで）
                 confirmModal.show();
             } else {
-                // 削除以外（公開・非公開・復元）はそのままローディングへ
-                executeFinalAction(action, this.dataset.msg);
+                // 削除以外（公開・非公開・復元）は確認なしで即ローディングへ
+                executeFinalAction(pendingAction, pendingMsg);
             }
         });
     });
 
-    // 確認モーダルの「実行する」ボタン
-    document.getElementById('confirm-execute-btn').addEventListener('click', function() {
-        const action = document.getElementById('bulk-action-input').value;
+    // 確認モーダルの中の「実行する」ボタンを押した時
+    confirmExecuteBtn.addEventListener('click', function() {
         confirmModal.hide();
-        executeFinalAction(action, action === 'delete' ? '削除しています...' : '復元しています...');
+        executeFinalAction(pendingAction, pendingMsg || (pendingAction === 'delete' ? '削除しています...' : '処理しています...'));
     });
+
+    // 共通実行処理（ローディング表示 → 送信）
+    function executeFinalAction(action, msg) {
+        document.getElementById('loading-text').innerText = msg || '処理しています...';
+        actionInput.value = action;
+        
+        statusModal.show();
+
+        setTimeout(() => {
+            document.getElementById('modal-loading').style.display = 'none';
+            document.getElementById('modal-success').style.display = 'block';
+            setTimeout(() => { 
+                bulkForm.submit(); 
+            }, 800);
+        }, 1200);
+    }
 });
 </script>
 {% endblock %}
