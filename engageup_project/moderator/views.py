@@ -49,6 +49,12 @@ class ModeratorNewsView(
 # =====================================================
 # アカウント連番作成
 # =====================================================
+from django.views.generic import FormView
+from django.utils.crypto import get_random_string
+from django.core.mail import send_mail
+from django.conf import settings
+from django.db import transaction
+
 class SequentialUserCreateView(
     AdminOrModeratorRequiredMixin,
     BaseTemplateMixin,
@@ -56,7 +62,6 @@ class SequentialUserCreateView(
 ):
     template_name = "moderator/mo_create_user.html"
     form_class = SequentialUserCreateForm
-    
 
     PASSWORD_LENGTH = 12
     PASSWORD_CHARS = (
@@ -108,14 +113,36 @@ class SequentialUserCreateView(
                 rank=rank
             )
             user.set_password(raw_password)
+
+            # メール用に一時保持
             user._raw_password = raw_password
             users.append(user)
 
+        # DB保存
         with transaction.atomic():
             User.objects.bulk_create(users)
 
-        return super().form_valid(form)
+        # メール送信（console backendならターミナルに出る）
+        for user in users:
+            print(f"[MAIL DEBUG] to={user.email}")  # ← 確認用
 
+            send_mail(
+                subject="アカウント作成のお知らせ",
+                message=f"""
+{user.username} 様
+
+アカウントが作成されました。
+
+ログイン情報
+ユーザー名: {user.username}
+パスワード: {user._raw_password}
+""",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+        return super().form_valid(form)
 
 # =====================================================
 # Badge 管理
@@ -131,12 +158,10 @@ class BadgeManageView(
 
     def get_queryset(self):
         q = self.request.GET.get("q")
+        ps = Badge.objects.filter(is_active=True)
         if q:
-            return Badge.objects.filter(name__icontains=q)
-        return Badge.objects.all()
-    
-    def get_queryset(self):
-        return Badge.objects.filter(is_active=True)
+            ps = ps.filter(name__icontains=q)
+        return ps
 
 
 class BadgeUpdateView(
@@ -220,14 +245,10 @@ class NewsUpdateView(
 
 # --- ランキング機能を提供するクラス ---
 class BadgeRankingMixin:
-    """バッジ取得数ランキングのデータを提供するMixin"""
-    
     def get_badge_ranking_data(self):
-        # 1. キャッシュを確認
-        ranking = cache.get('badge_ranking_list')
-
+        ranking = cache.get("badge_ranking_list")
         if not ranking:
-            # 2. キャッシュが空なら集計（上位3名）
+            # キャッシュがなければDBから計算して返す
             ranking = User.objects.annotate(
                 badge_count=Count(
                     'userexamstatus',
@@ -237,9 +258,8 @@ class BadgeRankingMixin:
                         userexamstatus__exam__is_active=True
                     )
                 )
-            ).order_by('-badge_count')[:3]
+            ).order_by('-badge_count', 'member_num')[:3]
 
-            # 3. 1時間(3600秒)キャッシュ
-            cache.set('badge_ranking_list', ranking, 3600)
-
+            # キャッシュに保存
+            cache.set("badge_ranking_list", ranking, 3600)
         return ranking

@@ -10,44 +10,18 @@ from common.views import BaseTemplateMixin
 from moderator.views import BadgeRankingMixin 
 
 
-class StaffIndexView(TemplateView):
+class StaffIndexView(TemplateView, 
+                    BadgeRankingMixin,
+                    BaseTemplateMixin):
     template_name = "staff/staff_index.html"
-class UserListView(
-    AdminOrModeratorOrStaffRequiredMixin,
-    BaseTemplateMixin,
-    ListView
-):
-    model = User
-    template_name = "staff/st_user_list.html"
-    context_object_name = "users"
-    paginate_by = 10
 
-    def get_queryset(self):
-        show = self.request.GET.get("show")
-
-        if show == "deleted":
-            return User.objects.filter(is_active=False).order_by("member_num")
-
-        return User.objects.filter(is_active=True).order_by("member_num")
-
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get("action")
-        ids = request.POST.getlist("user_ids")
-
-        if ids:
-            if action == "delete":
-                User.objects.filter(id__in=ids).update(is_active=False)
-            elif action == "restore":
-                User.objects.filter(id__in=ids).update(is_active=True)
-
-        return redirect(request.get_full_path())
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-
         if user.is_authenticated:
             # 1. 🏆 ランキングデータを取得 (Mixinの機能を使用)
-            context['badge_ranking'] = self.get_badge_ranking_data()
+            badge_ranking = self.get_badge_ranking_data()
+            context['badge_ranking'] = badge_ranking
 
             # 2. 🔔 最新のニュース（プレビュー用：3件）
             context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
@@ -63,26 +37,39 @@ class UserListView(
             ).count()
 
         return context
+class UserListView(
+    AdminOrModeratorOrStaffRequiredMixin,
+    BaseTemplateMixin,
+    ListView
+):
+    model = User
+    template_name = "staff/st_user_list.html"
+    context_object_name = "users"
+    paginate_by = 10
+
+    def get_queryset(self):
+        show = self.request.GET.get("show")
+        staff_ps = User.objects.filter(rank="staff")
+        
+        if show == "deleted":
+            return staff_ps.filter(is_active=False).order_by("member_num")
+
+        return staff_ps.filter(is_active=True).order_by("member_num")
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        ids = request.POST.getlist("user_ids")
+
+        if ids:
+            if action == "delete":
+                User.objects.filter(member_num__in=ids).update(is_active=False)
+            elif action == "restore":
+                User.objects.filter(member_num__in=ids).update(is_active=True)
+
+        return redirect(request.get_full_path())
     
-    def get_badge_ranking_data(self):
-        """
-        バッジ獲得数ランキング（上位5ユーザー）
-        """
-        return (
-            UserExamStatus.objects
-            .filter(
-                is_passed=True,
-                exam__exam_type='main',
-                exam__is_active=True
-            )
-            .values(
-            'user__member_num',   # ← 主キー
-            'user__username',     # ← 表示名
-            'user__name'          # ← 氏名（使うなら）
-            )
-            .annotate(badge_count=Count('id'))
-            .order_by('-badge_count')[:3]
-        )
+    
+    
 
 class StaffNewsListView(BaseTemplateMixin, ListView):
     """受講者用お知らせ一覧画面"""

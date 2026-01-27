@@ -1,110 +1,157 @@
 # models.py
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 import random
 
 
-def random_num():  # 会員の番号を作成する　同じ番号が出現する可能性は考慮しない
+def random_num():
+    """
+    会員番号を生成
+    ※ 同じ番号が出現する可能性は考慮しない
+    """
     return random.randint(1000000000000, 10000000000000)
 
 
-class Constant(models.Model):  # 定数をまとめたテーブル
+# =========================
+# 定数テーブル
+# =========================
+class Constant(models.Model):
     company_code = models.CharField(
-        verbose_name="会社コード", max_length=20, default="com"
+        verbose_name="会社コード",
+        max_length=20,
+        default="com"
     )
     address = models.CharField(
-        verbose_name="アドレス", max_length=20, default="gmail.com"
+        verbose_name="アドレス",
+        max_length=20,
+        default="gmail.com"
     )
 
     def __str__(self):
         return self.company_code
 
 
-class Course(models.Model):  # 講座
-    subject = models.CharField(verbose_name="科目", max_length=50)  # 科目
-    courseCount = models.IntegerField(verbose_name="講座数")  # 講座数
+# =========================
+# 講座
+# =========================
+class Course(models.Model):
+    subject = models.CharField(
+        verbose_name="科目",
+        max_length=50
+    )
+    courseCount = models.IntegerField(
+        verbose_name="講座数"
+    )
     is_mylist = models.BooleanField(
-        verbose_name="マイリストに入っているか", default=False
-    )  # マイリストに入っているか
+        verbose_name="マイリストに入っているか",
+        default=False
+    )
+    is_active = models.BooleanField(
+        default=True
+    )
 
-    is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
+    def __str__(self):
+        return self.subject
 
 
-from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-
-# --- ★新規追記：研修モジュール (コースの中身) ---
+# =========================
+# 研修モジュール（コース内）
+# =========================
 class TrainingModule(models.Model):
-    # コースを消したら研修も消える(CASCADE)設定
     course = models.ForeignKey(
-        Course, 
-        on_delete=models.CASCADE, 
+        Course,
+        on_delete=models.CASCADE,
         related_name="modules",
         verbose_name="所属コース"
     )
-    title = models.CharField(verbose_name="研修名", max_length=100)
-    
-    # 動画アップロード
+    title = models.CharField(
+        verbose_name="研修名",
+        max_length=100
+    )
+
     video = models.FileField(
-        verbose_name="研修動画", 
-        upload_to="training_videos/", 
-        null=True, 
+        verbose_name="研修動画",
+        upload_to="training_videos/",
+        null=True,
         blank=True
     )
-    
-    # 教材資料（検定のexams_filesフォルダと共通）
+
     training_file = models.FileField(
-        verbose_name="要約元資料(PDF/画像)", 
-        upload_to="exams_files/", 
-        null=True, 
+        verbose_name="要約元資料(PDF/画像)",
+        upload_to="exams_files/",
+        null=True,
         blank=True
     )
-    # ★ 推奨学習時間の項目を追加
+
     estimated_time = models.PositiveIntegerField(
-        verbose_name="推奨学習時間(分)", 
+        verbose_name="推奨学習時間(分)",
         default=30,
         help_text="受講者がこの研修を終えるのにかかる目安の時間（分）です"
     )
-    
-    # AIで生成したり手入力したりするメインテキスト
-    content_text = models.TextField(verbose_name="研修テキスト", blank=True)
-    
-    # 並べ替え用の順番
-    order = models.IntegerField(verbose_name="表示順", default=0)
-    
-    # 論理削除フラグ
-    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+
+    content_text = models.TextField(
+        verbose_name="研修テキスト",
+        blank=True
+    )
+
+    order = models.IntegerField(
+        verbose_name="表示順",
+        default=0
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="有効フラグ"
+    )
 
     def __str__(self):
         return f"{self.course.subject} - {self.title}"
 
-# --- ★新規追記：研修内の「例題」 ---
+
+# =========================
+# 研修内の例題
+# =========================
 class TrainingExample(models.Model):
     module = models.ForeignKey(
-        TrainingModule, 
-        on_delete=models.CASCADE, 
+        TrainingModule,
+        on_delete=models.CASCADE,
         related_name="examples",
         verbose_name="対象研修"
     )
-    text = models.TextField(verbose_name="例題文")
-    explanation = models.TextField(verbose_name="解説", blank=True)
+    text = models.TextField(
+        verbose_name="例題文"
+    )
+    explanation = models.TextField(
+        verbose_name="解説",
+        blank=True
+    )
 
     def __str__(self):
         return f"例題: {self.text[:20]}"
 
+
 class TrainingExampleChoice(models.Model):
     example = models.ForeignKey(
-        TrainingExample, 
-        on_delete=models.CASCADE, 
+        TrainingExample,
+        on_delete=models.CASCADE,
         related_name="choices"
     )
-    text = models.CharField(verbose_name="選択肢", max_length=200)
-    is_correct = models.BooleanField(verbose_name="これが正解か", default=False)
+    text = models.CharField(
+        verbose_name="選択肢",
+        max_length=200
+    )
+    is_correct = models.BooleanField(
+        verbose_name="これが正解か",
+        default=False
+    )
 
     def __str__(self):
         return self.text
 
 
+# =========================
+# カスタムユーザーマネージャ
+# =========================
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -121,7 +168,6 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
         extra_fields.setdefault("rank", "visitor")
-
         return self._create_user(username, password, **extra_fields)
 
     def create_superuser(self, username, password=None, **extra_fields):
@@ -137,7 +183,10 @@ class UserManager(BaseUserManager):
         return self._create_user(username, password, **extra_fields)
 
 
-class User(AbstractUser):  # ユーザーのランク
+# =========================
+# ユーザー
+# =========================
+class User(AbstractUser):
     RANK_CHOICES = [
         ("administer", "administer"),
         ("moderator", "moderator"),
@@ -145,144 +194,243 @@ class User(AbstractUser):  # ユーザーのランク
         ("visitor", "visitor"),
     ]
 
-    rank = models.CharField(  # ユーザーのランクを選ぶ
-        max_length=20, choices=RANK_CHOICES, default="visitor", verbose_name="ランク"
+    rank = models.CharField(
+        max_length=20,
+        choices=RANK_CHOICES,
+        default="visitor",
+        verbose_name="ランク"
     )
 
-    member_num = models.BigIntegerField(  # 会員の番号を持つ
-        verbose_name="会員番号", primary_key=True, default=random_num
+    member_num = models.BigIntegerField(
+        verbose_name="会員番号",
+        primary_key=True,
+        default=random_num
     )
 
-    name = models.CharField(verbose_name="氏名", max_length=20)  # 名前を持つ
+    name = models.CharField(
+        verbose_name="氏名",
+        max_length=20
+    )
+
     email = models.EmailField(
-        verbose_name="メールアドレス", unique=True
-    )  # メールアドレスを持つ
-    is_password_encrypted = models.BooleanField(
-        default=False, verbose_name="パスワード暗号化フラグ"
-    )  # パスワードを暗号化　削除するか検討
+        verbose_name="メールアドレス",
+        unique=True
+    )
 
-    #  追加：プロフィール写真
+    is_password_encrypted = models.BooleanField(
+        default=False,
+        verbose_name="パスワード暗号化フラグ"
+    )
+
     avatar = models.ImageField(
-        upload_to="avatars/", 
-        null=True, 
-        blank=True, 
+        upload_to="avatars/",
+        null=True,
+        blank=True,
         verbose_name="プロフィール写真"
     )
-    #  追加：備考欄（自己紹介）
+
     remarks = models.TextField(
-        max_length=500, 
-        blank=True, 
+        max_length=500,
+        blank=True,
         verbose_name="備考・自己紹介"
     )
 
-    USERNAME_FIELD = "email"  # ユーザーネームを打ち込む
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
+
     username = models.CharField(
-        max_length=20, blank=False, null=False
-    )  # ユーザーネームを打ち込む
+        max_length=20,
+        blank=False,
+        null=False
+    )
 
     objects = UserManager()
 
     def __str__(self):
         return self.username
 
-class Badge(models.Model):  # バッジ
-    exam = models.OneToOneField("Exam", on_delete=models.CASCADE, related_name="badge")
-    name = models.CharField(verbose_name="バッジ名", max_length=100)
-    icon = models.ImageField(
-        verbose_name="バッジ画像", upload_to="badges/", null=True, blank=True
+
+# =========================
+# バッジ
+# =========================
+class Badge(models.Model):
+    exam = models.OneToOneField(
+        "Exam",
+        on_delete=models.CASCADE,
+        related_name="badge"
     )
-    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+    name = models.CharField(
+        verbose_name="バッジ名",
+        max_length=100
+    )
+    icon = models.ImageField(
+        verbose_name="バッジ画像",
+        upload_to="badges/",
+        null=True,
+        blank=True
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="有効フラグ"
+    )
 
     def __str__(self):
         return self.name
 
-class Exam(models.Model):  # 検定
-    # --- 試験タイプ（仮・本）の選択肢 ---
+
+# =========================
+# 検定
+# =========================
+class Exam(models.Model):
     EXAM_TYPE_CHOICES = [
-        ('mock', '仮試験'),
-        ('main', '本試験'),
+        ("mock", "仮試験"),
+        ("main", "本試験"),
     ]
-    title = models.CharField(verbose_name="検定名", max_length=100)
-    exams_file = models.FileField(verbose_name="教材ファイル", upload_to="exams_files/", null=True, blank=True)
-    description = models.TextField(verbose_name="説明・研修テキスト", blank=True)
-    passing_score = models.IntegerField(verbose_name="合格基準点", default=80) # 自動採点に必要
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日") # 管理用
-    # is_active = models.BooleanField(default=True, verbose_name="有効フラグ") # 検定が有効かどうか
-    is_deleted = models.BooleanField(default=False, verbose_name="削除フラグ")
-    is_active = models.BooleanField(default=True, verbose_name="公開状態")
-    
-    # ★追加：仮試験か本試験か
-    exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='mock', verbose_name="試験タイプ")
-    
-    # ★追加：本試験の場合の前提条件（どの仮試験をクリアすべきか）
+
+    title = models.CharField(
+        verbose_name="検定名",
+        max_length=100
+    )
+    exams_file = models.FileField(
+        verbose_name="教材ファイル",
+        upload_to="exams_files/",
+        null=True,
+        blank=True
+    )
+    description = models.TextField(
+        verbose_name="説明・研修テキスト",
+        blank=True
+    )
+    passing_score = models.IntegerField(
+        verbose_name="合格基準点",
+        default=80
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="作成日"
+    )
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name="削除フラグ"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="公開状態"
+    )
+    exam_type = models.CharField(
+        max_length=10,
+        choices=EXAM_TYPE_CHOICES,
+        default="mock",
+        verbose_name="試験タイプ"
+    )
     prerequisite = models.ForeignKey(
-        'self', on_delete=models.SET_NULL, null=True, blank=True, 
-        verbose_name="前提となる仮試験", related_name="next_exams"
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="next_exams",
+        verbose_name="前提となる仮試験"
     )
 
     def __str__(self):
         return f"[{self.get_exam_type_display()}] {self.title}"
 
-    
-    
-
     def save(self, *args, **kwargs):
-        # 新規作成かどうかの判定
         is_new = self.pk is None
-        # まずは検定自体を保存
         super().save(*args, **kwargs)
 
-        if is_new and self.exam_type == 'main':
-            # Badgeクラスはこの下にありますが、メソッドの中なので呼び出せます
-            Badge.objects.create(exam=self, name=f"{self.title}合格バッジ")
+        if is_new and self.exam_type == "main":
+            Badge.objects.create(
+                exam=self,
+                name=f"{self.title}合格バッジ"
+            )
         else:
-            # 既存の検定が更新された場合、関連するバッジも更新
-            if hasattr(self, 'badge'):
+            if hasattr(self, "badge"):
                 self.badge.is_active = self.is_active
                 self.badge.save()
 
 
-
+# =========================
+# 問題・選択肢
+# =========================
 class Question(models.Model):
-    # どの検定の問題か
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="questions")
-    text = models.TextField(verbose_name="問題文")
+    exam = models.ForeignKey(
+        Exam,
+        on_delete=models.CASCADE,
+        related_name="questions"
+    )
+    text = models.TextField(
+        verbose_name="問題文"
+    )
 
     def __str__(self):
         return f"{self.exam.title} - {self.text[:20]}"
 
+
 class Choice(models.Model):
-    # どの問題の選択肢か
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
-    text = models.CharField(verbose_name="選択肢の内容", max_length=200)
-    is_correct = models.BooleanField(verbose_name="これが正解か", default=False)
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name="choices"
+    )
+    text = models.CharField(
+        verbose_name="選択肢の内容",
+        max_length=200
+    )
+    is_correct = models.BooleanField(
+        verbose_name="これが正解か",
+        default=False
+    )
 
     def __str__(self):
         return self.text
 
 
-
+# =========================
+# お知らせ
+# =========================
 class News(models.Model):
-    title = models.CharField(verbose_name="お知らせ名",max_length=100)
-    content = models.TextField(verbose_name="内容")
-    is_active = models.BooleanField(default=True)  # アクティブかどうかを調べる
-    created_at = models.DateTimeField(
-        verbose_name="投稿日", 
-        auto_now_add=True  # 最初に保存された時の日時を自動で入れる
+    title = models.CharField(
+        verbose_name="お知らせ名",
+        max_length=100
     )
-    
+    content = models.TextField(
+        verbose_name="内容"
+    )
+    is_active = models.BooleanField(
+        default=True
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="投稿日"
+    )
 
-# ★新規追加：ユーザーがどの試験に合格したかを記録する
+
+# =========================
+# ユーザー検定合格状況
+# =========================
 class UserExamStatus(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE, verbose_name="ユーザー")
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, verbose_name="検定")
-    is_passed = models.BooleanField(default=False, verbose_name="合格したか")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="ユーザー"
+    )
+    exam = models.ForeignKey(
+        Exam,
+        on_delete=models.CASCADE,
+        verbose_name="検定"
+    )
+    is_passed = models.BooleanField(
+        default=False,
+        verbose_name="合格したか"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="更新日"
+    )
 
     class Meta:
-        unique_together = ('user', 'exam') # 1人1試験1レコード
+        unique_together = ("user", "exam")
 
     def __str__(self):
         return f"{self.user.username} - {self.exam.title} ({'合格' if self.is_passed else '未'})"
-    

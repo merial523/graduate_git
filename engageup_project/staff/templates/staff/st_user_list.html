@@ -10,7 +10,7 @@
     <form method="post">
         {% csrf_token %}
 
-        <div class="mb-2">
+        <!-- <div class="mb-2">
             <button type="submit" name="action" value="delete"
                 class="btn btn-danger btn-sm"
                 onclick="return confirm('選択したユーザーを無効化しますか？')">
@@ -22,7 +22,7 @@
                 onclick="return confirm('選択したユーザーを復元しますか？')">
                 復元
             </button>
-        </div>
+        </div> -->
 
         <table class="table table-bordered table-hover">
             <thead class="table-light">
@@ -38,29 +38,31 @@
                 </tr>
             </thead>
             <tbody>
+                <!---スタッフのみ表示-->
                 {% for user in users %}
-                <tr>
-                    <td>
-                        <input type="checkbox" name="user_ids" value="{{ user.id }}">
-                    </td>
-                    <!-- <td>{{ user.member_num }}</td> -->
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.rank }}</td>
-                    <td>
-                        {% if user.is_active %}
-                            <span class="badge bg-success">有効</span>
-                        {% else %}
-                            <span class="badge bg-danger">無効</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center">
-                        ユーザーが存在しません
-                    </td>
-                </tr>
+                
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="user_ids" value="{{ user.id }}">
+                            </td>
+                            <!-- <td>{{ user.member_num }}</td> -->
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.rank }}</td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">有効</span>
+                                {% else %}
+                                    <span class="badge bg-danger">無効</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                ユーザーが存在しません
+                            </td>
+                        </tr>
                 {% endfor %}
             </tbody>
         </table>
