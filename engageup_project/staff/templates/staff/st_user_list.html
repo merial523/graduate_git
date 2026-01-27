@@ -17,7 +17,7 @@
                     {% endif %}
                     
                     <input type="text" name="q" value="{{ search_query }}" 
-                        class="form-control" placeholder="会員番号または氏名で検索...">
+                        class="form-control" placeholder="メールアドレスまたは氏名で検索...">
                     <button class="btn btn-dark" type="submit">検索</button>
                     <a href="?" class="btn btn-outline-secondary">クリア</a>
                 </div>
@@ -40,9 +40,9 @@
         <table class="table table-bordered table-hover">
             <thead class="table-light">
                 <tr>
-                    <th style="width:40px;">
+                    <!-- <th style="width:40px;">
                         <input type="checkbox" id="select-all">
-                    </th>
+                    </th> -->
                     <!-- <th>会員番号</th> -->
                     <th>名前</th>
                     <th>Email</th>
@@ -55,9 +55,9 @@
                 {% for user in users %}
                 
                         <tr>
-                            <td>
+                            <!-- <td>
                                 <input type="checkbox" name="user_ids" value="{{ user.id }}">
-                            </td>
+                            </td> -->
                             <!-- <td>{{ user.member_num }}</td> -->
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>

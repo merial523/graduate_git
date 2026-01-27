@@ -62,9 +62,9 @@ class UserListView(
 
         # 3. ★検索機能の追記
         if q:
-            # 会員番号(member_num) または 氏名(name) にキーワードが含まれる人を抽出
+            # メールアドレス または 氏名(name) にキーワードが含まれる人を抽出
             staff_ps = staff_ps.filter(
-                Q(member_num__icontains=q) | Q(username__icontains=q)
+                Q(email__icontains=q) | Q(username__icontains=q)
             )
 
         return staff_ps.order_by("member_num")

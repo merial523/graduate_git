@@ -15,20 +15,23 @@ from django.core.exceptions import PermissionDenied
 class BadgeRankingMixin:
     """バッジ取得数ランキングのデータを提供するMixin"""
     def get_badge_ranking_data(self):
-        ranking = cache.get('badge_ranking_list')
-        if not ranking:
-            ranking = User.objects.annotate(
-                badge_count=Count(
-                    'userexamstatus',
-                    filter=Q(
-                        userexamstatus__is_passed=True,
-                        userexamstatus__exam__exam_type='main',
-                        userexamstatus__exam__is_active=True
+            ranking = cache.get('badge_ranking_list')
+            if not ranking:
+                ranking = User.objects.annotate(
+                    badge_count=Count(
+                        'userexamstatus',
+                        filter=Q(
+                            userexamstatus__is_passed=True,
+                            #staffのみにする
+                            userexamstatus__user__rank='staff',
+                            userexamstatus__exam__exam_type='main',
+                            userexamstatus__exam__is_active=True
+                        )
                     )
-                )
-            ).order_by('-badge_count')[:3]
-            cache.set('badge_ranking_list', ranking, 3600)
-        return ranking
+                ).order_by('-badge_count')[:3]
+                cache.set('badge_ranking_list', ranking, 3600)
+            return ranking
+        
 
 #共通で返す処理
 class BaseCreateView(CreateView):
