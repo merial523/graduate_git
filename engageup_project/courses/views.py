@@ -145,6 +145,8 @@ class CourseCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCre
     form_class = CourseForm
     template_name = "courses/mo_courses_form.html"
     success_url = reverse_lazy("courses:courses_list")
+    is_continue_url = "courses:courses_list"
+    is_continue = True
 
     def form_valid(self, form):
         form.instance.is_active = True
@@ -182,7 +184,7 @@ class TrainingModuleCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin,
         if form.is_valid():
             module = form.save(commit=False)
             module.course = course
-            module.is_deleted = False # 初期値
+            module.is_active = True # 初期値
             existing = form.cleaned_data.get('existing_file')
             if existing and not request.FILES.get('training_file'):
                 module.training_file.name = f"exams_files/{existing}"
@@ -199,7 +201,7 @@ class TrainingModuleUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin,
         return reverse_lazy('courses:courses_list')
 
     def get_queryset(self):
-        return TrainingModule.objects.filter(is_deleted=False)
+        return TrainingModule.objects.filter(is_active=True)
 
     def form_valid(self, form):
         existing = form.cleaned_data.get('existing_file')
@@ -211,7 +213,7 @@ class TrainingModuleDeleteView(AdminOrModeratorRequiredMixin, View):
     def post(self, request, module_id):
         module = get_object_or_404(TrainingModule, pk=module_id)
         # 論理削除
-        module.is_deleted = True 
+        module.is_active = False
         module.save()
         return redirect('courses:courses_list')
     
@@ -219,7 +221,7 @@ class TrainingModuleRestoreView(AdminOrModeratorRequiredMixin, View):
     def post(self, request, module_id):
         module = get_object_or_404(TrainingModule, pk=module_id)
         # 復元
-        module.is_deleted = False
+        module.is_active = True
         module.save()
         return redirect(reverse_lazy('courses:courses_list') + '?show=deleted')
 
