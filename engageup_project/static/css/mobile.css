@@ -10,6 +10,7 @@
 
 body {
   color: var(--text-color);
+  background-color: var(--bg-color);
   font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
     "M PLUS Rounded 1c", sans-serif;
   min-height: 100vh;
@@ -17,12 +18,7 @@ body {
   -webkit-font-smoothing: antialiased;
 
   /* --- 背景画像の設定（ねこねこ薬局風スクロール演出） --- */
-  /* e-ラーニングに相応しい、清潔感のあるデスク・スタディ風画像 */
-  background-image: linear-gradient(
-      rgba(248, 242, 242, 0.8),
-      rgba(248, 242, 242, 0.8)
-    ),
-    url("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=2073");
+  
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
