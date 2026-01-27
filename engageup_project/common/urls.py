@@ -1,7 +1,7 @@
 from django.urls import path
-from . import views
+from common import views
 
 urlpatterns = [
-    path("", views.index, name="index"),  # トップページ用
+    path("", views.IndexView.as_view(), name="index"),  # トップページ用
     path("base",views.BaseTemplateMixin,name = "base_template"),
 ]

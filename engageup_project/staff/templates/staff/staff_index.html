@@ -1,4 +1,4 @@
-{% extends 'staff/staff_base.html' %} 
+{% extends base_template %} 
 
 {% block title %}ホーム | EngageUp{% endblock %}
 
@@ -16,6 +16,8 @@
         <div class="ms-3">
             <h2 class="greeting-text">
                 {% if user.is_authenticated %}{{ user.username }}{% else %}ゲスト{% endif %}さん！
+                現在のランク: {{ request.user.rank }}
+                読み込んでいるベース: {{ base_template }}
             </h2>
         </div>
     </div>

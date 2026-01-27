@@ -7,8 +7,21 @@
     <h2 class="mb-3">ユーザー一覧</h2>
 
 
-    <form method="post">
+    
         {% csrf_token %}
+            <form method="get" class="mb-4">
+                <div class="input-group">
+                    <!-- 削除済みを表示している状態を維持するための隠しパラメータ -->
+                    {% if is_trash_mode %}
+                        <input type="hidden" name="show" value="deleted">
+                    {% endif %}
+                    
+                    <input type="text" name="q" value="{{ search_query }}" 
+                        class="form-control" placeholder="会員番号または氏名で検索...">
+                    <button class="btn btn-dark" type="submit">検索</button>
+                    <a href="?" class="btn btn-outline-secondary">クリア</a>
+                </div>
+            </form>
 
         <!-- <div class="mb-2">
             <button type="submit" name="action" value="delete"
@@ -66,7 +79,6 @@
                 {% endfor %}
             </tbody>
         </table>
-    </form>
 
     <!-- ページネーション -->
     {% if is_paginated %}

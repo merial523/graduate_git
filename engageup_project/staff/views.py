@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render
 from django.views.generic import ListView,TemplateView
 from common.views import AdminOrModeratorOrStaffRequiredMixin, BaseTemplateMixin
 from main.models import User
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from django.views.generic import TemplateView, ListView
 from main.models import News, UserExamStatus
@@ -10,9 +10,9 @@ from common.views import BaseTemplateMixin
 from moderator.views import BadgeRankingMixin 
 
 
-class StaffIndexView(TemplateView, 
-                    BadgeRankingMixin,
-                    BaseTemplateMixin):
+class StaffIndexView(BaseTemplateMixin, 
+                        BadgeRankingMixin, 
+                        TemplateView):
     template_name = "staff/staff_index.html"
 
     def get_context_data(self, **kwargs):
@@ -49,13 +49,36 @@ class UserListView(
 
     def get_queryset(self):
         show = self.request.GET.get("show")
+        q = self.request.GET.get("q")  # ★検索キーワード(q)を取得
+
+        # 1. まず「staff」ランクの人だけに絞り込む
         staff_ps = User.objects.filter(rank="staff")
-        
+
+        # 2. 削除済みかどうかのフィルタ
         if show == "deleted":
-            return staff_ps.filter(is_active=False).order_by("member_num")
+            staff_ps = staff_ps.filter(is_active=False)
+        else:
+            staff_ps = staff_ps.filter(is_active=True)
 
-        return staff_ps.filter(is_active=True).order_by("member_num")
+        # 3. ★検索機能の追記
+        if q:
+            # 会員番号(member_num) または 氏名(name) にキーワードが含まれる人を抽出
+            staff_ps = staff_ps.filter(
+                Q(member_num__icontains=q) | Q(username__icontains=q)
+            )
 
+        return staff_ps.order_by("member_num")
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # URLの ?q=... の中身を取得して 'search_query' という名前でHTMLに送る
+        context['search_query'] = self.request.GET.get("q", "")
+        
+        # 削除済みを表示中かどうかのフラグも送っておくとHTMLで便利です
+        context['is_trash_mode'] = self.request.GET.get("show") == "deleted"
+        
+        return context
     def post(self, request, *args, **kwargs):
         action = request.POST.get("action")
         ids = request.POST.getlist("user_ids")

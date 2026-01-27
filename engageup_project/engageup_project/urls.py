@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings # 追加
 from django.conf.urls.static import static # 追加
+from common import views  # 追加
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,6 +31,7 @@ urlpatterns = [
     path("moderator/", include("moderator.urls", namespace="moderator")),#トップページはmoderatorアプリに委譲
     path('accounts/', include('accounts.urls', namespace='accounts')),  # トップページはaccountsに譲渡
     path("staff/", include("staff.urls", namespace="staff")),  # トップページは staff アプリに委譲
+    path("index/", views.IndexView.as_view(), name="index"),  # トップページ用
 ]
 
 # 開発環境（DEBUG=True）の場合のみメディアファイルを配信する設定

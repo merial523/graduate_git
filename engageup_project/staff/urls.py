@@ -2,8 +2,6 @@ from django.urls import path
 from . import views
 app_name = "staff"
 
-app_name = "staff"
-
 urlpatterns = [
     path("staff-list",views.UserListView.as_view(),name = "staff_list"),
     path("", views.StaffIndexView.as_view(), name="staff_index"),  # スタッフ用トップページ用
