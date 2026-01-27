@@ -396,21 +396,23 @@ class Choice(models.Model):
 # =========================
 # お知らせ
 # =========================
+from django.db import models
+from django.conf import settings
+
 class News(models.Model):
-    title = models.CharField(
-        verbose_name="お知らせ名",
-        max_length=100
-    )
-    content = models.TextField(
-        verbose_name="内容"
-    )
-    is_active = models.BooleanField(
-        default=True
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="投稿日"
-    )
+    title = models.CharField(max_length=200, verbose_name="タイトル")
+    content = models.TextField(verbose_name="内容")
+    is_active = models.BooleanField(default=True, verbose_name="公開状態")
+    
+    # ★追加フィールド
+    is_important = models.BooleanField(default=False, verbose_name="重要")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="作成者")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+
+    def __str__(self):
+        return self.title
 
 
 # =========================

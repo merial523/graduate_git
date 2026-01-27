@@ -18,7 +18,6 @@ from common.views import BaseCreateView, BaseTemplateMixin,AdminOrModeratorRequi
 from django.core.cache import cache
 from django.db.models import Count, Q
 
-
 # =====================================================
 # トップ・固定ページ
 # =====================================================
@@ -176,27 +175,47 @@ class BadgeUpdateView(
 
 
 
+
 # =====================================================
 # News 管理
 # =====================================================
-class NewsListView(
-    AdminOrModeratorRequiredMixin,
-    BaseTemplateMixin,
-    ListView
-):
+class NewsListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
     model = News
     template_name = "moderator/mo_news_list.html"
     context_object_name = "news_"
     paginate_by = 10
 
     def get_queryset(self):
+        # パラメータ取得
         show = self.request.GET.get("show")
-        qs = News.objects.order_by("id")
+        q = self.request.GET.get("q")
+        
+        # ベースのクエリ（ID降順＝新しい順が一般的）
+        qs = News.objects.order_by("-id")
 
-        if show == "deleted":
-            return qs.filter(is_active=False)
+        # 1. 削除済みか有効か
+        is_trash = (show == "deleted")
+        if is_trash:
+            qs = qs.filter(is_active=False)
+        else:
+            qs = qs.filter(is_active=True)
 
-        return qs.filter(is_active=True)
+        # 2. 検索機能
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) | Q(content__icontains=q)
+            )
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # テンプレート側で使う変数を渡す
+        context['is_trash_mode'] = (self.request.GET.get("show") == "deleted")
+        context['search_query'] = self.request.GET.get("q", "")
+        # バッジ表示用のカウントなど（任意）
+        context['total_active'] = News.objects.filter(is_active=True).count()
+        return context
 
     def post(self, request, *args, **kwargs):
         action = request.POST.get("action")
@@ -208,8 +227,11 @@ class NewsListView(
                 qs.update(is_active=False)
             elif action == "restore":
                 qs.update(is_active=True)
+            # 復元時はゴミ箱ページへリダイレクトすると親切
+            if action == "restore":
+                 return redirect(request.path + "?show=deleted")
 
-        return redirect(request.get_full_path())
+        return redirect(request.path)
 
 
 class NewsCreateView(
@@ -225,7 +247,10 @@ class NewsCreateView(
     is_continue = True
 
     def form_valid(self, form):
+        # 公開設定の初期値
         form.instance.is_active = True
+        # ★追加: ログイン中のユーザーを作成者として保存
+        form.instance.author = self.request.user
         return super().form_valid(form)
 
 

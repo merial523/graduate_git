@@ -1,110 +1,284 @@
 {% extends base_template %}
 {% load static %}
+{% block breadcrumb %}<li class="breadcrumb-item active">お知らせ管理</li>{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h2 class="h5 mb-0">お知らせ一覧</h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'moderator:news_create' %}" class="btn btn-primary btn-sm shadow-sm">
-                <i class="bi bi-plus-lg"></i> お知らせ作成
+<div class="user-management-container pb-5">
+    
+    <!-- ヘッダー & ツールバー -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="page-title text-dark m-0 fw-800" style="font-size: 1.75rem; letter-spacing: -0.02em;">
+                {% if is_trash_mode %}🗑️ ゴミ箱{% else %}News Feed{% endif %}
+            </h1>
+            <p class="text-muted small m-0 opacity-75">システム利用者へのお知らせを管理します</p>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            <!-- 検索 -->
+            <form method="get" class="position-relative">
+                {% if is_trash_mode %}<input type="hidden" name="show" value="deleted">{% endif %}
+                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" name="q" value="{{ search_query }}" 
+                       class="form-control rounded-pill border-0 shadow-sm ps-5 bg-white" 
+                       placeholder="検索..." style="min-width: 250px; height: 45px;">
+            </form>
+
+            <!-- 切り替えボタン -->
+            {% if is_trash_mode %}
+            <a href="{% url 'moderator:news_list' %}" class="btn btn-white rounded-pill shadow-sm fw-bold px-3" style="height: 45px; display: flex; align-items: center;">
+                <i class="bi bi-arrow-left me-2"></i>一覧へ
             </a>
-            <a href="{% url 'administer:administer_index' %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-house"></i> 管理ホーム
+            {% else %}
+            <a href="?show=deleted" class="btn btn-white rounded-circle shadow-sm text-secondary" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;" title="ゴミ箱">
+                <i class="bi bi-trash"></i>
             </a>
+            <a href="{% url 'moderator:news_create' %}" class="btn btn-dark rounded-pill shadow-lg fw-bold px-4 hover-scale" style="height: 45px; display: flex; align-items: center;">
+                <i class="bi bi-plus-lg me-2"></i>作成
+            </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            <div class="table-responsive">
-                <table class="table table-hover border align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center" style="width: 50px;">選択</th>
-                            <th>ID</th>
-                            <th>科目</th>
-                            <th>回数</th>
-                            <th>状態</th>
-                            <th class="text-center">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for news in news_ %}
-                        {# 削除済み（is_active=False）の場合は行を暗くする #}
-                        <tr class="{% if not news.is_active %}table-secondary text-muted opacity-75{% endif %}">
-                            <td class="text-center">
-                                <input type="checkbox" name="news_ids" value="{{ news.id }}" class="form-check-input">
-                            </td>
-                            <td>{{ news.id }}</td>
-                            <td class="fw-bold">{{ news.title }}</td>
-                            <td>{{ news.content }}</td>
-                            <td>
-                                {% if news.is_active %}
-                                    <span class="badge bg-success">有効</span>
-                                {% else %}
-                                    <span class="badge bg-dark">削除済み</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if moderator.is_active %}
-                                    <a href="{% url 'moderator:news_update' moderator.id %}" class="btn btn-outline-success btn-sm">
-                                        <i class="bi bi-pencil"></i> 変更
-                                    </a>
-                                {% else %}
-                                    <span class="text-muted small">-</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">お知らせが登録されていません。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- リストコンテナ -->
+    <form method="post" id="bulk-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" id="bulk-action-input" value="">
+
+        <div class="bg-white rounded-4 shadow-sm border overflow-hidden">
+            <!-- リストヘッダー -->
+            <div class="px-4 py-3 border-bottom bg-light bg-opacity-50 d-flex text-muted small fw-bold text-uppercase ls-1">
+                <div style="width: 40px;"></div> <!-- Checkbox space -->
+                <div class="flex-grow-1 ps-2">お知らせ内容</div>
+                <div style="width: 150px;">作成者</div>
+                <div style="width: 180px;" class="text-end">更新日時</div>
             </div>
 
-            {% if is_paginated %}
-            <nav class="mt-4">
-                <ul class="pagination pagination-sm justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">前へ</a>
-                        </li>
-                    {% endif %}
-                    <li class="page-item disabled">
-                        <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-                    </li>
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">次へ</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
+            <!-- リストアイテム -->
+            <div class="list-group list-group-flush">
+                {% for news in news_ %}
+                <div class="list-group-item p-0 border-bottom-0 news-row position-relative transition-bg {% if not news.is_active %}bg-secondary-subtle opacity-75{% endif %}">
+                    <!-- クリック全体リンク（JSで制御） -->
+                    <div class="d-flex align-items-center px-4 py-3 gap-3" onclick="handleRowClick(event, '{% url 'moderator:news_update' news.id %}')" style="cursor: pointer;">
+                        
+                        <!-- チェックボックス -->
+                        <div class="d-flex align-items-center justify-content-center" style="width: 40px;" onclick="event.stopPropagation()">
+                            <input type="checkbox" name="news_ids" value="{{ news.id }}" class="form-check-input row-checkbox scale-125 border-2">
+                        </div>
+
+                        <!-- メインコンテンツ -->
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <div class="d-flex align-items-center mb-1 gap-2">
+                                {% if news.is_important %}
+                                    <i class="bi bi-star-fill text-warning" title="重要"></i>
+                                {% endif %}
+                                
+                                {% if not news.is_active %}
+                                    <span class="badge bg-secondary text-white rounded-pill px-2" style="font-size: 0.7rem;">下書き</span>
+                                {% elif news.is_important %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-2" style="font-size: 0.7rem;">重要</span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2" style="font-size: 0.7rem;">公開中</span>
+                                {% endif %}
+                                
+                                <span class="text-truncate fw-bold text-dark fs-6 title-hover">{{ news.title }}</span>
+                            </div>
+                            <div class="text-muted small text-truncate pe-5" style="max-width: 600px;">
+                                {{ news.content|striptags }}
+                            </div>
+                        </div>
+
+                        <!-- 作成者 -->
+                        <div class="text-muted small d-none d-md-flex align-items-center" style="width: 150px;">
+                            {% if news.author %}
+                                <div class="avatar-circle me-2 bg-light border text-secondary fw-bold" style="width: 24px; height: 24px; font-size: 10px; display:flex; align-items:center; justify-content:center;">
+                                    {{ news.author.username|slice:":1"|upper }}
+                                </div>
+                                <span class="text-truncate">{{ news.author.get_full_name|default:news.author.username }}</span>
+                            {% else %}
+                                <span class="fst-italic opacity-50">-</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- 日付 -->
+                        <div class="text-end text-muted small fw-bold" style="width: 180px;">
+                            {{ news.updated_at|date:"Y.m.d" }} <span class="fw-normal opacity-75 ms-1">{{ news.updated_at|date:"H:i" }}</span>
+                        </div>
+
+                        <!-- ホバーアクションボタン (絶対配置) -->
+                        <div class="row-actions position-absolute end-0 top-50 translate-middle-y me-3 d-none d-lg-flex gap-2">
+                            {% if news.is_active %}
+                                <a href="{% url 'moderator:news_update' news.id %}" class="btn btn-white btn-sm rounded-circle shadow-sm border" title="編集" onclick="event.stopPropagation()">
+                                    <i class="bi bi-pencil-fill text-dark"></i>
+                                </a>
+                                <button type="button" class="btn btn-white btn-sm rounded-circle shadow-sm border action-trigger" data-action="delete" data-id="{{ news.id }}" title="削除" onclick="event.stopPropagation()">
+                                    <i class="bi bi-trash-fill text-danger"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-white btn-sm rounded-circle shadow-sm border action-trigger" data-action="restore" data-id="{{ news.id }}" title="復元" onclick="event.stopPropagation()">
+                                    <i class="bi bi-arrow-counterclockwise text-success"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5">
+                    <div class="mb-3 text-muted opacity-25">
+                        <i class="bi bi-wind" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="text-muted fw-bold">お知らせはありません</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+
+    <!-- ページネーション -->
+    {% if is_paginated %}
+    <nav class="mt-5 d-flex justify-content-center">
+        <ul class="pagination pagination-modern gap-2">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a></li>
             {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 
-            <div class="d-flex justify-content-between gap-2 mt-4 pt-3 border-top">
-                <div class="d-flex gap-2 flex-fill">
-                    <button type="submit" name="action" value="delete" class="btn btn-danger flex-fill shadow-sm py-2" onclick="return confirm('選択したコースを削除（無効化）しますか？')">
-                        <i class="bi bi-trash"></i> 選択削除
-                    </button>
-                    <button type="submit" name="action" value="restore" class="btn btn-warning flex-fill shadow-sm py-2" onclick="return confirm('選択したコースを復元しますか？')">
-                        <i class="bi bi-arrow-counterclockwise"></i> 選択復元
-                    </button>
-                </div>
-                <div class="d-flex gap-2 flex-fill">
-                    <a href="{% url 'moderator:news_list' %}" class="btn btn-outline-success flex-fill shadow-sm py-2">
-                        有効コース
-                    </a>
-                    <a href="{% url 'moderator:news_list' %}?show=deleted" class="btn btn-outline-dark flex-fill shadow-sm py-2">
-                        削除済みコース
-                    </a>
-                </div>
+    <!-- フローティングアクションバー (モダンVer) -->
+    <div class="action-bar-container" id="floating-action-bar">
+        <div class="action-bar-glass shadow-lg rounded-pill p-2 d-flex align-items-center gap-4 pe-4">
+            <div class="px-4 border-end border-white border-opacity-25 d-flex align-items-center text-white">
+                <span id="selected-count-display" class="fw-900 fs-4 me-2">0</span>
+                <span class="small opacity-75 text-uppercase ls-1">Selected</span>
             </div>
-        </form>
+            <div class="d-flex gap-2">
+                {% if is_trash_mode %}
+                    <button type="button" class="btn btn-success rounded-pill px-4 fw-bold action-trigger" data-action="restore" data-msg="復元中...">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>復元
+                    </button>
+                {% else %}
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold action-trigger" data-action="delete" data-msg="ゴミ箱へ移動中...">
+                        <i class="bi bi-trash me-2"></i>削除
+                    </button>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- モーダル類 (共通) -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-5"><div class="modal-body text-center p-5"><div id="modal-loading"><div class="spinner-border text-dark mb-4" role="status"></div><h5 class="fw-bold" id="loading-text">Processing...</h5></div><div id="modal-success" style="display: none;"><i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i><h5 class="fw-bold mt-3">完了しました</h5></div></div></div></div></div>
+<div class="modal fade" id="confirmModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-5"><div class="modal-body p-5 text-center"><h4 class="fw-bold mb-3" id="confirmTitle">確認</h4><p class="text-muted mb-4" id="confirmBody">操作を実行しますか？</p><div class="d-flex justify-content-center gap-3"><button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">キャンセル</button><button type="button" class="btn btn-dark rounded-pill px-4 fw-bold" id="confirmExecuteBtn">実行する</button></div></div></div></div></div>
+
+<style>
+    /* 独自スタイル定義 */
+    .fw-800 { font-weight: 800; }
+    .fw-900 { font-weight: 900; }
+    .ls-1 { letter-spacing: 1px; }
+    .btn-white { background: #fff; border: 1px solid #eee; color: #333; }
+    .btn-white:hover { background: #f8f9fa; border-color: #ddd; }
+    
+    /* リストスタイル */
+    .news-row { transition: all 0.2s ease; border-bottom: 1px solid #f0f0f0; }
+    .news-row:last-child { border-bottom: none; }
+    .news-row:hover { background-color: #fcfcfc; z-index: 1; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transform: scale(1.002); }
+    .row-actions { opacity: 0; transition: opacity 0.2s; }
+    .news-row:hover .row-actions { opacity: 1; }
+    
+    /* チェックボックス */
+    .scale-125 { transform: scale(1.25); cursor: pointer; }
+    
+    /* ページネーション */
+    .pagination-modern .page-link {
+        border: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        border-radius: 50%; color: #333; font-weight: bold; background: transparent;
+    }
+    .pagination-modern .page-item.active .page-link { background: #212529; color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .pagination-modern .page-link:hover:not(.active) { background: #f0f0f0; }
+
+    /* アクションバー (Glassmorphism) */
+    .action-bar-container {
+        position: fixed; bottom: 40px; left: 0; right: 0; 
+        display: flex; justify-content: center; pointer-events: none;
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
+        transform: translateY(100px); opacity: 0; z-index: 1050;
+    }
+    .action-bar-container.active { transform: translateY(0); opacity: 1; }
+    .action-bar-glass {
+        pointer-events: auto;
+        background: rgba(33, 37, 41, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .hover-scale:hover { transform: scale(1.05); transition: transform 0.2s; }
+</style>
+
+<script>
+    // 行クリック時のリンク遷移
+    function handleRowClick(event, url) {
+        if (event.target.type === 'checkbox' || event.target.closest('.row-actions') || event.target.closest('.btn')) {
+            return;
+        }
+        window.location.href = url;
+    }
+
+    // JSロジックは既存のものをベースに、スタイルに合わせて調整
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (基本的なチェックボックス制御やモーダル表示のJSは前回と同じため省略。ID等はHTMLに合わせてあります) ...
+        const actionBar = document.getElementById('floating-action-bar');
+        const countDisplay = document.getElementById('selected-count-display');
+        const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        const bulkForm = document.getElementById('bulk-form');
+        const actionInput = document.getElementById('bulk-action-input');
+        const confirmExecuteBtn = document.getElementById('confirmExecuteBtn');
+
+        function updateSelection() {
+            const count = document.querySelectorAll('.row-checkbox:checked').length;
+            countDisplay.innerText = count;
+            if (count > 0) actionBar.classList.add('active');
+            else actionBar.classList.remove('active');
+        }
+
+        document.querySelectorAll('.row-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelection);
+        });
+
+        document.querySelectorAll('.action-trigger').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.dataset.action;
+                const id = this.dataset.id;
+                
+                if (id) {
+                    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+                    const target = document.querySelector(`.row-checkbox[value="${id}"]`);
+                    if (target) target.checked = true;
+                }
+
+                actionInput.value = action;
+                document.getElementById('confirmBody').innerText = (action === 'delete') 
+                    ? '選択したお知らせをゴミ箱へ移動しますか？' 
+                    : '選択したお知らせを復元しますか？';
+                confirmModal.show();
+            });
+        });
+
+        confirmExecuteBtn.addEventListener('click', function() {
+            confirmModal.hide();
+            statusModal.show();
+            setTimeout(() => {
+                document.getElementById('modal-loading').style.display = 'none';
+                document.getElementById('modal-success').style.display = 'block';
+                setTimeout(() => bulkForm.submit(), 800);
+            }, 800);
+        });
+    });
+</script>
 {% endblock %}
