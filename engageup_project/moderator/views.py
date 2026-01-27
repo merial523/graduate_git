@@ -13,7 +13,7 @@ from django.core.exceptions import PermissionDenied
 from main.models import User, Badge, Constant, News
 from .forms import SequentialUserCreateForm, NewsForm
 from accounts.authority import AuthoritySet
-from common.views import BaseCreateView, BaseTemplateMixin,AdminOrModeratorRequiredMixin
+from common.views import BaseCreateView, BaseTemplateMixin,AdminOrModeratorRequiredMixin, BadgeRankingMixin
 
 from django.core.cache import cache
 from django.db.models import Count, Q
@@ -276,23 +276,4 @@ class NewsBulkActionView(AdminOrModeratorRequiredMixin, View):
         return redirect('moderator:news_list')
 
 
-# --- ランキング機能を提供するクラス ---
-class BadgeRankingMixin:
-    def get_badge_ranking_data(self):
-        ranking = cache.get("badge_ranking_list")
-        if not ranking:
-            # キャッシュがなければDBから計算して返す
-            ranking = User.objects.annotate(
-                badge_count=Count(
-                    'userexamstatus',
-                    filter=Q(
-                        userexamstatus__is_passed=True,
-                        userexamstatus__exam__exam_type='main',
-                        userexamstatus__exam__is_active=True
-                    )
-                )
-            ).order_by('-badge_count', 'member_num')[:3]
 
-            # キャッシュに保存
-            cache.set("badge_ranking_list", ranking, 3600)
-        return ranking

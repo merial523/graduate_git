@@ -354,6 +354,18 @@ class UserExamListView(BaseTemplateMixin, ListView):
     def get_queryset(self):
         # 削除されておらず、かつ公開中のものだけ表示
         return Exam.objects.filter(is_deleted=False, is_active=True).order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            # 自分が「合格(is_passed=True)」した検定のIDだけを抜き出したリストを作る
+            context['passed_exam_ids'] = UserExamStatus.objects.filter(
+                user=self.request.user, 
+                is_passed=True
+            ).values_list('exam_id', flat=True)
+        else:
+            context['passed_exam_ids'] = []
+        return context
 
 class ExamTakeView(BaseTemplateMixin, ContextMixin, View):
     def get(self, request, exam_id):
