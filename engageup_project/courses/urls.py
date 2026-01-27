@@ -11,6 +11,7 @@ urlpatterns = [
     path('<int:pk>/edit/', views.CourseUpdateView.as_view(), name='courses_edit'),
     path('module/<int:module_id>/delete/', views.TrainingModuleDeleteView.as_view(), name='module_delete'),
     path('bulk-action/', views.CourseBulkActionView.as_view(), name='bulk_action_course'),
+    path('toggle_active/<int:pk>/', views.CourseToggleActiveView.as_view(), name='course_toggle_active'),
     
     # 管理側：研修モジュール
     path('<int:course_id>/module/add/', views.TrainingModuleCreateView.as_view(), name='module_add'),
