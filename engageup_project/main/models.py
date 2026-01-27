@@ -49,6 +49,10 @@ class Course(models.Model):
     is_active = models.BooleanField(
         default=True
     )
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name="削除フラグ"
+    )
 
     def __str__(self):
         return self.subject
@@ -124,6 +128,9 @@ class TrainingExample(models.Model):
     explanation = models.TextField(
         verbose_name="解説",
         blank=True
+    )
+    is_deleted = models.BooleanField(
+        default=False
     )
 
     def __str__(self):
