@@ -46,8 +46,8 @@
                     <!-- <th>会員番号</th> -->
                     <th>名前</th>
                     <th>Email</th>
-                    <th>権限</th>
-                    <th>状態</th>
+                    <!-- <th>権限</th> -->
+                    <!-- <th>状態</th> -->
                 </tr>
             </thead>
             <tbody>
@@ -61,14 +61,14 @@
                             <!-- <td>{{ user.member_num }}</td> -->
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>
-                            <td>{{ user.rank }}</td>
-                            <td>
+                            <!-- <td>{{ user.rank }}</td> -->
+                            <!-- <td>
                                 {% if user.is_active %}
                                     <span class="badge bg-success">有効</span>
                                 {% else %}
                                     <span class="badge bg-danger">無効</span>
                                 {% endif %}
-                            </td>
+                            </td> -->
                         </tr>
                         {% empty %}
                         <tr>

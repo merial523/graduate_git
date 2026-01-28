@@ -17,13 +17,12 @@ class BadgeRankingMixin:
     def get_badge_ranking_data(self):
             ranking = cache.get('badge_ranking_list')
             if not ranking:
-                ranking = User.objects.annotate(
+                ranking = User.objects.filter(rank='staff').annotate(
                     badge_count=Count(
                         'userexamstatus',
                         filter=Q(
                             userexamstatus__is_passed=True,
-                            #staffのみにする
-                            userexamstatus__user__rank='staff',
+                            
                             userexamstatus__exam__exam_type='main',
                             userexamstatus__exam__is_active=True
                         )
@@ -48,8 +47,8 @@ class BaseCreateView(CreateView):
             return reverse_lazy("moderator:moderator_index")
         elif rank == "staff":
             return reverse_lazy("staff:staff_index")
-        elif rank == "vistor":
-            return reverse_lazy("vistor:vistor_index")
+        elif rank == "visitor":
+            return reverse_lazy("visitor:visitor_index")
 
 
 class BaseTemplateMixin:
@@ -102,7 +101,8 @@ class IndexView(BaseTemplateMixin, BadgeRankingMixin, TemplateView):
         if rank == "staff": return ["staff/staff_index.html"]
         elif rank == "administer": return ["administer/administer_index.html"]
         elif rank == "moderator": return ["moderator/moderator_index.html"]
-        return ["common/index.html"]
+        elif rank == "visitor": return ["visitor/visitor_index.html"]
+        else: return ["common/base.html"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
