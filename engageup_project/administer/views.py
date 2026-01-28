@@ -1,5 +1,12 @@
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+
+from django.utils.crypto import get_random_string
+
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.conf import settings
+from django.shortcuts import redirect
 from django.views.generic import (
     TemplateView,
     ListView,
@@ -138,6 +145,7 @@ class UserRankListView(
         context["form"] = UserRankForm()
         return context
 
+
     def post(self, request, *args, **kwargs):
         selected_users = request.POST.getlist("selected_user")
         form = UserRankForm(request.POST)
@@ -149,11 +157,41 @@ class UserRankListView(
             for user in users:
                 if user == request.user:
                     continue
+
                 user.rank = new_rank
-                user.save()
+
+                # visitor に変更された場合のみ
+                if new_rank == "visitor":
+                    raw_password = get_random_string(12)
+
+                    # 🔐 Django標準のパスワード更新
+                    user.set_password(raw_password)
+                    user.save()
+
+                    # ✉️ Django標準のメール送信
+                    send_mail(
+                        subject="【重要】ログイン情報のお知らせ",
+                        message=f"""
+    {user.username} 様
+
+    ランク変更により、パスワードが再発行されました。
+
+    ログイン情報
+    --------------------
+    ユーザー名：{user.username}
+    パスワード：{raw_password}
+    --------------------
+
+    ※ログイン後、必ずパスワードを変更してください。
+    """,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                        fail_silently=False,
+                    )
+                else:
+                    user.save()
 
         return redirect("administer:select_rank")
-
 
 # =========================
 # 定数リスト
