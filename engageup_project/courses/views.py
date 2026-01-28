@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.views.generic.base import ContextMixin
 from django.db.models import Q
 from django.http import JsonResponse
-from common.views import BaseCreateView, AdminOrModeratorRequiredMixin, BaseTemplateMixin
+from common.views import BaseCreateView, AdminOrModeratorRequiredMixin, BaseTemplateMixin, LoginRequiredCustomMixin
 from main.models import Course, TrainingModule, TrainingExample, TrainingExampleChoice, User, UserModuleProgress
 from .forms import CourseForm, TrainingModuleForm
 
@@ -301,14 +301,20 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # どの研修を完了したかのリストを渡すとHTMLでチェックマークを出しやすくなります
-        context['completed_module_ids'] = UserModuleProgress.objects.filter(
-            user=self.request.user, is_completed=True
-        ).values_list('module_id', flat=True)
+        if self.request.user.is_authenticated:
+            # ★ 末尾に list() を付けて、確実に数値のリストにする
+            ids = UserModuleProgress.objects.filter(
+                user_id=self.request.user.pk, 
+                is_completed=True
+            ).values_list('module_id', flat=True)
+            
+            context['completed_module_ids'] = list(ids) # リスト化
+        else:
+            context['completed_module_ids'] = []
+            
         return context
-
-class UpdateVideoProgressView(AdminOrModeratorRequiredMixin, View):
-    """動画の再生位置と完了状態を非同期で保存する"""
+    
+class UpdateVideoProgressView(LoginRequiredCustomMixin, View):
     def post(self, request):
         try:
             data = json.loads(request.body)
@@ -316,24 +322,23 @@ class UpdateVideoProgressView(AdminOrModeratorRequiredMixin, View):
             position = data.get('position', 0)
             is_done = data.get('is_done', False)
 
-            # 進捗データを取得または作成
+            # 現在ログインしているユーザーの進捗データを取得または作成
             progress, created = UserModuleProgress.objects.get_or_create(
-                user_id=request.user.pk, # pk(member_num)を明示的に使用
+                user_id=request.user.pk, # ログインユーザーのID
                 module_id=module_id
             )
             
-            # 再生位置を更新（数値であることを確認）
+            # 再生位置を更新
             progress.last_position = float(position)
             
-            # 最後まで見た場合、または既に完了している場合はTrueを維持
-            if is_done:
+            # ★ ここがポイント：一度完了(True)になったら、再度見てもFalseに戻らないようにする
+            if is_done or progress.is_completed:
                 progress.is_completed = True
                 
             progress.save()
             return JsonResponse({'status': 'success'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
 # --- 受講者用：研修詳細 ---
 class StaffTrainingDetailView(BaseTemplateMixin, ContextMixin, View):
     """研修学習画面 (動画再生位置の復元に対応)"""
