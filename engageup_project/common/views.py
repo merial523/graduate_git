@@ -1,12 +1,37 @@
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import FormView, ListView, UpdateView,CreateView
+from main.models import News, UserExamStatus,User
+from django.core.cache import cache
+from django.db.models import Count, Q
 
 from django.views.generic import TemplateView
 
 from django.core.exceptions import PermissionDenied
 
 
+
+class BadgeRankingMixin:
+    """バッジ取得数ランキングのデータを提供するMixin"""
+    def get_badge_ranking_data(self):
+            ranking = cache.get('badge_ranking_list')
+            if not ranking:
+                ranking = User.objects.annotate(
+                    badge_count=Count(
+                        'userexamstatus',
+                        filter=Q(
+                            userexamstatus__is_passed=True,
+                            #staffのみにする
+                            userexamstatus__user__rank='staff',
+                            userexamstatus__exam__exam_type='main',
+                            userexamstatus__exam__is_active=True
+                        )
+                    )
+                ).order_by('-badge_count')[:3]
+                cache.set('badge_ranking_list', ranking, 3600)
+            return ranking
+        
 
 #共通で返す処理
 class BaseCreateView(CreateView):
@@ -67,8 +92,34 @@ class BaseTemplateMixin:
 
         return context
 
-class IndexView(TemplateView,BaseTemplateMixin):
-    template_name = "common/index.html"
+class IndexView(BaseTemplateMixin, BadgeRankingMixin, TemplateView):
+    """
+    URL「/」にアクセスした際、ランクに合わせて staff_index などを
+    そのまま表示し、ランキングデータも渡すView
+    """
+    def get_template_names(self):
+        rank = getattr(self.request.user, 'rank', "")
+        if rank == "staff": return ["staff/staff_index.html"]
+        elif rank == "administer": return ["administer/administer_index.html"]
+        elif rank == "moderator": return ["moderator/moderator_index.html"]
+        return ["common/index.html"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            # ランキングデータをセット
+            context['badge_ranking'] = self.get_badge_ranking_data()
+            
+            # スタッフなら追加の統計もセット
+            if self.request.user.rank == "staff":
+                context['completed_count'] = UserExamStatus.objects.filter(
+                    user=self.request.user, is_passed=True, exam__is_active=True
+                ).count()
+                context['badges_count'] = UserExamStatus.objects.filter(
+                    user=self.request.user, is_passed=True, exam__exam_type='main', exam__is_active=True
+                ).count()
+                context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
+        return context
 
 from django.shortcuts import redirect
 from django.urls import reverse_lazy

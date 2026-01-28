@@ -1,111 +1,194 @@
 {% extends base_template %}
 {% load static %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'courses:courses_list' %}" class="text-decoration-none">コース・研修管理</a></li>
+<li class="breadcrumb-item active">{% if object %}コース編集{% else %}新規コース作成{% endif %}</li>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-sm mt-4 border-0 rounded-4">
-            <!-- カードヘッダー -->
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-                <h2 class="h5 mb-0 text-dark">
-                    <i class="bi bi-journal-plus me-2 text-success"></i>
-                    {% if object %}コースの編集{% else %}新規コースの作成{% endif %}
-                </h2>
-                <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill">
-                    一覧へ戻る
-                </a>
-            </div>
+<div class="container-fluid pb-5 px-md-5">
+    <!-- タイトルエリア -->
+    <div class="mb-4 text-start">
+        <h1 class="page-title text-dark m-0 fw-bold">
+            {% if object %}コース編集{% else %}新規コース作成{% endif %}
+        </h2>
+    </div>
 
-            <div class="card-body p-4">
-                <form method="post">
-                    {% csrf_token %}
+    <form method="post" id="course-form">
+        {% csrf_token %}
+        <div class="row g-4">
+            
+            <!-- 左カラム：STEP 1 基本設定 -->
+            <div class="col-lg-6">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5 h-100 position-relative overflow-hidden">
+                    <!-- 背景の装飾アイコン -->
+                    <span class="material-icons position-absolute opacity-05" style="font-size: 160px; right: -30px; bottom: -30px; transform: rotate(-10deg); color: #76b19d;">history_edu</span>
 
-                    <!-- エラー表示 -->
-                    {% if form.errors %}
-                        <div class="alert alert-danger shadow-sm py-2 small rounded-3">
-                            入力内容を確認してください。
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="step-badge me-2">1</span>
+                        <h5 class="fw-800 m-0">基本設定</h5>
+                    </div>
 
-                    <div class="form-container">
-                        <!-- 科目名 (subject) -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-secondary small">コース名（科目名） <span class="badge bg-danger ms-1">必須</span></label>
-                            {{ form.subject }}
-                            {% if form.subject.errors %}<div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div>{% endif %}
-                        </div>
+                    <!-- コース名 -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center">
+                            コース名（科目名）
+                            <span class="badge-required ms-2">必須</span>
+                        </label>
+                        {{ form.subject }}
+                        <div class="form-text extra-small mt-2">受講者画面のメインタイトルになります</div>
+                    </div>
 
-                        <!-- 講座数 (courseCount) -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-secondary small">予定講座数</label>
+                    <!-- 予定講座数 -->
+                    <div class="mb-0">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center">
+                            予定講座数
+                            <span class="badge-required ms-2">必須</span>
+                        </label>
+                        <div class="input-group-cute">
                             {{ form.courseCount }}
-                            <div class="form-text small">このコースに含まれる予定の動画本数を入力してください。</div>
-                            {% if form.courseCount.errors %}<div class="text-danger small mt-1">{{ form.courseCount.errors.0 }}</div>{% endif %}
-                        </div>
-
-                        <!-- 公開設定 (is_active) -->
-                        <div class="mb-3 p-3 bg-light rounded-3 border">
-                            <div class="form-check form-switch">
-                                {{ form.is_active }}
-                                <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">このコースを公開する</label>
-                            </div>
-                            <div class="form-text small ms-4">チェックを外すと「削除済み」フォルダへ移動し、受講者には見えなくなります。</div>
                         </div>
                     </div>
-
-                    <hr class="my-4 opacity-25">
-
-                    <!-- 送信ボタン -->
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg shadow-sm py-2 fw-bold rounded-3">
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                            {% if object %}変更を保存する{% else %}コースを登録して次へ{% endif %}
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
 
-            <div class="card-footer bg-light-subtle text-muted small py-3 text-center border-0">
-                ※ コースを作成後、各コースの中から「研修動画」を追加できます。
+            <!-- 右カラム：STEP 2 公開・詳細設定 -->
+            <div class="col-lg-6">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5 h-100">
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="step-badge me-2">2</span>
+                        <h5 class="fw-800 m-0">ステータス設定</h5>
+                    </div>
+
+                    <!-- 公開スイッチ（カード型） -->
+                    <div class="status-selection-card rounded-5 p-4 mb-4">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <label class="fw-bold text-dark d-block mb-1">公開ステータス</label>
+                                <p class="text-muted extra-small m-0">チェックを外すと一覧から隠れます。</p>
+                            </div>
+                            <div class="col-auto">
+                                <div class="form-check form-switch custom-switch-cute">
+                                    {{ form.is_active }}
+                                    <label class="status-label fw-bold mt-1 text-muted" for="{{ form.is_active.id_for_label }}">
+                                        <span class="label-text">{% if form.is_active.value %}公開中{% else %}非公開{% endif %}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 注意事項・補足 -->
+                    <div class="info-box rounded-4 p-3 d-flex align-items-start gap-3">
+                        <span class="material-icons text-primary">tips_and_updates</span>
+                        <div class="small text-muted">
+                            コースを登録した後、詳細画面（研修一覧）から実際の動画ファイルや要約テキストを追加できます。まずはコースの枠組みを作成しましょう。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下部：アクションボタン -->
+            <div class="col-12 mt-4 text-center">
+                <div class="d-flex flex-column align-items-center">
+                    <button type="submit" class="btn btn-primary btn-rounded-cute px-5 py-3 fw-800 shadow-sm mb-3" style="min-width: 320px;">
+                        <span class="material-icons align-middle me-1">check_circle</span>
+                        {% if object %}変更を保存する{% else %}コースを登録して次へ{% endif %}
+                    </button>
+                    <a href="{% url 'courses:courses_list' %}" class="btn btn-link text-muted text-decoration-none fw-bold small hover-teal">
+                        キャンセルして一覧に戻る
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
 
 <style>
-    /* 研修フォームと統一したスタイル設定 */
-    .form-container input:not([type="checkbox"]), 
-    .form-container select, 
-    .form-container textarea {
-        display: block;
-        width: 100%;
-        padding: 0.75rem 1rem;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.5rem;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    }
-    
-    .form-container input:focus {
-        border-color: #28a745; /* コースはグリーン系 */
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+    .fw-800 { font-weight: 800; }
+    .extra-small { font-size: 0.72rem; }
+    .size-32 { font-size: 32px; }
+    .opacity-05 { opacity: 0.05; }
+
+    /* ステップバッジ */
+    .step-badge {
+        width: 28px; height: 28px; background-color: #76b19d; color: white;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 900; font-size: 0.9rem;
     }
 
-    /* スイッチ（チェックボックス）のサイズ調整 */
-    .form-check-input {
-        width: 3em;
-        height: 1.5em;
-        cursor: pointer;
+    /* カードアクセント */
+    .admin-card { border-left: 10px solid #76b19d !important; } /* メインカラー：緑 */
+    .status-selection-card { background-color: #f8faf9; border: 2px dashed #e2e8e5; }
+    .info-box { background-color: #f0f7ff; border: 1px solid #e0eeff; }
+
+    /* 必須ラベル */
+    .badge-required {
+        background-color: #ff7675;
+        color: white; font-size: 0.62rem; padding: 2px 8px;
+        border-radius: 4px; font-weight: bold;
     }
-    .form-check-label {
-        padding-top: 2px;
-        margin-left: 10px;
-        cursor: pointer;
+
+    /* 入力フォーム */
+    input[type="text"], input[type="number"], select {
+        width: 100%; padding: 14px 18px; border: 2px solid #f2f2f2;
+        border-radius: 16px; background-color: #fdfdfd; transition: 0.3s;
+        font-size: 1rem;
     }
+    input:focus {
+        outline: none; border-color: #76b19d; background-color: #fff;
+        box-shadow: 0 5px 15px rgba(118, 177, 157, 0.1);
+    }
+
+    /* 単位付き入力 */
+    .input-group-cute { position: relative; display: flex; align-items: center; }
+    .unit-text { position: absolute; right: 20px; }
+
+    /* トグルスイッチ */
+    .custom-switch-cute { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+    .custom-switch-cute .form-check-input {
+        width: 3.2rem !important; height: 1.6rem !important; cursor: pointer;
+        background-color: #ced4da; border-color: #ced4da;
+    }
+    .custom-switch-cute .form-check-input:checked {
+        background-color: #76b19d !important; border-color: #76b19d !important;
+    }
+    .status-label { font-size: 0.72rem; }
+
+    /* ボタン */
+    .btn-rounded-cute {
+        border-radius: 50px;
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .btn-primary { background-color: #76b19d; border: none; }
+    .btn-primary:hover {
+        background-color: #5fa089; transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(118, 177, 157, 0.25) !important;
+    }
+
+    .hover-teal:hover { color: #76b19d !important; }
+    .rounded-5 { border-radius: 2.5rem !important; }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activeSwitch = document.querySelector('.custom-switch-cute .form-check-input');
+    const labelText = document.querySelector('.label-text');
+
+    if (activeSwitch && labelText) {
+        const updateText = () => {
+            if (activeSwitch.checked) {
+                labelText.innerText = "公開中";
+                labelText.parentElement.className = "status-label fw-bold mt-1 text-success";
+            } else {
+                labelText.innerText = "非公開";
+                labelText.parentElement.className = "status-label fw-bold mt-1 text-muted";
+            }
+        };
+        activeSwitch.addEventListener('change', updateText);
+        updateText();
+    }
+});
+</script>
 {% endblock %}

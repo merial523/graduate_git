@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render
 from django.views.generic import ListView,TemplateView
 from common.views import AdminOrModeratorOrStaffRequiredMixin, BaseTemplateMixin
 from main.models import User
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from django.views.generic import TemplateView, ListView
 from main.models import News, UserExamStatus
@@ -10,44 +10,18 @@ from common.views import BaseTemplateMixin
 from moderator.views import BadgeRankingMixin 
 
 
-class StaffIndexView(TemplateView):
+class StaffIndexView(BaseTemplateMixin, 
+                        BadgeRankingMixin, 
+                        TemplateView):
     template_name = "staff/staff_index.html"
-class UserListView(
-    AdminOrModeratorOrStaffRequiredMixin,
-    BaseTemplateMixin,
-    ListView
-):
-    model = User
-    template_name = "staff/st_user_list.html"
-    context_object_name = "users"
-    paginate_by = 10
 
-    def get_queryset(self):
-        show = self.request.GET.get("show")
-
-        if show == "deleted":
-            return User.objects.filter(is_active=False).order_by("member_num")
-
-        return User.objects.filter(is_active=True).order_by("member_num")
-
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get("action")
-        ids = request.POST.getlist("user_ids")
-
-        if ids:
-            if action == "delete":
-                User.objects.filter(id__in=ids).update(is_active=False)
-            elif action == "restore":
-                User.objects.filter(id__in=ids).update(is_active=True)
-
-        return redirect(request.get_full_path())
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-
         if user.is_authenticated:
             # 1. 🏆 ランキングデータを取得 (Mixinの機能を使用)
-            context['badge_ranking'] = self.get_badge_ranking_data()
+            badge_ranking = self.get_badge_ranking_data()
+            context['badge_ranking'] = badge_ranking
 
             # 2. 🔔 最新のニュース（プレビュー用：3件）
             context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
@@ -63,26 +37,62 @@ class UserListView(
             ).count()
 
         return context
+class UserListView(
+    AdminOrModeratorOrStaffRequiredMixin,
+    BaseTemplateMixin,
+    ListView
+):
+    model = User
+    template_name = "staff/st_user_list.html"
+    context_object_name = "users"
+    paginate_by = 10
+
+    def get_queryset(self):
+        show = self.request.GET.get("show")
+        q = self.request.GET.get("q")  # ★検索キーワード(q)を取得
+
+        # 1. まず「staff」ランクの人だけに絞り込む
+        staff_ps = User.objects.filter(rank="staff")
+
+        # 2. 削除済みかどうかのフィルタ
+        if show == "deleted":
+            staff_ps = staff_ps.filter(is_active=False)
+        else:
+            staff_ps = staff_ps.filter(is_active=True)
+
+        # 3. ★検索機能の追記
+        if q:
+            # メールアドレス または 氏名(name) にキーワードが含まれる人を抽出
+            staff_ps = staff_ps.filter(
+                Q(email__icontains=q) | Q(username__icontains=q)
+            )
+
+        return staff_ps.order_by("member_num")
     
-    def get_badge_ranking_data(self):
-        """
-        バッジ獲得数ランキング（上位5ユーザー）
-        """
-        return (
-            UserExamStatus.objects
-            .filter(
-                is_passed=True,
-                exam__exam_type='main',
-                exam__is_active=True
-            )
-            .values(
-            'user__member_num',   # ← 主キー
-            'user__username',     # ← 表示名
-            'user__name'          # ← 氏名（使うなら）
-            )
-            .annotate(badge_count=Count('id'))
-            .order_by('-badge_count')[:3]
-        )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # URLの ?q=... の中身を取得して 'search_query' という名前でHTMLに送る
+        context['search_query'] = self.request.GET.get("q", "")
+        
+        # 削除済みを表示中かどうかのフラグも送っておくとHTMLで便利です
+        context['is_trash_mode'] = self.request.GET.get("show") == "deleted"
+        
+        return context
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        ids = request.POST.getlist("user_ids")
+
+        if ids:
+            if action == "delete":
+                User.objects.filter(member_num__in=ids).update(is_active=False)
+            elif action == "restore":
+                User.objects.filter(member_num__in=ids).update(is_active=True)
+
+        return redirect(request.get_full_path())
+    
+    
+    
 
 class StaffNewsListView(BaseTemplateMixin, ListView):
     """受講者用お知らせ一覧画面"""

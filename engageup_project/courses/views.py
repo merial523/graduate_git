@@ -9,12 +9,13 @@ from django.views.generic import TemplateView, ListView, UpdateView, CreateView
 from django.urls import reverse_lazy
 from django.views.generic.base import ContextMixin
 from django.db.models import Q
+from django.http import JsonResponse
 from common.views import BaseCreateView, AdminOrModeratorRequiredMixin, BaseTemplateMixin
 from main.models import Course, TrainingModule, TrainingExample, TrainingExampleChoice, User
 from .forms import CourseForm, TrainingModuleForm
 
 # =====================================================
-# 1. コース管理 (一覧・作成・編集)
+# 1. コース管理 (一覧・作成・編集・削除・復元)
 # =====================================================
 
 class CoursesIndexView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, TemplateView):
@@ -27,43 +28,116 @@ class CourseListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView)
     paginate_by = 10
 
     def get_queryset(self):
-        show = self.request.GET.get("show")
-        q = self.request.GET.get("q")
-        qs = Course.objects.filter(is_active=not (show == "deleted")).order_by("-id")
-        if self.request.GET.get("show") == "deleted":
-            # 修正：コース自体が削除されているか、中身に1つでも削除された研修があるコースを取得
-            qs = Course.objects.filter(Q(is_active=False) | Q(modules__is_active=False)).distinct()
-        else:
-            qs = Course.objects.filter(is_active=True)
+        # ゴミ箱モードの判定（show=deletedならTrue）
+        self.is_trash_mode = self.request.GET.get("show") == "deleted"
+        
+        # 論理削除(is_deleted)の状態に基づいてフィルタリング
+        # ※モデルに is_deleted = models.BooleanField(default=False) が必要です
+        queryset = Course.objects.filter(is_deleted=self.is_trash_mode)
 
+        # 1. 検索 (件名)
+        q = self.request.GET.get("q")
         if q:
-            qs = qs.filter(subject__icontains=q)
-        return qs.order_by("-id")
+            queryset = queryset.filter(subject__icontains=q)
+
+        # 2. 公開状態フィルタ (ゴミ箱モード以外の場合)
+        status = self.request.GET.get("status")
+        if not self.is_trash_mode and status:
+            if status == "public":
+                queryset = queryset.filter(is_active=True)
+            elif status == "private":
+                queryset = queryset.filter(is_active=False)
+
+        # 3. ソート
+        sort = self.request.GET.get("sort", "newest")
+        if sort == "newest":
+            queryset = queryset.order_by("-id")
+        elif sort == "oldest":
+            queryset = queryset.order_by("id")
+        elif sort == "title":
+            queryset = queryset.order_by("subject")
+        else:
+            queryset = queryset.order_by("-id")
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
-            'total_active_courses': Course.objects.filter(is_active=True).count(),
-            'total_videos': TrainingModule.objects.filter(is_active=True).count(),
-            'total_students': User.objects.filter(rank="staff").count(),
-            'is_trash_mode': self.request.GET.get("show") == "deleted",
-            'search_query': self.request.GET.get("q", "")
+            'is_trash_mode': self.is_trash_mode,
+            'search_query': self.request.GET.get("q", ""),
+            'current_sort': self.request.GET.get("sort", "newest"),
+            'current_status': self.request.GET.get("status", "all"),
+            # 統計用: 有効かつ公開中のコース数、削除済みコース数
+            'total_active_courses': Course.objects.filter(is_deleted=False, is_active=True).count(),
+            'total_deleted_courses': Course.objects.filter(is_deleted=True).count(),
         })
         return context
 
-class CourseBulkActionView(AdminOrModeratorRequiredMixin, View):
-    """コースの一括削除・復元（NoReverseMatch対策で専用クラス化）"""
-    def post(self, request):
-        action = request.POST.get("action")
-        ids = request.POST.getlist("course_ids")
-        if ids:
-            active_val = (action == "restore")
-            Course.objects.filter(id__in=ids).update(is_active=active_val)
-            TrainingModule.objects.filter(course_id__in=ids).update(is_active=active_val)
+class CourseToggleActiveView(AdminOrModeratorRequiredMixin, View):
+    """Ajax用: 個別の公開/非公開切り替え"""
+    def post(self, request, pk):
+        # 404エラーが出ないよう対象を取得
+        course = get_object_or_404(Course, pk=pk)
         
-        # 復元時はゴミ箱表示を維持
-        if action == "restore":
+        # 現在の状態を反転させる (True ⇔ False)
+        course.is_active = not course.is_active
+        course.save()
+        
+        # 新しい状態をJSONで返す
+        return JsonResponse({
+            'status': 'success', 
+            'is_active': course.is_active
+        })
+
+class CourseDeleteView(AdminOrModeratorRequiredMixin, View):
+    """個別削除（ゴミ箱へ移動）"""
+    def post(self, request, pk):
+        course = get_object_or_404(Course, pk=pk)
+        course.is_deleted = True # 論理削除
+        course.save()
+        # 紐づく研修もゴミ箱に入れる場合は以下を有効化
+        # course.modules.update(is_deleted=True)
+        return redirect('courses:courses_list')
+
+class CourseRestoreView(AdminOrModeratorRequiredMixin, View):
+    """個別復元（ゴミ箱から戻す）"""
+    def post(self, request, pk):
+        course = get_object_or_404(Course, pk=pk)
+        course.is_deleted = False # 復元
+        course.save()
+        return redirect(reverse_lazy('courses:courses_list') + '?show=deleted')
+
+class CourseBulkActionView(AdminOrModeratorRequiredMixin, View):
+    """一括操作（削除・復元・公開・非公開）"""
+    def post(self, request):
+        ids = request.POST.getlist("course_ids")
+        action = request.POST.get("action")
+        
+        if not ids:
+            return redirect('courses:courses_list')
+
+        qs = Course.objects.filter(id__in=ids)
+        
+        if action == "delete":
+            # ゴミ箱へ移動
+            qs.update(is_deleted=True)
+            # 関連モジュールも削除する場合:
+            # TrainingModule.objects.filter(course_id__in=ids).update(is_deleted=True)
+            
+        elif action == "restore":
+            # 復元
+            qs.update(is_deleted=False)
             return redirect(reverse_lazy('courses:courses_list') + '?show=deleted')
+            
+        elif action == "make_public":
+            # 一括公開
+            qs.update(is_active=True)
+            
+        elif action == "make_private":
+            # 一括非公開
+            qs.update(is_active=False)
+
         return redirect('courses:courses_list')
     
 class CourseCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreateView):
@@ -71,9 +145,12 @@ class CourseCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCre
     form_class = CourseForm
     template_name = "courses/mo_courses_form.html"
     success_url = reverse_lazy("courses:courses_list")
+    is_continue_url = "courses:courses_list"
+    is_continue = True
 
     def form_valid(self, form):
         form.instance.is_active = True
+        form.instance.is_deleted = False
         return super().form_valid(form)
 
 class CourseUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
@@ -83,7 +160,8 @@ class CourseUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateV
     success_url = reverse_lazy("courses:courses_list")
 
     def get_queryset(self):
-        return Course.objects.filter(is_active=True)
+        # ゴミ箱に入っていないものだけ編集可能
+        return Course.objects.filter(is_deleted=False)
 
 
 # =====================================================
@@ -106,6 +184,7 @@ class TrainingModuleCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin,
         if form.is_valid():
             module = form.save(commit=False)
             module.course = course
+            module.is_active = True # 初期値
             existing = form.cleaned_data.get('existing_file')
             if existing and not request.FILES.get('training_file'):
                 module.training_file.name = f"exams_files/{existing}"
@@ -121,6 +200,9 @@ class TrainingModuleUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin,
     def get_success_url(self):
         return reverse_lazy('courses:courses_list')
 
+    def get_queryset(self):
+        return TrainingModule.objects.filter(is_active=True)
+
     def form_valid(self, form):
         existing = form.cleaned_data.get('existing_file')
         if existing and not self.request.FILES.get('training_file'):
@@ -130,6 +212,7 @@ class TrainingModuleUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin,
 class TrainingModuleDeleteView(AdminOrModeratorRequiredMixin, View):
     def post(self, request, module_id):
         module = get_object_or_404(TrainingModule, pk=module_id)
+        # 論理削除
         module.is_active = False
         module.save()
         return redirect('courses:courses_list')
@@ -137,20 +220,16 @@ class TrainingModuleDeleteView(AdminOrModeratorRequiredMixin, View):
 class TrainingModuleRestoreView(AdminOrModeratorRequiredMixin, View):
     def post(self, request, module_id):
         module = get_object_or_404(TrainingModule, pk=module_id)
-        module.is_active = True # 復活
+        # 復元
+        module.is_active = True
         module.save()
-        # もし親のコースが非表示なら、一緒に復元させる
-        if not module.course.is_active:
-            module.course.is_active = True
-            module.course.save()
-            # メッセージを出すとより親切です（任意）
         return redirect(reverse_lazy('courses:courses_list') + '?show=deleted')
 
 
 # =====================================================
 # 3. AI自動生成機能 (要約 ＆ 例題)
 # =====================================================
-
+# (AI機能部分は変更なし)
 class TrainingAllAutoGenerateView(AdminOrModeratorRequiredMixin, View):
     def post(self, request, module_id):
         module = get_object_or_404(TrainingModule, pk=module_id)
@@ -217,11 +296,13 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
     context_object_name = "courses"
 
     def get_queryset(self):
-        return Course.objects.filter(is_active=True).prefetch_related('modules')
+        # 削除されておらず、かつ公開中のものだけ表示
+        return Course.objects.filter(is_deleted=False, is_active=True).prefetch_related('modules')
 
 class StaffTrainingDetailView(BaseTemplateMixin, ContextMixin, View):
     def get(self, request, module_id):
-        module = get_object_or_404(TrainingModule, pk=module_id, is_active=True)
+        # モジュール自体も削除・非公開でないかチェック
+        module = get_object_or_404(TrainingModule, pk=module_id, is_active=True, is_deleted=False)
         context = self.get_context_data(
             module=module,
             base_template=self.get_base_template()

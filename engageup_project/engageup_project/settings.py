@@ -145,7 +145,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"  # 本番環境でcollectstatic実行時�
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "/accounts/login/"  # 未ログイン時にリダイレクトするURL
-LOGIN_REDIRECT_URL = "/"  # ログイン成功後のリダイレクト先
+LOGIN_REDIRECT_URL = "index"  # ログイン成功後のリダイレクト先
 LOGOUT_REDIRECT_URL = "/accounts/login/"  # ログアウト後のリダイレクト先
 
 

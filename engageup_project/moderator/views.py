@@ -13,11 +13,10 @@ from django.core.exceptions import PermissionDenied
 from main.models import User, Badge, Constant, News
 from .forms import SequentialUserCreateForm, NewsForm
 from accounts.authority import AuthoritySet
-from common.views import BaseCreateView, BaseTemplateMixin,AdminOrModeratorRequiredMixin
+from common.views import BaseCreateView, BaseTemplateMixin,AdminOrModeratorRequiredMixin, BadgeRankingMixin
 
 from django.core.cache import cache
 from django.db.models import Count, Q
-
 
 # =====================================================
 # トップ・固定ページ
@@ -158,12 +157,10 @@ class BadgeManageView(
 
     def get_queryset(self):
         q = self.request.GET.get("q")
+        ps = Badge.objects.filter(is_active=True)
         if q:
-            return Badge.objects.filter(name__icontains=q)
-        return Badge.objects.all()
-    
-    def get_queryset(self):
-        return Badge.objects.filter(is_active=True)
+            ps = ps.filter(name__icontains=q)
+        return ps
 
 
 class BadgeUpdateView(
@@ -178,95 +175,105 @@ class BadgeUpdateView(
 
 
 
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import ListView, CreateView, UpdateView
+from django.urls import reverse_lazy
+from django.db.models import Q
+from django.http import JsonResponse
+from django.views import View
+from common.views import AdminOrModeratorRequiredMixin, BaseTemplateMixin
+from main.models import News
+from .forms import NewsForm
+
 # =====================================================
-# News 管理
+# お知らせ管理
 # =====================================================
-class NewsListView(
-    AdminOrModeratorRequiredMixin,
-    BaseTemplateMixin,
-    ListView
-):
+
+class NewsListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
     model = News
     template_name = "moderator/mo_news_list.html"
-    context_object_name = "news_"
+    context_object_name = "news_list"
     paginate_by = 10
 
     def get_queryset(self):
-        show = self.request.GET.get("show")
-        qs = News.objects.order_by("id")
+        # ゴミ箱モード判定
+        self.is_trash_mode = self.request.GET.get("show") == "deleted"
+        
+        qs = News.objects.all()
 
-        if show == "deleted":
-            return qs.filter(is_active=False)
+        # 検索
+        q = self.request.GET.get("q")
+        if q:
+            qs = qs.filter(Q(title__icontains=q) | Q(content__icontains=q))
 
-        return qs.filter(is_active=True)
+        # フィルタ（公開・非公開）
+        status = self.request.GET.get("status")
+        if status == "public":
+            qs = qs.filter(is_active=True)
+        elif status == "private":
+            qs = qs.filter(is_active=False)
 
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get("action")
-        ids = request.POST.getlist("news_ids")
+        # ソート
+        sort = self.request.GET.get("sort", "newest")
+        if sort == "newest":
+            qs = qs.order_by("-created_at")
+        elif sort == "oldest":
+            qs = qs.order_by("created_at")
+        elif sort == "important":
+            qs = qs.order_by("-is_important", "-created_at")
+            
+        return qs
 
-        if ids:
-            qs = News.objects.filter(id__in=ids)
-            if action == "delete":
-                qs.update(is_active=False)
-            elif action == "restore":
-                qs.update(is_active=True)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'search_query': self.request.GET.get("q", ""),
+            'current_sort': self.request.GET.get("sort", "newest"),
+            'current_status': self.request.GET.get("status", "all"),
+            # 統計用
+            'total_count': News.objects.count(),
+        })
+        return context
 
-        return redirect(request.get_full_path())
-
-
-class NewsCreateView(
-    AdminOrModeratorRequiredMixin,
-    BaseTemplateMixin,
-    BaseCreateView
-):
+class NewsCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, CreateView):
     model = News
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
     success_url = reverse_lazy("moderator:news_list")
-    is_continue_url = "moderator:news_list"
-    is_continue = True
 
     def form_valid(self, form):
-        form.instance.is_active = True
+        form.instance.author = self.request.user # 作成者を記録
         return super().form_valid(form)
 
-
-class NewsUpdateView(
-    AdminOrModeratorRequiredMixin,
-    BaseTemplateMixin,
-    UpdateView
-):
+class NewsUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
     model = News
     form_class = NewsForm
     template_name = "moderator/mo_news_form.html"
     success_url = reverse_lazy("moderator:news_list")
 
-    def get_queryset(self):
-        return News.objects.filter(is_active=True)
+class NewsToggleActiveView(AdminOrModeratorRequiredMixin, View):
+    """Ajax用: 公開/非公開切り替え"""
+    def post(self, request, pk):
+        news = get_object_or_404(News, pk=pk)
+        news.is_active = not news.is_active
+        news.save()
+        return JsonResponse({'status': 'success', 'is_active': news.is_active})
+
+class NewsDeleteView(AdminOrModeratorRequiredMixin, View):
+    """削除処理（物理削除または論理削除）"""
+    def post(self, request, pk):
+        news = get_object_or_404(News, pk=pk)
+        news.delete() # または news.is_deleted = True
+        return redirect('moderator:news_list')
+
+class NewsBulkActionView(AdminOrModeratorRequiredMixin, View):
+    """一括削除"""
+    def post(self, request):
+        ids = request.POST.getlist("news_ids")
+        if ids:
+            News.objects.filter(id__in=ids).delete()
+        return redirect('moderator:news_list')
 
 
-# --- ランキング機能を提供するクラス ---
-class BadgeRankingMixin:
-    """バッジ取得数ランキングのデータを提供するMixin"""
-    
-    def get_badge_ranking_data(self):
-        # 1. キャッシュを確認
-        ranking = cache.get('badge_ranking_list')
 
-        if not ranking:
-            # 2. キャッシュが空なら集計（上位3名）
-            ranking = User.objects.annotate(
-                badge_count=Count(
-                    'userexamstatus',
-                    filter=Q(
-                        userexamstatus__is_passed=True,
-                        userexamstatus__exam__exam_type='main',
-                        userexamstatus__exam__is_active=True
-                    )
-                )
-            ).order_by('-badge_count')[:3]
-
-            # 3. 1時間(3600秒)キャッシュ
-            cache.set('badge_ranking_list', ranking, 3600)
-
-        return ranking

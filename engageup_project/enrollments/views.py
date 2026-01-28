@@ -30,7 +30,9 @@ class ExamListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
+        # ゴミ箱モードの判定
         self.is_trash_mode = self.request.GET.get("show") == "deleted"
+        # 論理削除の状態に基づいてフィルタリング
         queryset = Exam.objects.filter(is_deleted=self.is_trash_mode)
         
         # 1. 検索 (q)
@@ -69,10 +71,15 @@ class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreat
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
+        # 前提試験の選択肢は削除されていない仮試験のみ
         form.fields['prerequisite'].queryset = Exam.objects.filter(exam_type='mock', is_deleted=False)
         return form
 
     def form_valid(self, form):
+        # ★修正: 新規作成時はデフォルトで「公開」「削除なし」にする
+        form.instance.is_active = True
+        form.instance.is_deleted = False
+
         # 1. 新規アップロードがあるか確認
         new_file = self.request.FILES.get('exams_file')
         # 2. 過去のファイル選択（プルダウン）の値を確認
@@ -83,7 +90,6 @@ class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreat
             pass
         elif past_file_name:
             # 新規がなく、過去のファイルが選択されていれば、そのパスをセット
-            # ※ ファイルパスは 'exams_files/ファイル名' の形式で保存されます
             form.instance.exams_file.name = f"exams_files/{past_file_name}"
         
         return super().form_valid(form)
@@ -97,25 +103,28 @@ class ExamUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateVie
     template_name = "enrollments/exam_create.html"
     form_class = ExamForm
 
+    def get_queryset(self):
+        # ★修正: ゴミ箱に入っていないものだけ編集可能にする
+        return Exam.objects.filter(is_deleted=False)
+
     def get_success_url(self):
         return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
+        # 自分自身を前提条件にしないように除外
         form.fields['prerequisite'].queryset = Exam.objects.filter(
             exam_type='mock', is_deleted=False
         ).exclude(id=self.object.id)
         return form
 
     def form_valid(self, form):
-        # 編集時も同様のロジック（新規があれば上書き、なければ既存維持）
         new_file = self.request.FILES.get('exams_file')
         past_file_name = form.cleaned_data.get('exam_file')
 
         if new_file:
             pass
         elif past_file_name:
-            # プルダウンで別の過去ファイルを選び直した場合
             form.instance.exams_file.name = f"exams_files/{past_file_name}"
             
         return super().form_valid(form)
@@ -180,12 +189,13 @@ class QuestionDeleteView(AdminOrModeratorRequiredMixin, View):
         return redirect('enrollments:question_list', exam_id=exam_id)
 
 
-# --- 検定アクション ---
+# --- 検定アクション (Ajaxトグル & 削除・復元) ---
 
 class ExamToggleActiveView(AdminOrModeratorRequiredMixin, View):
-    """公開非公開をリアルタイムで切り替える"""
+    """公開非公開をリアルタイムで切り替える (DB保存)"""
     def post(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
+        # 状態を反転して保存
         exam.is_active = not exam.is_active
         exam.save()
         return JsonResponse({'status': 'success', 'is_active': exam.is_active})
@@ -197,6 +207,7 @@ class ExamDeleteView(AdminOrModeratorRequiredMixin, View):
         exam.is_deleted = True
         exam.save()
         if exam.exam_type == 'mock':
+            # 仮試験が削除されたら、それを前提とする本試験も削除（非公開）にする
             Exam.objects.filter(prerequisite=exam).update(is_deleted=True)
         return redirect('enrollments:exam_list')
 
@@ -221,19 +232,25 @@ class ExamBulkActionView(AdminOrModeratorRequiredMixin, View):
         target_exams = Exam.objects.filter(id__in=exam_ids)
 
         if action == 'delete':
+            # 一括削除
             target_exams.update(is_deleted=True)
+            # 紐づく本試験も削除
             mock_ids = Exam.objects.filter(id__in=exam_ids, exam_type='mock').values_list('id', flat=True)
             if mock_ids:
                 Exam.objects.filter(prerequisite_id__in=mock_ids).update(is_deleted=True)
         elif action == 'restore':
+            # 一括復元
             target_exams.update(is_deleted=False)
+            # オプションで前提の仮試験も復元
             if restore_prerequisite:
                 prereq_ids = target_exams.filter(exam_type='main').values_list('prerequisite_id', flat=True)
                 target_mocks = [pid for pid in prereq_ids if pid]
                 Exam.objects.filter(id__in=target_mocks).update(is_deleted=False)
         elif action == 'make_public':
+            # 一括公開 (DB保存)
             target_exams.update(is_active=True)
         elif action == 'make_private':
+            # 一括非公開 (DB保存)
             target_exams.update(is_active=False)
         
         return redirect('enrollments:exam_list')
@@ -242,7 +259,7 @@ class ExamBulkActionView(AdminOrModeratorRequiredMixin, View):
 # --- AI自動生成 ---
 
 class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ContextMixin, View):
-    """AIによる問題自動生成（セーフティフィルター緩和・エラー対策済み版）"""
+    """AIによる問題自動生成"""
     
     def get(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
@@ -252,7 +269,6 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
     def post(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
         
-        # 教材の存在チェック
         if not exam.exams_file:
             context = self.get_context_data(error='教材が登録されていません。', exam_id=exam_id)
             return render(request, 'enrollments/enrollments_error.html', context) 
@@ -261,14 +277,10 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
         difficulty = request.POST.get('difficulty', '中級')
 
         try:
-            # 1. 教材データを読み込み
             with exam.exams_file.open('rb') as f:
                 file_data = f.read()
 
-            # 2. AIの設定
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            
-            # ★ 修正ポイント：セーフティ設定を追加して「回答拒否」を防ぐ
             model = genai.GenerativeModel(
                 model_name="gemini-flash-latest",
                 safety_settings={
@@ -279,64 +291,47 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
                 }
             )
             
-            # 3. 厳格なプロンプトの定義
             prompt = f"""
                 以下の教材内容から、4択形式の検定問題を「{num_questions}問」作成してください。
                 問題の難易度は「{difficulty}」にしてください。
 
                 【重要：JSONの構造ルール】
                 出力は必ず、以下の構造を持つJSON形式のリストのみで返してください。
-                キーの名前（text, choices, is_correct）は、一字一句違わず以下の通りに指定すること。
-
                 [
                 {{
-                    "text": "問題文をここに書く",
+                    "text": "問題文",
                     "choices": [
-                    {{"text": "正解の選択肢", "is_correct": true}},
-                    {{"text": "間違いの選択肢1", "is_correct": false}},
-                    {{"text": "間違いの選択肢2", "is_correct": false}},
-                    {{"text": "間違いの選択肢3", "is_correct": false}}
+                    {{"text": "正解", "is_correct": true}},
+                    {{"text": "誤り", "is_correct": false}},
+                    {{"text": "誤り", "is_correct": false}},
+                    {{"text": "誤り", "is_correct": false}}
                     ]
                 }}
                 ]
-
-                【禁止事項】
-                1. JSON以外の説明文、挨拶などは一切含めないこと。
-                2. 正解（is_correct: true）の位置は、ランダムに配置すること。
             """
 
-            # 4. AIへのリクエスト
             response = model.generate_content([
                 prompt, 
                 {'mime_type': 'application/pdf', 'data': file_data}
             ])
 
-            # 5. 解析処理（JSONのクリーニング）
             raw_text = response.text.replace('```json', '').replace('```', '').strip()
             quiz_data = json.loads(raw_text)
 
-            # データが単一辞書ならリストに包む（型エラー対策）
             if isinstance(quiz_data, dict):
                 quiz_data = quiz_data.get('questions', [quiz_data])
 
-            # 6. データベースへの保存
             for item in quiz_data:
-                # 'text'がなくても 'question' 等で探す（KeyError対策）
-                q_text = item.get('text') or item.get('question') or item.get('question_text')
-                if not q_text:
-                    continue
+                q_text = item.get('text') or item.get('question')
+                if not q_text: continue
 
                 q = Question.objects.create(exam=exam, text=q_text)
-
-                # 選択肢の取得
                 choices_data = item.get('choices') or item.get('options')
-                if not choices_data:
-                    continue
+                if not choices_data: continue
 
-                # シャッフルして保存
                 random.shuffle(choices_data)
                 for c in choices_data:
-                    c_text = c.get('text') or c.get('content') or c.get('option')
+                    c_text = c.get('text') or c.get('option')
                     if c_text:
                         Choice.objects.create(
                             question=q, 
@@ -347,7 +342,6 @@ class AddQuestionAIView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, Contex
             return redirect('enrollments:question_list', exam_id=exam.id)
 
         except Exception as e:
-            # エラーの詳細を error.html に送る
             context = self.get_context_data(error=str(e), exam_id=exam_id)
             return render(request, 'enrollments/enrollments_error.html', context)
 
@@ -358,11 +352,25 @@ class UserExamListView(BaseTemplateMixin, ListView):
     template_name = "enrollments/exam_list_user.html"
     context_object_name = "exams"
     def get_queryset(self):
+        # 削除されておらず、かつ公開中のものだけ表示
         return Exam.objects.filter(is_deleted=False, is_active=True).order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            # 自分が「合格(is_passed=True)」した検定のIDだけを抜き出したリストを作る
+            context['passed_exam_ids'] = UserExamStatus.objects.filter(
+                user=self.request.user, 
+                is_passed=True
+            ).values_list('exam_id', flat=True)
+        else:
+            context['passed_exam_ids'] = []
+        return context
 
 class ExamTakeView(BaseTemplateMixin, ContextMixin, View):
     def get(self, request, exam_id):
-        exam = get_object_or_404(Exam, pk=exam_id, is_active=True)
+        # 受講時も公開チェック
+        exam = get_object_or_404(Exam, pk=exam_id, is_active=True, is_deleted=False)
         if exam.exam_type == 'main' and exam.prerequisite:
             passed = UserExamStatus.objects.filter(user=request.user, exam=exam.prerequisite, is_passed=True).exists()
             if not passed: return render(request, 'enrollments/enrollments_error.html', self.get_context_data(error=f'先に「{exam.prerequisite.title}」に合格してください。', exam_id=exam.prerequisite.id))

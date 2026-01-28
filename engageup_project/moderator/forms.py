@@ -25,4 +25,4 @@ class SequentialUserCreateForm(forms.Form):
 class NewsForm(forms.ModelForm):
     class Meta:
         model = News
-        fields = ["title", "content","is_active"]
+        fields = ["title", "content","is_active", 'is_important']

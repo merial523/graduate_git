@@ -171,7 +171,7 @@
                     <div class="col-md-auto">
                         <div class="selection-count py-1 d-flex align-items-center">
                             <span class="material-icons text-primary me-2">how_to_reg</span>
-                            <span id="selected-count-display" class="fw-bold fs-5 me-2 text-primary">0</span> 件を選択中
+                            <span id="selected-count-display" class="fw-bold fs-5 me-2">0</span> 件を選択中
                         </div>
                     </div>
                     <div class="col text-end">
@@ -308,6 +308,7 @@
   </div>
 </div>
 
+<!-- 確認用ポップアップモーダル (デザイン維持) -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-5">
@@ -318,7 +319,7 @@
             <div class="modal-body px-4" id="confirmBody"></div>
             <div class="modal-footer border-0 pb-4 px-4">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">キャンセル</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="confirm-execute-btn">実行する</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" id="confirm-execute-btn">実行する</button>
             </div>
         </div>
     </div>
@@ -403,11 +404,9 @@
   .custom-switch-cute .form-check-input:checked { background-color: #76b19d !important; border-color: #76b19d !important; }
   .status-label { font-size: 0.75rem; margin: 0 !important; white-space: nowrap; line-height: 1; }
 
-  /* ローダー */
-  .custom-loader { width: 50px; height: 50px; display: grid; border: 4px solid #0000; border-radius: 50%; border-right-color: #76b19d; animation: l15 1s infinite linear; margin: 0 auto; }
-  .custom-loader::before, .custom-loader::after { content: ""; grid-area: 1/1; margin: 2px; border: inherit; border-radius: 50%; animation: l15 2s infinite; }
-  .custom-loader::after { margin: 8px; animation-duration: 3s; }
-  @keyframes l15{ 100%{transform: rotate(1turn)} }
+  /* ローディング画面 */
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   .inactive-item { filter: opacity(0.85); }
   @media (max-width: 991px) { .action-bar-container { left: 0; width: 100%; } }

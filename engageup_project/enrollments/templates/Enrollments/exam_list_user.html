@@ -9,56 +9,31 @@
 
     <div class="row g-4">
         {% for exam in exams %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center border-0 py-3">
-                    <span class="badge rounded-pill bg-secondary px-3">
-                        {{ exam.get_exam_type_display }}
-                    </span>
-                    {% if exam.id in passed_exam_ids %}
-                        <span class="badge bg-success shadow-sm">
-                            <i class="bi bi-check-circle-fill"></i> 合格済み
-                        </span>
-                    {% endif %}
-                </div>
+    <div class="exam-item">
+        <strong>{{ exam.title }}</strong> [{{ exam.get_exam_type_display }}]
+        
+        <!-- 合格済みならチェックマークを出す -->
+        {% if exam.id in passed_exam_ids %}
+            <span class="text-success">✅合格済み</span>
+        {% endif %}
 
-                <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">{{ exam.title }}</h5>
-                    <p class="card-text text-muted small">
-                        {% if exam.description %}
-                            {{ exam.description|truncatechars:50 }}
-                        {% else %}
-                            この検定の説明はありません。
-                        {% endif %}
-                    </p>
-                </div>
-
-                <div class="card-footer bg-white border-0 pb-4">
-                    {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
-                        <div class="alert alert-secondary mb-0 py-2 small d-flex align-items-center">
-                            <i class="bi bi-lock-fill me-2"></i>
-                            <div>
-                                <strong>ロック中</strong><br>
-                                {{ exam.prerequisite.title }} の合格が必要です
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="d-grid">
-                            <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-success shadow-sm fw-bold py-2">
-                                <i class="bi bi-pencil-square me-1"></i>
-                                {% if exam.id in passed_exam_ids %}再受験する{% else %}受験する{% endif %}
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+        <div class="mt-2">
+            <!-- ★ 受験ボタンの出し分けロジック -->
+            {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
+                <!-- 条件：本試験 且つ 前提試験があり 且つ その前提試験に合格していない場合 -->
+                <button class="btn btn-secondary" disabled style="cursor: not-allowed;">
+                    🔒 ロック中（{{ exam.prerequisite.title }}の合格が必要です）
+                </button>
+            {% else %}
+                <!-- それ以外（仮試験、または前提をクリア済みの本試験）は押せる -->
+                <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-primary">
+                    受験する
+                </a>
+            {% endif %}
         </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <i class="bi bi-inbox fs-1 text-muted"></i>
-            <p class="text-muted mt-3">現在公開されている検定はありません。</p>
-        </div>
-        {% endfor %}
+    </div>
+    <hr>
+{% endfor %}
     </div>
 </div>
 

@@ -26,11 +26,6 @@
 
 <!-- モデレーター用操作カードグリッド -->
 <div class="dashboard-grid">
-  <a href="{% url 'courses:courses_list' %}" class="admin-card">
-    <h2 class="text-primary">コース一覧</h2>
-    <p class="text-muted">公開中の研修コースを確認</p>
-  </a>
-
   <a href="{% url 'administer:user_list' %}" class="admin-card">
     <h2>ユーザー管理</h2>
     <p>権限・アカウント管理</p>
@@ -39,6 +34,11 @@
   <a href="{% url 'enrollments:exam_list' %}" class="admin-card">
     <h2 class="text-primary">検定管理</h2>
     <p class="text-muted">受講生の進捗状況・合格判定</p>
+  </a>
+
+  <a href="{% url 'courses:courses_list' %}" class="admin-card">
+    <h2 class="text-primary">コース一覧</h2>
+    <p class="text-muted">公開中の研修コースを確認</p>
   </a>
 
   <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">

@@ -280,6 +280,22 @@
   </div>
 </div>
 
+<!-- 確認用ポップアップモーダル (デザイン維持) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-800" id="confirmTitle">確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4" id="confirmBody"></div>
+            <div class="modal-footer border-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" id="confirm-execute-btn">実行する</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- 処理中/完了ポップアップモーダル -->
 <div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -365,7 +381,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const actionInput = document.getElementById('bulk-action-input');
     const actionBar = document.getElementById('floating-action-bar');
     const countDisplay = document.getElementById('selected-count-display');
+    
+    // モーダルの初期化
     const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    const confirmExecuteBtn = document.getElementById('confirm-execute-btn');
+
+    // 実行待ちの状態を保持する変数
+    let pendingAction = '';
+    let pendingMsg = '';
 
     // 選択状態とアクションバーの表示更新
     function updateSelection() {
@@ -402,22 +426,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // アクション実行
+
+    // アクション実行ボタン（一括削除・復元ボタン）を押した時
     document.querySelectorAll('.action-trigger').forEach(btn => {
         btn.addEventListener('click', function() {
-            const action = this.dataset.action;
-            const msg = this.dataset.msg;
+            pendingAction = this.dataset.action;
+            pendingMsg = this.dataset.msg;
             
-            document.getElementById('loading-text').innerText = msg;
-            actionInput.value = action;
-            statusModal.show();
-
-            setTimeout(() => {
-                document.getElementById('modal-loading').style.display = 'none';
-                document.getElementById('modal-success').style.display = 'block';
-                setTimeout(() => { bulkForm.submit(); }, 800);
-            }, 1200);
+            // 確認モーダルのテキストを設定
+            if (pendingAction === 'soft_delete') {
+                document.getElementById('confirmTitle').innerText = 'ユーザー削除の確認';
+                document.getElementById('confirmBody').innerHTML = '<p class="mb-0">選択したユーザーを削除してもよろしいですか？</p><p class="text-muted extra-small mt-2">※削除されたユーザーはログインできなくなります。</p>';
+            } else {
+                document.getElementById('confirmTitle').innerText = 'ユーザー復元の確認';
+                document.getElementById('confirmBody').innerHTML = '<p class="mb-0">選択したユーザーを復元してもよろしいですか？</p>';
+            }
+            
+            // 確認画面を表示
+            confirmModal.show();
         });
+    });
+
+    // 確認モーダルの中の「実行する」ボタンを押した時
+    confirmExecuteBtn.addEventListener('click', function() {
+        // 確認モーダルを閉じる
+        confirmModal.hide();
+        
+        // 処理中表示の設定
+        document.getElementById('loading-text').innerText = pendingMsg;
+        actionInput.value = pendingAction;
+        
+        // ローディング画面を表示
+        statusModal.show();
+
+        // 演出用タイマー（完了アニメーション後に送信）
+        setTimeout(() => {
+            document.getElementById('modal-loading').style.display = 'none';
+            document.getElementById('modal-success').style.display = 'block';
+            setTimeout(() => { 
+                bulkForm.submit(); 
+            }, 800);
+        }, 1200);
     });
 });
 </script>
