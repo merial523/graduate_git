@@ -1,21 +1,31 @@
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import (
-    TemplateView, ListView, UpdateView
+    TemplateView,
+    ListView,
+    UpdateView,
 )
 from django.db.models import Q
 
 from main.models import User, Constant
 from .forms import UserRankForm, ConstantForm
 from common.views import AdminOrModeratorRequiredMixin, BaseTemplateMixin
-#トップ
+
+
+# =========================
+# トップ
+# =========================
 class AdministerIndexView(
     AdminOrModeratorRequiredMixin,
     BaseTemplateMixin,
     TemplateView
 ):
     template_name = "administer/administer_index.html"
-    #ユーザー一覧
+
+
+# =========================
+# ユーザー一覧
+# =========================
 class UserListView(
     AdminOrModeratorRequiredMixin,
     BaseTemplateMixin,
@@ -31,7 +41,11 @@ class UserListView(
         query = self.request.GET.get("q")
         rank_filter = self.request.GET.get("rank")
 
-        queryset = User.objects.all() if show == "all" else User.objects.filter(is_active=True)
+        queryset = (
+            User.objects.all()
+            if show == "all"
+            else User.objects.filter(is_active=True)
+        )
 
         if rank_filter and rank_filter != "all":
             queryset = queryset.filter(rank=rank_filter)
@@ -46,7 +60,12 @@ class UserListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["rank_choices"] = ["administer", "moderator", "staff", "visitor"]
+        context["rank_choices"] = [
+            "administer",
+            "moderator",
+            "staff",
+            "visitor",
+        ]
         context["current_rank"] = self.request.GET.get("rank", "all")
         context["show_all"] = self.request.GET.get("show") == "all"
         return context
@@ -63,13 +82,21 @@ class UserListView(
             if action == "soft_delete":
                 User.objects.filter(
                     pk__in=selected_users
-                ).exclude(pk=request.user.pk).update(is_active=False)
+                ).exclude(
+                    pk=request.user.pk
+                ).update(is_active=False)
 
             elif action == "restore":
-                User.objects.filter(pk__in=selected_users).update(is_active=True)
+                User.objects.filter(
+                    pk__in=selected_users
+                ).update(is_active=True)
 
         return redirect(request.path)
-    #ユーザーランク一覧
+
+
+# =========================
+# ユーザーランク一覧
+# =========================
 class UserRankListView(
     AdminOrModeratorRequiredMixin,
     BaseTemplateMixin,
@@ -98,8 +125,16 @@ class UserRankListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["rank_choices"] = ["administer", "moderator", "staff", "visitor"]
-        context["current_rank"] = self.request.GET.get("rank_filter", "all")
+        context["rank_choices"] = [
+            "administer",
+            "moderator",
+            "staff",
+            "visitor",
+        ]
+        context["current_rank"] = self.request.GET.get(
+            "rank_filter",
+            "all"
+        )
         context["form"] = UserRankForm()
         return context
 
@@ -118,7 +153,11 @@ class UserRankListView(
                 user.save()
 
         return redirect("administer:select_rank")
-    #定数リスト
+
+
+# =========================
+# 定数リスト
+# =========================
 class ConstantListView(
     AdminOrModeratorRequiredMixin,
     BaseTemplateMixin,
@@ -129,7 +168,10 @@ class ConstantListView(
     context_object_name = "constants"
     paginate_by = 10
 
-    #定数変更関数
+
+# =========================
+# 定数変更
+# =========================
 class ConstantUpdateView(
     AdminOrModeratorRequiredMixin,
     BaseTemplateMixin,

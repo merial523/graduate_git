@@ -36,7 +36,7 @@ class Constant(models.Model):
 # =========================
 class Course(models.Model):
     subject = models.CharField(
-        verbose_name="科目",
+        verbose_name="講座名",
         max_length=50
     )
     courseCount = models.IntegerField(
@@ -47,6 +47,7 @@ class Course(models.Model):
         default=False
     )
     is_active = models.BooleanField(
+        verbose_name = "有効かどうか",
         default=True
     )
 
@@ -186,7 +187,13 @@ class UserManager(BaseUserManager):
 # =========================
 # ユーザー
 # =========================
-class User(AbstractUser):
+class User(AbstractUser):       #名前、ランク、会員番号、メールアドレス、プロフ写真、備考
+
+    username = models.CharField(
+        max_length=20,
+        blank=False,
+        null=False
+    )
     RANK_CHOICES = [
         ("administer", "administer"),
         ("moderator", "moderator"),
@@ -203,14 +210,9 @@ class User(AbstractUser):
 
     member_num = models.BigIntegerField(
         verbose_name="会員番号",
-        primary_key=True,
         default=random_num
     )
 
-    name = models.CharField(
-        verbose_name="氏名",
-        max_length=20
-    )
 
     email = models.EmailField(
         verbose_name="メールアドレス",
@@ -238,11 +240,7 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
-    username = models.CharField(
-        max_length=20,
-        blank=False,
-        null=False
-    )
+
 
     objects = UserManager()
 
@@ -414,7 +412,7 @@ class UserExamStatus(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name="ユーザー"
-    )
+        )
     exam = models.ForeignKey(
         Exam,
         on_delete=models.CASCADE,
