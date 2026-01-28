@@ -111,6 +111,21 @@ class TrainingModule(models.Model):
 
     def __str__(self):
         return f"{self.course.subject} - {self.title}"
+    
+class UserModuleProgress(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    module = models.ForeignKey(TrainingModule, on_delete=models.CASCADE)
+    # 動画の再生位置（秒）を保存
+    last_position = models.FloatField(default=0.0, verbose_name="再生位置(秒)")
+    # 動画を見終わったかどうかのフラグ
+    is_completed = models.BooleanField(default=False, verbose_name="完了フラグ")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'module') # 1人1研修1レコードに固定
+
+    def __str__(self):
+        return f"{self.user.username} - {self.module.title} ({'完了' if self.is_completed else '進行中'})"
 
 
 # =========================

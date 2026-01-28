@@ -25,4 +25,5 @@ urlpatterns = [
     # 受講者側
     path('staff/list/', views.StaffCourseListView.as_view(), name='staff_course_list'),
     path('staff/training/<int:module_id>/', views.StaffTrainingDetailView.as_view(), name='training_detail'),
+    path('staff/update_video_progress/', views.UpdateVideoProgressView.as_view(), name='save_progress'),
 ]

@@ -2,26 +2,22 @@
 {% block content %}
 <div class="container py-4" style="max-width: 1100px;">
 
-    <!-- パンくず -->
+    <!-- 1. パンくず -->
     <nav class="mb-2">
         <a href="{% url 'courses:staff_course_list' %}" class="text-decoration-none small" style="color: #0d6efd;">研修一覧</a>
         <span class="small text-muted"> / {{ module.course.subject }}</span>
     </nav>
 
-    <!-- タイトル＋学習時間 -->
+    <!-- 2. タイトル＋学習時間 -->
     <div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
-        <h1 class="fw-bold mb-2" style="font-size: 2rem;">
-            {{ module.title }}
-        </h1>
-        <div class="badge rounded-pill bg-primary fs-6 px-3 py-2">
-            ⏱ {{ module.estimated_time }}分
-        </div>
+        <h1 class="fw-bold mb-2" style="font-size: 2rem;">{{ module.title }}</h1>
+        <div class="badge rounded-pill bg-primary fs-6 px-3 py-2">⏱ {{ module.estimated_time }}分</div>
     </div>
 
-    <!-- 動画（横いっぱい） -->
+    <!-- 3. 動画エリア -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-dark">
         {% if module.video %}
-        <video controls class="w-100" style="max-height: 480px;">
+        <video id="trainingVideo" controls class="w-100" style="max-height: 480px;">
             <source src="{{ module.video.url }}" type="video/mp4">
         </video>
         {% else %}
@@ -31,28 +27,25 @@
         {% endif %}
     </div>
 
-    <!-- テキスト（横いっぱい・スクロール） -->
+    <!-- 4. テキストエリア -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
             <h5 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>研修テキスト・要約</h5>
             <hr>
-            <div class="training-content"
-                 style="line-height: 1.7; color: #333; max-height: 280px; overflow-y: auto; padding-right: 8px;">
+            <div class="training-content" style="line-height: 1.7; color: #333; max-height: 280px; overflow-y: auto; padding-right: 8px;">
                 {{ module.content_text|safe|default:"テキスト情報はありません。" }}
             </div>
         </div>
     </div>
 
-    <!-- 理解度チェック（横いっぱい） -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <!-- 5. 理解度チェック -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5">
         <div class="card-body p-4">
             <h5 class="fw-bold mb-4">💡 理解度チェック</h5>
-
             {% for example in module.examples.all %}
             <div class="example-section mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
                 <p class="text-primary fw-bold small mb-1">例題 {{ forloop.counter }}</p>
                 <p class="fw-bold mb-3" style="font-size: 1.05rem;">{{ example.text }}</p>
-
                 <div class="row g-2">
                     {% for choice in example.choices.all %}
                     <div class="col-md-6">
@@ -63,14 +56,9 @@
                     </div>
                     {% endfor %}
                 </div>
-
-                <!-- 解説（高さ固定＋スクロール） -->
-                <div class="explanation-area d-none mt-3 p-3 rounded-3 border bg-light"
-                style="font-size: 1rem; max-height: 140px; overflow-y: auto; line-height: 1.7;">
+                <div class="explanation-area d-none mt-3 p-3 rounded-3 border bg-light" style="font-size: 1rem; max-height: 140px; overflow-y: auto;">
                     <div class="result-msg fw-bold mb-1"></div>
-                    <div class="text-secondary">
-                        <strong>【解説】</strong><br>{{ example.explanation }}
-                    </div>
+                    <div class="text-secondary"><strong>【解説】</strong><br>{{ example.explanation }}</div>
                 </div>
             </div>
             {% empty %}
@@ -79,20 +67,85 @@
         </div>
     </div>
 
-    <!-- 完了・保存ボタン -->
+    <!-- ★ 6. 進捗操作エリア（一番下に配置） -->
+    <div class="bg-white border-top p-4 fixed-bottom-relative shadow-sm mt-5" style="border-radius: 20px 20px 0 0;">
+        <div class="row align-items-center">
+            <div class="col-sm-6 text-center text-sm-start mb-3 mb-sm-0">
+                <div id="complete-status" class="{% if not is_completed %}d-none{% endif %} text-success fw-bold fs-5">
+                    <i class="bi bi-check-circle-fill me-2"></i> 受講完了済み
+                </div>
+                <div id="learning-status" class="{% if is_completed %}d-none{% endif %} text-primary small">
+                    <i class="bi bi-info-circle me-1"></i> 動画を最後まで見ると完了として記録されます
+                </div>
+            </div>
+            <div class="col-sm-6 text-center text-sm-end">
+                <button type="button" class="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onclick="saveAndExit()">
+                    <i class="bi bi-box-arrow-left me-2"></i> 保存して戻る
+                </button>
+            </div>
+        </div>
+    </div>
 
 </div>
 
+<!-- JavaScript -->
 <script>
+const video = document.getElementById('trainingVideo');
+const moduleId = "{{ module.id }}";
+
+// 1. ページ読み込み時に続きから再生
+if (video) {
+    video.addEventListener('loadedmetadata', function() {
+        const lastPos = parseFloat("{{ last_position|default:0 }}");
+        if (lastPos > 0 && lastPos < video.duration) {
+            video.currentTime = lastPos;
+        }
+    });
+}
+
+// 2. 動画終了時の自動保存
+if (video) {
+    video.onended = function() {
+        saveProgress(video.currentTime, true);
+        document.getElementById('complete-status')?.classList.remove('d-none');
+        document.getElementById('learning-status')?.classList.add('d-none');
+        alert("研修を完了しました！お疲れ様でした。");
+    };
+}
+
+// 3. サーバーへの送信関数
+function saveProgress(position, isDone = false) {
+    fetch("{% url 'courses:save_progress' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            module_id: moduleId,
+            position: position,
+            is_done: isDone
+        })
+    });
+}
+
+// 4. 「保存して戻る」ボタン
+function saveAndExit() {
+    if (video) {
+        saveProgress(video.currentTime, false);
+    }
+    setTimeout(() => {
+        window.location.href = "{% url 'courses:staff_course_list' %}";
+    }, 500);
+}
+
+// 例題回答チェック（既存）
 function checkAnswer(button, isCorrect) {
     const parent = button.closest('.example-section');
     const explanation = parent.querySelector('.explanation-area');
     const resultMsg = parent.querySelector('.result-msg');
     const allButtons = parent.querySelectorAll('.small-choice');
-
-    // 全ボタン無効化
     allButtons.forEach(btn => btn.classList.add('disabled'));
-
     if (isCorrect) {
         button.classList.replace('btn-outline-secondary', 'btn-success');
         button.classList.add('text-white');
@@ -102,28 +155,14 @@ function checkAnswer(button, isCorrect) {
         button.classList.add('text-white');
         resultMsg.innerHTML = '<span class="text-danger">❌ 残念！</span>';
     }
-
     explanation.classList.remove('d-none');
 }
 </script>
 
 <style>
-body {
-    background-color: #f0f2f5;
-    font-family: sans-serif;
-}
-
-.small-choice {
-    transition: all 0.2s;
-    border-radius: 10px;
-}
-.small-choice:hover:not(.disabled) {
-    background-color: #f8f9fa;
-    border-color: #0d6efd;
-    color: #0d6efd;
-}
-
+body { background-color: #f0f2f5; font-family: sans-serif; }
+.small-choice { transition: all 0.2s; border-radius: 10px; }
+.small-choice:hover:not(.disabled) { background-color: #f8f9fa; border-color: #0d6efd; color: #0d6efd; }
 .training-content ul { padding-left: 1.2rem; }
-.training-content p { margin-bottom: 1rem; }
 </style>
 {% endblock %}

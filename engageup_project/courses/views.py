@@ -11,7 +11,7 @@ from django.views.generic.base import ContextMixin
 from django.db.models import Q
 from django.http import JsonResponse
 from common.views import BaseCreateView, AdminOrModeratorRequiredMixin, BaseTemplateMixin
-from main.models import Course, TrainingModule, TrainingExample, TrainingExampleChoice, User
+from main.models import Course, TrainingModule, TrainingExample, TrainingExampleChoice, User, UserModuleProgress
 from .forms import CourseForm, TrainingModuleForm
 
 # =====================================================
@@ -299,12 +299,59 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
         # 削除されておらず、かつ公開中のものだけ表示
         return Course.objects.filter(is_deleted=False, is_active=True).prefetch_related('modules')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # どの研修を完了したかのリストを渡すとHTMLでチェックマークを出しやすくなります
+        context['completed_module_ids'] = UserModuleProgress.objects.filter(
+            user=self.request.user, is_completed=True
+        ).values_list('module_id', flat=True)
+        return context
+
+class UpdateVideoProgressView(AdminOrModeratorRequiredMixin, View):
+    """動画の再生位置と完了状態を非同期で保存する"""
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            module_id = data.get('module_id')
+            position = data.get('position', 0)
+            is_done = data.get('is_done', False)
+
+            # 進捗データを取得または作成
+            progress, created = UserModuleProgress.objects.get_or_create(
+                user_id=request.user.pk, # pk(member_num)を明示的に使用
+                module_id=module_id
+            )
+            
+            # 再生位置を更新（数値であることを確認）
+            progress.last_position = float(position)
+            
+            # 最後まで見た場合、または既に完了している場合はTrueを維持
+            if is_done:
+                progress.is_completed = True
+                
+            progress.save()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+# --- 受講者用：研修詳細 ---
 class StaffTrainingDetailView(BaseTemplateMixin, ContextMixin, View):
+    """研修学習画面 (動画再生位置の復元に対応)"""
     def get(self, request, module_id):
-        # モジュール自体も削除・非公開でないかチェック
-        module = get_object_or_404(TrainingModule, pk=module_id, is_active=True, is_deleted=False)
+        # 公開中かつ削除されていないモジュールを取得
+        module = get_object_or_404(TrainingModule, pk=module_id, is_active=True)
+        
+        # このユーザーの再生進捗を取得
+        progress = UserModuleProgress.objects.filter(
+            user_id=request.user.pk, 
+            module=module
+        ).first()
+        
         context = self.get_context_data(
             module=module,
+            # データがなければ 0.0 を渡す（JSでエラーにならないように）
+            last_position=progress.last_position if progress else 0.0,
+            is_completed=progress.is_completed if progress else False,
             base_template=self.get_base_template()
         )
         return render(request, 'courses/staff_training_detail.html', context)

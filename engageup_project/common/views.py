@@ -119,6 +119,38 @@ class IndexView(BaseTemplateMixin, BadgeRankingMixin, TemplateView):
                     user=self.request.user, is_passed=True, exam__exam_type='main', exam__is_active=True
                 ).count()
                 context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
+
+                # ---  コース完了のカウントロジックを追加 ---
+                from main.models import Course, TrainingModule, UserModuleProgress
+                
+                # 有効なすべてのコースを取得
+                all_courses = Course.objects.filter(is_active=True).prefetch_related('modules')
+                completed_course_count = 0
+
+                for course in all_courses:
+                    # そのコース内の「有効な研修（動画）」のリスト
+                    active_modules = course.modules.filter(is_active=True)
+                    
+                    # 研修が1つも登録されていないコースは計算から除外
+                    if not active_modules.exists():
+                        continue
+                    
+                    # そのユーザーがこのコース内で「完了済み」にした研修の数を数える
+                    user_done_count = UserModuleProgress.objects.filter(
+                        user = self.request.user,
+                        module__course=course,
+                        is_completed=True
+                    ).count()
+
+                    # 「コース内の全研修数」と「ユーザーの完了数」が一致したら1カウント
+                    if active_modules.count() == user_done_count:
+                        completed_course_count += 1
+
+                # HTMLで {{ completed_course_count }} として表示可能
+                context['completed_course_count'] = completed_course_count
+
+                # --- お知らせ ---
+                context['latest_news'] = News.objects.filter(is_active=True).order_by('-id')[:3]
         return context
 
 from django.shortcuts import redirect
