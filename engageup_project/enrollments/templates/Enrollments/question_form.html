@@ -197,7 +197,12 @@
 
     /* 本物のチェックボックスは隠す */
     .custom-bubble-toggle input[type="checkbox"] {
-        display: none;
+    position: absolute;
+    opacity: 0;         /* 透明にする */
+    width: 20px;
+    height: 20px;
+    margin-top: 10px;   /* 吹き出しが出る位置を調整 */
+    pointer-events: none;
     }
 
     /* トグルの土台（レール） */
@@ -279,35 +284,51 @@
 
     .bg-light-green { background-color: #f0fdf4; }
 </style>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // すべての正解スイッチを取得
     const switches = document.querySelectorAll('.custom-bubble-toggle input[type="checkbox"]');
-    
+    const form = document.getElementById('question-form');
+
+    // 1. 択一選択のロジック（そのまま）
     switches.forEach(sw => {
         sw.addEventListener('change', function() {
+            // 何か選んだらエラーをリセット
+            switches.forEach(s => s.setCustomValidity(""));
+
             const currentCard = this.closest('.choice-tile');
-            
             if (this.checked) {
-                // 【択一ロジック】他のすべてのスイッチをOFFにする
                 switches.forEach(otherSw => {
                     if (otherSw !== this) {
                         otherSw.checked = false;
-                        // 他のカードの「正解色」を解除
                         const otherCard = otherSw.closest('.choice-tile');
-                        if (otherCard) {
-                            otherCard.classList.remove('is-correct-card');
-                        }
+                        if (otherCard) otherCard.classList.remove('is-correct-card');
                     }
                 });
-                // クリックしたカードを「正解色」にする
                 currentCard.classList.add('is-correct-card');
             } else {
-                // 自分でOFFにした場合は色を消す
                 currentCard.classList.remove('is-correct-card');
             }
         });
+    });
+
+    // 2. 登録ボタンが押された時のバリデーション
+    form.addEventListener('submit', function (e) {
+        const checkedCount = Array.from(switches).filter(sw => sw.checked).length;
+
+        if (checkedCount === 0) {
+            // チェックがない場合
+            e.preventDefault(); // 送信を止める
+            
+            const firstSwitch = switches[0];
+            // ★ ブラウザに吹き出しを出させる命令
+            firstSwitch.setCustomValidity("正解の選択肢を1つ選んでください。");
+            
+            // スクロールして表示
+            firstSwitch.closest('.admin-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 吹き出しを出す
+            firstSwitch.reportValidity();
+        }
     });
 });
 </script>

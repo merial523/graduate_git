@@ -17,7 +17,8 @@
                     {% endif %}
                     
                     <input type="text" name="q" value="{{ search_query }}" 
-                        class="form-control" placeholder="メールアドレスまたは氏名で検索...">
+                        class="form-control" placeholder="メールアドレスまたは氏名で検索...",
+                        required>
                     <button class="btn btn-dark" type="submit">検索</button>
                     <a href="?" class="btn btn-outline-secondary">クリア</a>
                 </div>
@@ -53,27 +54,23 @@
             <tbody>
                 <!---スタッフのみ表示-->
                 {% for user in users %}
-                
                         <tr>
-                            <!-- <td>
-                                <input type="checkbox" name="user_ids" value="{{ user.id }}">
-                            </td> -->
-                            <!-- <td>{{ user.member_num }}</td> -->
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>
-                            <!-- <td>{{ user.rank }}</td> -->
-                            <!-- <td>
-                                {% if user.is_active %}
-                                    <span class="badge bg-success">有効</span>
-                                {% else %}
-                                    <span class="badge bg-danger">無効</span>
-                                {% endif %}
-                            </td> -->
                         </tr>
-                        {% empty %}
+                    {% empty %}
+                        <!--  検索結果が空の場合の表示 -->
                         <tr>
-                            <td colspan="6" class="text-center">
-                                ユーザーが存在しません
+                            <!-- 現在表示している列数（名前・Email）に合わせて colspan="2" にします -->
+                            <td colspan="2" class="text-center py-5">
+                                {% if search_query %}
+                                    <!-- 検索ワードがあるのに空の場合 -->
+                                    <h5 class="text-secondary">「<strong>{{ search_query }}</strong>」に一致するユーザーは見つかりませんでした。</h5>
+                                    <p class="small text-muted">キーワードを変えてもう一度お試しください。</p>
+                                {% else %}
+                                    <!-- そもそもデータが1件もない場合 -->
+                                    <p class="text-muted">ユーザーが登録されていません。</p>
+                                {% endif %}
                             </td>
                         </tr>
                 {% endfor %}
