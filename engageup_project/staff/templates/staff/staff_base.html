@@ -1,5 +1,5 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
@@ -9,62 +9,105 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{% static 'css/mobile.css' %}" />
+
+    <style>
+      /* --- 追加：左上のメインロゴ配置用CSS --- */
+      .side-logo-container {
+        position: fixed;
+        left: 40px;
+        top: 40px;
+        z-index: 100;
+        text-align: center;
+      }
+      .side-logo-img {
+        width: 270px; /* 必要に応じてサイズ調整してください */
+        height: auto;
+        display: block;
+        margin-bottom: 10px;
+      }
+      /* モバイルでは非表示（ねこねこ薬局と同様） */
+      @media (max-width: 991px) {
+        .side-logo-container {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <!-- container-fluid に p-0 を追加 -->
+    <div class="side-logo-container d-none d-lg-block">
+      <a href="{% url 'index' %}">
+        <img
+          src="{% static 'images/engageup_logo.png' %}"
+          alt="EngageUp Logo"
+          class="side-logo-img"
+        />
+      </a>
+    </div>
+
+    <nav class="side-nav-left d-none d-lg-flex">
+      <a href="{% url 'index' %}">ホーム</a>
+      <a href="{% url 'enrollments:exam_list_user' %}">検定受講</a>
+      <a href="{% url 'courses:staff_course_list' %}">研修動画視聴</a>
+      <a href="{% url 'staff:news_list' %}">お知らせ</a>
+      <a href="{% url 'staff:staff_list' %}">プロフィール一覧</a>
+      <a href="{% url 'accounts:logout' %}" class="logout-v">ログアウト</a>
+    </nav>
+
+    <div class="side-nav-right d-none d-lg-flex">
+      <div class="qr-container">
+        <div class="qr-box">
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://example.com"
+            alt="QR"
+          />
+        </div>
+        <p class="qr-text">Mobile Access</p>
+      </div>
+    </div>
+
     <div class="container-fluid p-0">
-      <!-- row に g-0 を追加 -->
       <div class="row g-0 justify-content-center">
-        <!-- lg以上で6枠。md以下は全幅。centerクラスが浮き上がる演出になります -->
         <div class="col-12 col-lg-6">
-          <div class="center">
-            <nav class="navbar navbar-dark">
-              <div class="container-fluid">
-                <div class="d-flex align-items-center">
-                  <button
-                    class="btn text-white p-0 me-3"
-                    type="button"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#offcanvasMenu"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      fill="currentColor"
-                      class="bi bi-list"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"
-                      />
-                    </svg>
-                  </button>
-                  <a class="navbar-brand mb-0" href="{% url 'index' %}"
-                    >EngageUp</a
-                  >
-                </div>
-              </div>
-            </nav>
+          <div class="center-box">
+            <header class="app-header">
+              <button
+                class="icon-btn"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasMenu"
+              >
+                <span class="material-icons">menu</span>
+              </button>
+
+              <a class="logo-font" href="{% url 'index' %}">EngageUp</a>
+
+              <a href="{% url 'prof:user_profile' %}" class="icon-btn">
+                <span class="material-icons">account_circle</span>
+              </a>
+            </header>
 
             <div
-              class="offcanvas offcanvas-start w-25 bg-custom-theme"
+              class="offcanvas offcanvas-start custom-studio-menu"
               tabindex="-1"
               id="offcanvasMenu"
             >
-              <div class="offcanvas-header text-white">
-                <h5 class="offcanvas-title font-serif" id="offcanvasMenuLabel">
-                  Menu
-                </h5>
+              <div class="offcanvas-header px-4 pt-4">
+                <h1 class="offcanvas-title font-serif text-white fw-bold">
+                  EngageUp
+                </h1>
                 <button
                   type="button"
                   class="btn-close btn-close-white"
@@ -72,44 +115,39 @@
                 ></button>
               </div>
               <div class="offcanvas-body">
-                <ul class="navbar-nav px-2">
-                  <!-- 適宜追加 -->
-                  <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'enrollments:exam_list_user' %}">検定</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'prof:user_profile' %}">プロフィール</a> 
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'staff:staff_list' %}">プロフィール一覧</a> 
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'staff:news_list' %}">お知らせ</a> 
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'courses:staff_course_list' %}">研修</a> 
-                  </li>
-
-                  <li class="nav-item mt-4 pt-4 border-top border-white border-opacity-25">
-                    <a
-                      class="nav-link opacity-75 fw-bold"
-                      style="color: #e86a6a"
-                      href="{% url 'accounts:logout'%}"
-                      >ログアウト</a
-                    >
-                  </li>
-                </ul>
+                <nav class="mobile-nav">
+                  <a href="{% url 'index' %}"
+                    ><span class="material-icons">home</span>ホーム</a
+                  >
+                  <a href="{% url 'enrollments:exam_list_user' %}"
+                    ><span class="material-icons">assignment</span
+                    >検定を受ける</a
+                  >
+                  <a href="{% url 'courses:staff_course_list' %}"
+                    ><span class="material-icons">school</span>研修動画を見る</a
+                  >
+                  <a href="{% url 'staff:news_list' %}"
+                    ><span class="material-icons">notifications</span
+                    >お知らせ</a
+                  >
+                  <a href="{% url 'staff:staff_list' %}"
+                    ><span class="material-icons">groups</span>スタッフ一覧</a
+                  >
+                  <div class="divider"></div>
+                  <a href="{% url 'accounts:logout' %}" class="logout-btn"
+                    ><span class="material-icons">logout</span>ログアウト</a
+                  >
+                </nav>
               </div>
             </div>
 
-            <!-- メイン表示エリア -->
-            <main class="container py-4">
+            <main class="main-content-area">
               {% block content %}{% endblock %}
             </main>
 
-            <!-- フッター -->
-            <footer class="text-center py-4 mt-auto">
-              <span class="font-serif text-muted">&copy; GroupG</span>
+            <footer class="app-footer">
+              <div class="footer-dot-line"></div>
+              <span class="font-serif">&copy; GroupG</span>
             </footer>
           </div>
         </div>
