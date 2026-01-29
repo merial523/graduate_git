@@ -398,18 +398,37 @@ class ExamTakeView(BaseTemplateMixin, ContextMixin, View):
         return render(request, 'enrollments/exam_take.html', self.get_context_data(exam=exam, questions=exam.questions.all().order_by('?')))
 
 class ExamGradeView(BaseTemplateMixin, ContextMixin, View):
-    """受講者の解答を採点し、結果を保存する"""
     def post(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
         questions = exam.questions.all()
-        correct = 0
+        
+        correct_count = 0
+        result_details = [] # ★ 復習用の詳細リスト
+
         for q in questions:
-            choice_id = request.POST.get(f'question_{q.id}')
-            if choice_id and Choice.objects.filter(pk=choice_id, is_correct=True).exists():
-                correct += 1
+            user_choice_id = request.POST.get(f'question_{q.id}')
+            user_choice = None
+            if user_choice_id:
+                user_choice = Choice.objects.filter(pk=user_choice_id).first()
+            
+            # 正解の選択肢を取得
+            correct_choice = q.choices.filter(is_correct=True).first()
+            
+            # 判定
+            is_correct = (user_choice == correct_choice)
+            if is_correct:
+                correct_count += 1
+            
+            # 復習用データを格納
+            result_details.append({
+                'question': q,
+                'user_choice': user_choice,
+                'correct_choice': correct_choice,
+                'is_correct': is_correct
+            })
         
         total = questions.count()
-        score = int(round((correct / total) * 100)) if total > 0 else 0
+        score = int(round((correct_count / total) * 100)) if total > 0 else 0
         is_passed = score >= exam.passing_score
 
         if is_passed:
@@ -417,10 +436,12 @@ class ExamGradeView(BaseTemplateMixin, ContextMixin, View):
             status.is_passed = True
             status.save()
 
-        return render(request, 'enrollments/exam_result.html', self.get_context_data(
+        context = self.get_context_data(
             exam=exam, 
             score=score, 
             is_passed=is_passed, 
-            correct_count=correct, 
-            total=total
-        ))
+            correct_count=correct_count, 
+            total=total,
+            result_details=result_details # ★ HTMLに渡す
+        )
+        return render(request, 'enrollments/exam_result.html', context)

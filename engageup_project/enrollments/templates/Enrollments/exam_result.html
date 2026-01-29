@@ -1,77 +1,173 @@
 {% extends base_template %}
 {% load static %}
 
-{% block content %}
-<div class="container mt-5 mb-5 text-center">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            
-            <!-- 1. メインメッセージ -->
-            <div class="mb-5">
-                {% if is_passed %}
-                    <h1 class="display-1">🎉</h1>
-                    <h1 class="fw-bold text-success display-4">合格おめでとう！</h1>
-                    <p class="lead text-muted">素晴らしい成績です。合格基準をクリアしました。</p>
-                {% else %}
-                    <h1 class="display-1">✍️</h1>
-                    <h1 class="fw-bold text-danger display-4">不合格...</h1>
-                    <p class="lead text-muted">あと一歩でした。もう一度教材を確認しましょう。</p>
-                {% endif %}
-            </div>
+{% block title %}{{ exam.title }} | 検定結果{% endblock %}
 
-            <!-- 2. スコア表示 -->
-            <div class="py-4 border-top border-bottom mb-5">
-                <div class="row">
-                    <div class="col-6 border-end">
-                        <small class="text-muted d-block mb-1">今回のスコア</small>
-                        <div class="display-4 fw-bold text-dark">{{ score }}<span class="fs-4">点</span></div>
+{% block content %}
+<div class="user-exam-container pb-5">
+    
+    <!-- 1. 結果サマリー (合格・不合格) -->
+    <div class="result-banner {% if is_passed %}passed-bg{% else %}failed-bg{% endif %} shadow-sm mb-4">
+        <div class="text-center p-4">
+            <div class="result-icon mb-2">
+                <span class="material-icons">
+                    {% if is_passed %}emoji_events{% else %}sentiment_very_dissatisfied{% endif %}
+                </span>
+            </div>
+            <h1 class="fw-800 m-0">{% if is_passed %}合格！{% else %}不合格{% endif %}</h1>
+            <p class="mt-1 mb-0 opacity-75">
+                {% if is_passed %}素晴らしい成績です！{% else %}もう一度復習して再チャレンジしましょう。{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. スコア詳細 -->
+    <div class="row g-3 mb-5">
+        <div class="col-6">
+            <div class="stat-card-result">
+                <span class="label">あなたの得点</span>
+                <div class="value-group">
+                    <span class="value {% if is_passed %}text-success{% else %}text-danger{% endif %}">{{ score }}</span>
+                    <span class="unit">点</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="stat-card-result">
+                <span class="label">正解数 / 問題数</span>
+                <div class="value-group">
+                    <span class="value text-dark">{{ correct_count }}</span>
+                    <span class="unit">/ {{ total }} 問</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 解答の振り返り -->
+    <div class="mb-4">
+        <h2 class="h5 fw-800 text-dark d-flex align-items-center gap-2 mb-3">
+            <span class="material-icons text-primary">fact_check</span>
+            解答の振り返り
+        </h2>
+
+        <div class="review-stack">
+            {% for item in result_details %}
+            <div class="review-card mb-3 {% if item.is_correct %}correct-border{% else %}wrong-border{% endif %}">
+                <div class="p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="q-num fw-bold text-muted small">第 {{ forloop.counter }} 問</span>
+                        {% if item.is_correct %}
+                            <span class="status-badge status-correct"><span class="material-icons">check</span> 正解</span>
+                        {% else %}
+                            <span class="status-badge status-wrong"><span class="material-icons">close</span> 不正解</span>
+                        {% endif %}
                     </div>
-                    <div class="col-6">
-                        <small class="text-muted d-block mb-1">正解数</small>
-                        <div class="display-4 fw-bold text-dark">{{ correct_count }}<span class="fs-4"> / {{ total }}</span></div>
+                    <p class="fw-bold text-dark mb-3">{{ item.question.text }}</p>
+                    
+                    <div class="choice-review">
+                        <div class="review-item {% if item.is_correct %}is-success{% else %}is-danger{% endif %} mb-2">
+                            <span class="label">あなたの回答：</span>
+                            <span class="text">{% if item.user_choice %}{{ item.user_choice.text }}{% else %}（未回答）{% endif %}</span>
+                        </div>
+                        {% if not item.is_correct %}
+                        <div class="review-item is-correct-answer">
+                            <span class="label text-success">正しい答え：</span>
+                            <span class="text fw-bold">{{ item.correct_choice.text }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+            {% endfor %}
+        </div>
+    </div>
 
-            <!-- 3. 検定名とバッジ -->
-            <div class="mb-5">
-                <p class="text-muted mb-1">受講した検定</p>
-                <h3 class="fw-bold mb-4">{{ exam.title }}</h3>
+    <!-- 4. アクションボタン (警告ポップアップを呼び出す) -->
+    <div class="text-center py-4">
+        <div class="d-grid gap-3 col-md-6 mx-auto">
+            {% if not is_passed %}
+            <button type="button" 
+                    class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm" 
+                    data-url="{% url 'enrollments:exam_take' exam.id %}" 
+                    onclick="handleExitClick(this)">
+                <span class="material-icons align-middle me-1">replay</span> もう一度挑戦する
+            </button>
+            {% endif %}
 
-                {% if is_passed and exam.badge %}
-                    <div class="p-4 rounded-4 bg-light d-inline-block shadow-sm">
-                        <p class="small fw-bold text-warning mb-2">🎖️ NEW BADGE!</p>
-                        {% if exam.badge.icon %}
-                            <img src="{{ exam.badge.icon.url }}" alt="Badge" class="img-fluid mb-2" style="max-height: 100px;">
-                        {% endif %}
-                        <h5 class="fw-bold mb-0">{{ exam.badge.name }}</h5>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- 4. ボタンエリア -->
-            <div class="d-flex justify-content-center gap-3">
-                <a href="{% url 'enrollments:exam_list_user' %}" class="btn btn-outline-secondary btn-lg px-4">
-                    検定一覧へ戻る
-                </a>
-                {% if not is_passed %}
-                    <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-primary btn-lg px-4 shadow">
-                        もう一度挑戦する
-                    </a>
-                {% endif %}
-            </div>
-
+            <button type="button" 
+                    class="btn btn-outline-secondary btn-lg rounded-pill fw-bold border-2" 
+                    data-url="{% url 'enrollments:exam_list_user' %}" 
+                    onclick="handleExitClick(this)">
+                検定一覧に戻る
+            </button>
         </div>
     </div>
 </div>
 
+<!-- 離脱確認ポップアップモーダル -->
+<div class="modal fade" id="exitWarningModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <span class="material-icons text-warning" style="font-size: 64px;">warning_amber</span>
+                </div>
+                <h5 class="fw-800 mb-2">結果を閉じますか？</h5>
+                <p class="text-muted small mb-4">
+                    この画面を離れると、今回の正誤結果は確認できなくなります。<br>復習は終わりましたか？
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="#" id="modal-confirm-link" class="btn btn-outline-danger rounded-pill py-2 fw-bold small">はい、終了します</a>
+                    <button type="button" class="btn btn-light rounded-pill py-2 border fw-bold small" data-bs-dismiss="modal">まだ復習する</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 関数を先に定義（どこからでも呼べるようにする）
+    function handleExitClick(button) {
+        // 1. ボタンからURLを取得
+        const targetUrl = button.getAttribute('data-url');
+        
+        // 2. 必要な要素を「ボタンが押された瞬間」に取得する（初期化エラー防止）
+        const modalElement = document.getElementById('exitWarningModal');
+        const confirmLink = document.getElementById('modal-confirm-link');
+
+        // 3. Bootstrapが読み込まれているか確認してからモーダルを表示
+        if (typeof bootstrap !== 'undefined') {
+            const exitModal = new bootstrap.Modal(modalElement);
+            confirmLink.setAttribute('href', targetUrl);
+            exitModal.show();
+        } else {
+            // 万が一JSが読み込まれていない場合のフォールバック（緊急用）
+            if (confirm("結果を閉じますか？（この画面を離れると詳細は見られなくなります）")) {
+                window.location.href = targetUrl;
+            }
+        }
+    }
+</script>
+
 <style>
-    /* 画面全体を少し柔らかい印象にする設定（任意） */
-    body {
-        background-color: #ffffff;
-    }
-    .display-4 {
-        letter-spacing: -1px;
-    }
+    /* 以前のスタイルを維持 */
+    .result-banner { border-radius: 32px; color: #fff; overflow: hidden; }
+    .passed-bg { background: linear-gradient(135deg, #76b19d 0%, #5da08a 100%); }
+    .failed-bg { background: linear-gradient(135deg, #e86a6a 0%, #d63031 100%); }
+    .result-icon span { font-size: 64px; }
+    .fw-800 { font-weight: 800 !important; }
+    .stat-card-result { background: #fff; padding: 20px; border-radius: 24px; text-align: center; shadow: 0 10px 25px rgba(0,0,0,0.03); border: 1px solid #f0f0f0; }
+    .stat-card-result .value { font-size: 2rem; font-weight: 900; }
+    .review-card { background: #fff; border-radius: 20px; border: 2px solid #f0f0f0; transition: 0.3s; }
+    .correct-border { border-left: 8px solid #76b19d; }
+    .wrong-border { border-left: 8px solid #e86a6a; }
+    .status-badge { font-size: 0.7rem; font-weight: 800; padding: 4px 10px; border-radius: 50px; display: flex; align-items: center; gap: 3px; }
+    .status-correct { background: #e8fcf1; color: #2ecc71; }
+    .status-wrong { background: #fff5f5; color: #e86a6a; }
+    .review-item { padding: 10px 15px; border-radius: 12px; font-size: 0.9rem; }
+    .is-success { background-color: #f0f7f5; color: #1b5e20; }
+    .is-danger { background-color: #fff5f5; color: #c62828; }
+    .is-correct-answer { border: 1px dashed #2ecc71; background-color: #fff; }
+    .page-title { font-size: 1.4rem; border-left: 5px solid var(--accent-color); padding-left: 15px; }
 </style>
 {% endblock %}

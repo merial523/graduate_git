@@ -117,7 +117,7 @@
                                         data-exam-url="{% url 'enrollments:exam_take' exam.id %}"
                                         data-exam-desc="{{ exam.description|default:'研修テキストの内容を理解した上で受験してください。' }}"
                                         data-exam-score="{{ exam.passing_score }}"
-                                        data-exam-time="{{ exam.time_limit }}"> <!-- ★これを追加 -->
+                                        data-exam-time="{{ exam.time_limit }}">
                                     {% if exam.id in passed_exam_ids %}再挑戦{% else %}挑戦する{% endif %}
                                 </button>
                             </div>
@@ -159,6 +159,7 @@
                 <div class="alert bg-soft-red text-danger small text-start border-0 rounded-4 mb-4">
                     <p class="mb-1 fw-bold">【注意事項】</p>
                     <ul class="ps-3 mb-0">
+                        <li>PCで受講する際は<b>「全画面表示」</b>で受講してください。</li>
                         <li>途中で画面を閉じると無効になります。</li>
                         <!-- ★ここに id を付け、中身を空にしておく -->
                         <li id="modal-time-text">制限時間は <strong id="modal-exam-time"></strong> 分です。集中して解きましょう。</li>

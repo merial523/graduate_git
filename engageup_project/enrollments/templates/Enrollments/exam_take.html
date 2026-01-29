@@ -4,97 +4,17 @@
 {% block title %}{{ exam.title }} | 受験中{% endblock %}
 
 {% block content %}
-<!-- 試験中専用レイアウト：サイドバーやヘッダーを物理的に隠す -->
-<style>
-    /* 没入感を出すため、ベーステンプレートの要素を隠す */
-    .sidebar, .main-header, .app-header, .side-nav-left, .side-nav-right { display: none !important; }
-    .main-content, .center-box-sd, .center { margin: 0 !important; max-width: 100% !important; border-radius: 0 !important; width: 100vw !important; height: 100vh !important; }
-    body { background-color: #f4f7f6 !important; overflow: hidden; } /* 背景を試験専用に */
-
-    /* CBT専用スタイル */
-    .cbt-container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        background: #fff;
-    }
-    .cbt-header {
-        background: #2d3436;
-        color: #fff;
-        padding: 10px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .cbt-timer {
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 1.5rem;
-        font-weight: bold;
-        background: #e17055;
-        padding: 5px 15px;
-        border-radius: 8px;
-    }
-    .cbt-main {
-        flex: 1;
-        overflow-y: auto;
-        padding: 40px 20px;
-    }
-    .question-card {
-        max-width: 800px;
-        margin: 0 auto;
-        display: none; /* JSで一つずつ表示 */
-    }
-    .question-card.active { display: block; animation: fadeIn 0.3s ease; }
-    
-    .choice-label {
-        display: block;
-        padding: 20px;
-        margin-bottom: 12px;
-        background: #f8f9fa;
-        border: 2px solid #eee;
-        border-radius: 16px;
-        cursor: pointer;
-        transition: 0.2s;
-        font-weight: 500;
-    }
-    .choice-input:checked + .choice-label {
-        border-color: var(--primary-color);
-        background-color: #f0f7f5;
-        color: var(--primary-color);
-    }
-    .cbt-footer {
-        background: #f8f9fa;
-        padding: 20px;
-        border-top: 1px solid #dee2e6;
-        display: flex;
-        justify-content: space-between;
-    }
-    .progress-dots { display: flex; gap: 5px; align-items: center; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; }
-    .dot.active { background: var(--primary-color); }
-    .dot.answered { background: #636e72; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* 不正防止：テキスト選択不可 */
-    .no-select {
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
-</style>
 
 <div class="cbt-container no-select">
-    <!-- ヘッダー：試験名とタイマー -->
-    <header class="cbt-header shadow-sm">
-        <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-light text-dark rounded-pill">受験中</span>
-            <h5 class="m-0 fw-bold small text-truncate" style="max-width: 200px;">{{ exam.title }}</h5>
-        </div>
+    <!-- ヘッダー -->
+    <header class="cbt-header shadow">
         <div class="d-flex align-items-center gap-2">
-            <span class="material-icons size-18">timer</span>
-            <div class="cbt-timer" id="timer">00:00</div>
+            <span class="material-icons" style="font-size: 20px;">edit_document</span>
+            <span class="fw-bold small">{{ exam.title }}</span>
+        </div>
+        <div class="cbt-timer-box shadow-sm">
+            <span class="material-icons" style="font-size: 18px;">timer</span>
+            <span id="timer-display">00:00</span>
         </div>
     </header>
 
@@ -103,10 +23,10 @@
         {% csrf_token %}
         <div class="cbt-main">
             {% for q in questions %}
-            <div class="question-card" id="q-{{ forloop.counter }}" data-index="{{ forloop.counter }}">
+            <div class="question-card" id="q-box-{{ forloop.counter }}">
                 <div class="mb-4">
-                    <span class="text-primary fw-bold">第 {{ forloop.counter }} 問 / 全 {{ questions|length }} 問</span>
-                    <h4 class="fw-800 mt-2">{{ q.text }}</h4>
+                    <p class="text-muted small fw-bold mb-1">第 {{ forloop.counter }} 問 / {{ questions|length }} 問</p>
+                    <h4 class="fw-800 text-dark" style="line-height: 1.5;">{{ q.text }}</h4>
                 </div>
 
                 <div class="choices-list">
@@ -114,11 +34,11 @@
                     <div class="choice-item">
                         <input type="radio" class="choice-input d-none" 
                                name="question_{{ q.id }}" 
-                               id="choice_{{ choice.id }}" 
+                               id="c-{{ choice.id }}" 
                                value="{{ choice.id }}"
                                onchange="markAnswered({{ forloop.parentloop.counter }})">
-                        <label class="choice-label" for="choice_{{ choice.id }}">
-                            <span class="me-2 fw-bold text-muted">{{ forloop.counter|yesno:"A,B,C,D,E" }}.</span> {{ choice.text }}
+                        <label class="choice-label shadow-sm" for="c-{{ choice.id }}">
+                            {{ choice.text }}
                         </label>
                     </div>
                     {% endfor %}
@@ -127,128 +47,243 @@
             {% endfor %}
         </div>
 
-        <!-- フッター：ナビゲーション -->
+        <!-- フッター -->
         <footer class="cbt-footer">
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-light rounded-pill px-4 border" id="prev-btn" onclick="prevQuestion()" disabled>
-                    <span class="material-icons align-middle">chevron_left</span> 戻る
-                </button>
+            <button type="button" class="btn btn-light btn-cbt border" id="btn-prev" onclick="changeQuestion(-1)">
+                戻る
+            </button>
+
+            <div class="progress-bar-cbt d-none d-md-flex">
+                {% for q in questions %}<div class="p-dot" id="dot-{{ forloop.counter }}"></div>{% endfor %}
             </div>
 
-            <div class="progress-dots d-none d-md-flex">
-                {% for q in questions %}<div class="dot" id="dot-{{ forloop.counter }}"></div>{% endfor %}
-            </div>
-
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="next-btn" onclick="nextQuestion()">
-                    次へ <span class="material-icons align-middle">chevron_right</span>
+            <div>
+                <button type="button" class="btn btn-primary btn-cbt shadow-sm" id="btn-next" onclick="changeQuestion(1)">
+                    次へ
                 </button>
-                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm d-none" id="finish-btn" onclick="confirmSubmit()">
-                    試験を終了する
+                <button type="button" class="btn btn-success btn-cbt shadow-sm d-none" id="btn-finish" onclick="openConfirm()">
+                    終了する
                 </button>
             </div>
         </footer>
     </form>
 </div>
 
-<!-- 終了確認モーダル -->
+<!-- モーダル：終了確認 -->
 <div class="modal fade" id="confirmModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow rounded-5 p-3 text-center">
-            <h5 class="fw-800 mt-3">試験を終了しますか？</h5>
-            <p class="text-muted small">送信後は解答の修正ができません。</p>
+        <div class="modal-content border-0 shadow-lg rounded-5 text-center p-4">
+            <div class="mb-3 text-warning">
+                <span class="material-icons" style="font-size: 48px;">warning</span>
+            </div>
+            <h6 class="fw-800 mb-2">試験を終了しますか？</h6>
+            <p class="text-muted extra-small mb-4">送信後は解答の変更ができません。</p>
             <div class="d-grid gap-2">
-                <button type="button" class="btn btn-success rounded-pill py-2 fw-bold" onclick="forceSubmit()">解答を送信する</button>
-                <button type="button" class="btn btn-light rounded-pill py-2" data-bs-dismiss="modal">まだ続ける</button>
+                <button type="button" class="btn btn-success rounded-pill fw-bold" onclick="submitExam()">はい、提出します</button>
+                <button type="button" class="btn btn-light rounded-pill border" data-bs-dismiss="modal">戻る</button>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+    /* ==========================================================
+       CBT完全没入モード：ベーステンプレートの装飾をすべて抹殺
+       ========================================================== */
+    
+    /* 1. ベーステンプレートの要素を物理的に非表示にする */
+    .side-nav-left, .side-nav-right, .side-qr-fixed, .side-text-decor,
+    .app-header, .custom-header, .app-footer, .app-footer-sd,
+    .dot-separator, .footer-dot-line, .navbar, .sidebar {
+        display: none !important;
+    }
+
+    /* 2. 親コンテナの制限（幅・角丸・マージン）をすべて解除 */
+    .admin-layout, .container-fluid, .row, .col-12 {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+    }
+
+    .center, .center-box, .center-box-sd, .main-content-area {
+        all: unset !important; /* 全てのスタイルをリセット */
+        display: block !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 9999 !important; /* 最前面に配置 */
+        background: #fff !important;
+    }
+
+    body {
+        overflow: hidden !important;
+        background: #fff !important; /* 背景画像も白で塗りつぶす */
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 3. CBT専用インターフェース */
+    .cbt-container {
+        display: flex;
+        flex-direction: column;
+        width: 100vw;
+        height: 100vh;
+        background: #fff;
+        color: #333;
+    }
+
+    .cbt-header {
+        background: #2d3436;
+        color: #fff;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .cbt-timer-box {
+        background: #e17055;
+        padding: 4px 12px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: bold;
+    }
+
+    .cbt-main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 40px 20px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .question-card {
+        max-width: 700px;
+        margin: 0 auto;
+        display: none;
+    }
+    .question-card.active { display: block; animation: cbt-fadeIn 0.4s ease; }
+
+    /* 選択肢ボタン（CBTスタイル） */
+    .choice-item { margin-bottom: 12px; }
+    .choice-label {
+        display: block;
+        padding: 18px 25px;
+        background: #f8f9fa;
+        border: 2px solid #eee;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    .choice-input:checked + .choice-label {
+        border-color: #76b19d;
+        background-color: #f0f7f5;
+        color: #4a8a7a;
+    }
+
+    .cbt-footer {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .btn-cbt {
+        border-radius: 50px !important;
+        padding: 10px 25px !important;
+        font-weight: 800 !important;
+    }
+
+    /* プログレスドット */
+    .progress-bar-cbt { display: flex; gap: 6px; }
+    .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+    .p-dot.active { background: #76b19d; transform: scale(1.3); }
+    .p-dot.answered { background: #636e72; }
+
+    @keyframes cbt-fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .no-select { user-select: none; -webkit-user-select: none; }
+    footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        background-color: #f8f9fa;
+    }
+
+</style>
+
 <script>
     let currentIdx = 1;
-    const totalQuestions = {{ questions|length }};
-    const examForm = document.getElementById('exam-form');
-    
-    // 1. 制限時間の設定 (views.pyから秒単位で渡す想定、なければ30分)
+    const total = {{ questions|length }};
+    const form = document.getElementById('exam-form');
     let timeLeft = {{ exam.time_limit|default:30 }} * 60;
 
+    function updateDisplay() {
+        document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+        document.getElementById(`q-box-${currentIdx}`).classList.add('active');
+        
+        document.querySelectorAll('.p-dot').forEach(d => d.classList.remove('active'));
+        document.getElementById(`dot-${currentIdx}`).classList.add('active');
+
+        document.getElementById('btn-prev').style.visibility = (currentIdx === 1) ? 'hidden' : 'visible';
+        
+        if (currentIdx === total) {
+            document.getElementById('btn-next').classList.add('d-none');
+            document.getElementById('btn-finish').classList.remove('d-none');
+        } else {
+            document.getElementById('btn-next').classList.remove('d-none');
+            document.getElementById('btn-finish').classList.add('d-none');
+        }
+    }
+
+    function changeQuestion(step) {
+        currentIdx += step;
+        updateDisplay();
+        document.querySelector('.cbt-main').scrollTop = 0;
+    }
+
+    function markAnswered(idx) {
+        document.getElementById(`dot-${idx}`).classList.add('answered');
+    }
+
     function startTimer() {
-        const timerEl = document.getElementById('timer');
-        const interval = setInterval(() => {
-            let mins = Math.floor(timeLeft / 60);
-            let secs = timeLeft % 60;
-            timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-            
-            if (timeLeft <= 60) timerEl.parentElement.style.background = "#d63031"; // 残り1分で赤く
-            
+        const display = document.getElementById('timer-display');
+        const timer = setInterval(() => {
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            display.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
             if (timeLeft <= 0) {
-                clearInterval(interval);
-                alert("制限時間終了です。自動的に解答を送信します。");
-                forceSubmit();
+                clearInterval(timer);
+                submitExam();
             }
             timeLeft--;
         }, 1000);
     }
 
-    // 2. ナビゲーション
-    function showQuestion(idx) {
-        document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
-        document.getElementById(`q-${idx}`).classList.add('active');
-        
-        // ドットの更新
-        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
-        document.getElementById(`dot-${idx}`).classList.add('active');
-
-        // ボタンの制御
-        document.getElementById('prev-btn').disabled = (idx === 1);
-        if (idx === totalQuestions) {
-            document.getElementById('next-btn').classList.add('d-none');
-            document.getElementById('finish-btn').classList.remove('d-none');
-        } else {
-            document.getElementById('next-btn').classList.remove('d-none');
-            document.getElementById('finish-btn').classList.add('d-none');
-        }
-    }
-
-    function nextQuestion() { if (currentIdx < totalQuestions) { currentIdx++; showQuestion(currentIdx); } }
-    function prevQuestion() { if (currentIdx > 1) { currentIdx--; showQuestion(currentIdx); } }
+    function openConfirm() { new bootstrap.Modal(document.getElementById('confirmModal')).show(); }
     
-    function markAnswered(idx) {
-        document.getElementById(`dot-${idx}`).classList.add('answered');
+    function submitExam() {
+        window.onbeforeunload = null;
+        form.submit();
     }
 
-    function confirmSubmit() {
-        new bootstrap.Modal(document.getElementById('confirmModal')).show();
-    }
+    // 不正防止
+    window.onbeforeunload = () => "試験を中断してよろしいですか？";
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('copy', e => e.preventDefault());
 
-    function forceSubmit() {
-        window.onbeforeunload = null; // 警告を解除
-        examForm.submit();
-    }
-
-    // 3. 不正防止・警告
-    window.onbeforeunload = function() {
-        return "試験を終了せずにページを離れると、解答が保存されない可能性があります。";
-    };
-
-    // 右クリック禁止
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    
-    // コピー禁止
-    document.addEventListener('copy', event => event.preventDefault());
-
-    // 画面切り替え（タブ変更）検知
-    document.addEventListener("visibilitychange", function() {
-        if (document.hidden) {
-            console.warn("タブを離れました");
-            // 必要に応じてここにペナルティロジックを追加
-        }
-    });
-
-    // 初期化
     document.addEventListener('DOMContentLoaded', () => {
-        showQuestion(1);
+        updateDisplay();
         startTimer();
     });
 </script>
