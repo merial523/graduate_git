@@ -1,26 +1,151 @@
 {% extends base_template %}
+{% load static %}
+
+{% block title %}お知らせ | EngageUp{% endblock %}
+
+
 {% block content %}
-<div class="container mt-4" style="max-width: 800px;">
-    <div class="d-flex align-items-center mb-4">
-        <a href="{% url 'staff:staff_index' %}" class="btn btn-light rounded-circle me-3">←</a>
-        <h2 class="fw-bold m-0">📢 お知らせ一覧</h2>
+<div class="user-exam-container pb-5">
+    <!-- ヘッダー -->
+    <div class="mb-4 text-start">
+        <h1 class="page-title text-dark m-0 fw-800">お知らせ</h1>
     </div>
 
-    {% for news in news_list %}
-        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 20px; overflow: hidden;">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">NEWS</span>
-                    <small class="text-muted">{{ news.created_at|date:"Y/m/d H:i" }}</small>
+    <!-- お知らせリスト -->
+    <div class="news-stack">
+        {% for news in news_list %}
+            <!-- onclickを削除し、data属性に情報を格納。classに 'news-card-trigger' を追加 -->
+            <div class="news-card news-card-trigger {% if news.is_important %}is-important{% endif %} mb-3 shadow-sm" 
+                 data-title="{{ news.title }}"
+                 data-date="{{ news.created_at|date:'Y/m/d H:i' }}">
+                
+                <!-- 本文は改行が含まれるため、専用の隠しタグ内に格納して安全に取得する -->
+                <div class="hidden-news-content" style="display:none;">{{ news.content }}</div>
+
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="news-icon-status me-3">
+                        <span class="material-icons">
+                            {% if news.is_important %}priority_high{% else %}info_outline{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted extra-small">{{ news.created_at|date:"Y.m.d" }}</span>
+                            {% if news.is_important %}
+                                <span class="badge-important">重要</span>
+                            {% endif %}
+                        </div>
+                        <h2 class="h6 fw-800 text-dark mb-0 text-truncate">{{ news.title }}</h2>
+                    </div>
+
+                    <div class="ms-2">
+                        <span class="material-icons text-muted opacity-50">chevron_right</span>
+                    </div>
                 </div>
-                <h4 class="fw-bold mb-3">{{ news.title }}</h4>
-                <div style="white-space: pre-wrap; line-height: 1.8; color: #444;">{{ news.content }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- お知らせ詳細ポップアップモーダル -->
+<div class="modal fade" id="newsDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <div class="d-flex flex-column">
+                    <span id="modal-date" class="text-muted extra-small mb-1"></span>
+                    <h5 id="modal-title" class="fw-800 text-dark mb-0"></h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- ここに本文が入ります -->
+                <div id="modal-content" class="news-detail-text"></div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-5 w-100 fw-bold border" data-bs-dismiss="modal">閉じる</button>
             </div>
         </div>
-    {% empty %}
-        <div class="text-center py-5">
-            <p class="text-muted">現在、お知らせはありません。</p>
-        </div>
-    {% endfor %}
+    </div>
 </div>
+
+<style>
+    .fw-800 { font-weight: 800 !important; }
+    .extra-small { font-size: 0.7rem; }
+
+    .news-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid rgba(0,0,0,0.03);
+        cursor: pointer;
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .news-card:hover { transform: translateX(5px); background-color: #fdfcfb; }
+
+    .news-card.is-important {
+        border-left: 5px solid var(--accent-color);
+        background-color: #fffaf9;
+    }
+    .news-card.is-important .news-icon-status { color: var(--accent-color); }
+    
+    .badge-important {
+        background: var(--accent-color);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 900;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .news-icon-status { color: #ccc; }
+
+    .news-detail-text {
+        white-space: pre-wrap;
+        line-height: 1.8;
+        color: #444;
+        font-size: 0.95rem;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        border-left: 5px solid var(--primary-color);
+        padding-left: 15px;
+    }
+    
+    .rounded-5 { border-radius: 2rem !important; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // モーダルの準備
+        const newsModalEl = document.getElementById('newsDetailModal');
+        const newsModal = new bootstrap.Modal(newsModalEl);
+
+        // すべてのお知らせカードにクリックイベントを設定
+        const triggers = document.querySelectorAll('.news-card-trigger');
+        
+        triggers.forEach(card => {
+            card.addEventListener('click', function() {
+                // data属性からタイトルと日付を取得
+                const title = this.getAttribute('data-title');
+                const date = this.getAttribute('data-date');
+                // 隠しdivから本文を取得（改行が壊れない方法）
+                const content = this.querySelector('.hidden-news-content').innerHTML;
+
+                // モーダルの要素を更新
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-date').textContent = date;
+                document.getElementById('modal-content').innerHTML = content;
+                
+                // モーダルを表示
+                newsModal.show();
+            });
+        });
+    });
+</script>
 {% endblock %}

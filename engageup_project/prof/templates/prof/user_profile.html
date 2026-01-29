@@ -1,71 +1,170 @@
 {% extends base_template %}
+{% load static %}
+
+{% block title %}マイプロフィール | EngageUp{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">👤 マイプロフィール</h2>
-    
-    <div class="card shadow-sm mb-5">
-        <div class="card-body">
-            <!-- 
-              d-flex: 横並びにする 
-              align-items-start: 上揃えにする
-              flex-column flex-md-row: スマホでは縦、PCでは横並びにする
-            -->
-            <div class="d-flex flex-column flex-md-row align-items-start">
+<div class="user-management-container pb-5">
+    <!-- ヘッダーエリア -->
+    <div class="mb-4">
+        <h1 class="page-title text-dark m-0 fw-800">マイプロフィール</h1>
+    </div>
+
+    <!-- メインプロフィールカード -->
+    <div class="admin-card border-0 shadow-sm mb-5 rounded-5 bg-white overflow-hidden">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4">
                 
-                <!-- 写真エリア（幅を100pxで固定して、絶対に重ならないようにする） -->
-                <div class="text-center mb-3 mb-md-0 me-md-4" style="flex: 0 0 100px;">
+                <!-- 写真エリア：大きな丸みと影で強調 -->
+                <div class="profile-avatar-wrapper">
                     {% if request.user.avatar %}
-                        <img src="{{ request.user.avatar.url }}" class="rounded-circle border" style="width: 100px; height: 100px; object-fit: cover;">
+                        <img src="{{ request.user.avatar.url }}" class="profile-avatar-img shadow-sm">
                     {% else %}
-                        <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; color: #adb5bd; font-size: 0.8em;">
-                            No Image
+                        <div class="profile-avatar-placeholder shadow-sm">
+                            <span class="material-icons">person</span>
                         </div>
                     {% endif %}
                 </div>
                 
-                <!-- 文字情報エリア（flex-grow-1で残りの幅をすべて使う） -->
-                <div class="flex-grow-1 w-100">
-                    <h3 class="fw-bold mb-1">{{ request.user.username }}</h3>
-                    <p class="text-muted small mb-3">会員番号: {{ request.user.member_num }}</p>
-                    
-                    <!-- 備考欄（カードの中のさらに小さな枠として表示） -->
-                    <div class="p-3 rounded border bg-light w-100">
-                        <label class="fw-bold small text-muted d-block mb-1">備考・自己紹介</label>
-                        <div style="word-break: break-all;"> <!-- 長い文章でも改行されるようにする -->
-                            {{ request.user.remarks|default:"未記入"|linebreaksbr }}
-                        </div>
+                <!-- 情報エリア -->
+                <div class="flex-grow-1 text-center text-md-start w-100">
+                    <div class="mb-3">
+                        <h2 class="fw-800 text-dark mb-1">{{ request.user.username }}</h2>
+                        <span class="badge bg-soft-blue text-primary rounded-pill px-3">
+                            会員番号: {{ request.user.member_num|default:"---" }}
+                        </span>
                     </div>
                     
-                    <div class="mt-3">
-                        <a href="{% url 'prof:profile_edit' %}" class="btn btn-outline-primary btn-sm">
-                            ⚙️ プロフィールを編集
+                    <!-- 自己紹介：メモ帳のような質感 -->
+                    <div class="bio-box p-3 rounded-4 mb-4">
+                        <label class="fw-800 small text-muted d-flex align-items-center gap-1 mb-2">
+                            <span class="material-icons size-16">notes</span>
+                            備考・自己紹介
+                        </label>
+                        <p class="small mb-0 text-dark" style="line-height: 1.6;">
+                            {{ request.user.remarks|default:"自己紹介が未記入です。編集から入力してみましょう！"|linebreaksbr }}
+                        </p>
+                    </div>
+                    
+                    <!-- 編集ボタン：カプセル型 -->
+                    <div class="d-grid d-md-block">
+                        <a href="{% url 'prof:profile_edit' %}" class="btn btn-outline-primary rounded-pill px-4 fw-800 shadow-sm">
+                            <span class="material-icons size-18 me-1">settings</span>
+                            プロフィールを編集
                         </a>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- バッジエリア（ここは変更なし） -->
-    <h4 class="fw-bold mb-3">🎖️ 獲得称号</h4>
-    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 g-3">
-        {% for status in passed_statuses %}
-            {% if status.exam.badge %}
-                <div class="col">
-                    <div class="card h-100 text-center border-0 bg-light py-2">
-                        <div class="mb-1">
-                            {% if status.exam.badge.icon %}
-                                <img src="{{ status.exam.badge.icon.url }}" style="height: 50px; width: 50px; object-fit: contain;">
-                            {% else %}
-                                <div style="font-size: 30px;">🎖️</div>
-                            {% endif %}
+    <!-- 獲得バッジエリア：コレクションケースのような演出 -->
+    <div class="badge-section">
+        <h3 class="h5 fw-800 text-dark d-flex align-items-center gap-2 mb-4">
+            <span class="material-icons text-warning">workspace_premium</span>
+            獲得した称号（バッジ）
+        </h3>
+
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 g-3">
+            {% for status in passed_statuses %}
+                {% if status.exam.badge %}
+                    <div class="col">
+                        <div class="badge-item-card h-100 text-center p-3 shadow-sm border-0 bg-white rounded-4">
+                            <div class="badge-icon-container mb-2">
+                                {% if status.exam.badge.icon %}
+                                    <img src="{{ status.exam.badge.icon.url }}" class="img-fluid">
+                                {% else %}
+                                    <span class="material-icons text-warning" style="font-size: 40px;">stars</span>
+                                {% endif %}
+                            </div>
+                            <p class="extra-small fw-800 text-dark mb-0 line-clamp-2">
+                                {{ status.exam.badge.name }}
+                            </p>
                         </div>
-                        <p class="small fw-bold mb-0">{{ status.exam.badge.name }}</p>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="admin-card bg-light border-dashed p-5 rounded-5">
+                        <span class="material-icons text-muted opacity-25" style="font-size: 48px;">military_tech</span>
+                        <p class="text-muted small mt-2 mb-0">まだ獲得したバッジはありません。<br>検定に合格してバッジを集めましょう！</p>
                     </div>
                 </div>
-            {% endif %}
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
 </div>
+
+<style>
+    /* ご指定のタイトルスタイル */
+    .page-title {
+        font-size: 1.4rem;
+        border-left: 5px solid var(--primary-color);
+        padding-left: 15px;
+    }
+
+    .fw-800 { font-weight: 800 !important; }
+    .size-16 { font-size: 16px; }
+    .size-18 { font-size: 18px; }
+    .extra-small { font-size: 0.75rem; }
+    .bg-soft-blue { background-color: rgba(118, 177, 157, 0.1); }
+
+    /* アバターのデザイン */
+    .profile-avatar-wrapper {
+        flex-shrink: 0;
+    }
+    .profile-avatar-img, .profile-avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+    }
+    .profile-avatar-placeholder {
+        background-color: var(--bg-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+    }
+    .profile-avatar-placeholder .material-icons { font-size: 60px; }
+
+    /* 自己紹介ボックス */
+    .bio-box {
+        background-color: #fdfaf5;
+        border: 1px solid #f0ece4;
+        text-align: left;
+    }
+
+    /* バッジアイテム */
+    .badge-item-card {
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid rgba(0,0,0,0.03) !important;
+    }
+    .badge-item-card:hover {
+        transform: scale(1.05) translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+    }
+    .badge-icon-container {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .badge-icon-container img {
+        max-height: 60px;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+
+    /* 境界線デザイン */
+    .border-dashed { border: 2px dashed #ddd !important; }
+
+    /* テキストの2行省略 */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
 {% endblock %}

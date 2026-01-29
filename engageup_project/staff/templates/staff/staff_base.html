@@ -44,6 +44,23 @@
           display: none;
         }
       }
+
+      .notification-icon-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      /* 通知の赤丸 */
+      .unread-dot {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 10px;
+        height: 10px;
+        background-color: #e86a6a; /* アクセントの赤 */
+        border-radius: 50%;
+        border: 2px solid white;
+      }
     </style>
   </head>
   <body>
@@ -93,7 +110,6 @@
               </button>
 
               <a class="logo-font" href="{% url 'index' %}">EngageUp</a>
-
               <a href="{% url 'prof:user_profile' %}" class="icon-btn">
                 <span class="material-icons">account_circle</span>
               </a>

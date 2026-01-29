@@ -1,47 +1,85 @@
 {% extends base_template %}
-{% block content %}
-<div class="container mt-5" style="max-width: 700px;">
-    <h2 class="mb-4">✏️ プロフィール編集</h2>
+{% load static %}
 
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <form method="post" enctype="multipart/form-data">
+{% block title %}プロフィール編集 | EngageUp{% endblock %}
+
+{% block content %}
+<div class="user-management-container pb-5">
+    <!-- ヘッダーエリア -->
+    <div class="mb-4">
+        <h1 class="page-title text-dark m-0 fw-800">プロフィール編集</h1>
+    </div>
+
+    <div class="admin-card border-0 shadow-sm rounded-5 bg-white">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" enctype="multipart/form-data" id="profile-edit-form">
                 {% csrf_token %}
 
-                <!-- 各入力項目をループで回してBootstrapのスタイルを当てる -->
-                {% for field in form %}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold" for="{{ field.id_for_label }}">
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 shadow-sm mb-4">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <!-- 各入力項目 -->
+                <div class="row g-4">
+                    {% for field in form %}
+                    <div class="col-12">
+                        <label class="form-label fw-800 d-flex align-items-center gap-2 mb-2" for="{{ field.id_for_label }}">
+                            <span class="material-icons text-primary" style="font-size: 18px;">
+                                {% if 'username' in field.name %}person
+                                {% elif 'remarks' in field.name %}chat_bubble_outline
+                                {% elif 'avatar' in field.name %}face
+                                {% elif 'member' in field.name %}badge
+                                {% else %}edit{% endif %}
+                            </span>
                             {{ field.label }}
                         </label>
-                        
-                        <!-- 
-                          Djangoのフォームパーツをそのまま出すのではなく、
-                          Bootstrapの form-control クラスを強制的に当てるための工夫 
-                        -->
-                        <div class="input-group">
-                            {{ field }}
-                        </div>
+
+                        {% if 'avatar' in field.name %}
+                            <!-- 画像アップロード専用のデザイン -->
+                            <div class="bg-light rounded-4 p-3 d-flex align-items-center gap-3 border border-dashed overflow-hidden">
+                                <div class="profile-preview-circle shadow-sm flex-shrink-0">
+                                    {% if request.user.avatar %}
+                                        <img src="{{ request.user.avatar.url }}" id="img-preview">
+                                    {% else %}
+                                        <span class="material-icons text-muted fs-2" id="img-placeholder">account_circle</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 django-file-custom">
+                                    <p class="extra-small text-muted mb-1 fw-bold">新しい画像を選択</p>
+                                    {{ field }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- 通常の入力欄 -->
+                            <div class="custom-input-group">
+                                {{ field }}
+                            </div>
+                        {% endif %}
 
                         {% if field.help_text %}
-                            <div class="form-text text-muted">{{ field.help_text }}</div>
+                            <div class="form-text extra-small mt-2">{{ field.help_text }}</div>
                         {% endif %}
 
                         {% if field.errors %}
-                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            <div class="text-danger small mt-1 fw-bold">{{ field.errors.0 }}</div>
                         {% endif %}
                     </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
 
-                <hr class="my-4">
+                <hr class="my-5">
 
-                <!-- ボタンエリア -->
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'prof:user_profile' %}" class="btn btn-outline-secondary">
+                <!-- アクションボタンエリア -->
+                <div class="d-flex flex-column flex-md-row justify-content-center gap-3 mt-4 pt-4 border-top">
+                    <!-- キャンセルボタン -->
+                    <a href="{% url 'prof:user_profile' %}" class="btn btn-light rounded-pill px-4 py-2 border order-2 order-md-1 text-nowrap d-flex align-items-center justify-content-center">
                         キャンセル
                     </a>
-                    <button type="submit" class="btn btn-primary px-5">
-                        変更を保存する
+                    
+                    <!-- 保存ボタン -->
+                    <button type="button" id="save-btn" class="btn btn-primary rounded-pill px-4 py-2 fw-800 shadow-sm order-1 order-md-2 text-nowrap d-flex align-items-center justify-content-center">
+                        <span class="material-icons me-2" style="font-size: 20px;">check_circle</span>
+                        <span>変更を保存する</span>
                     </button>
                 </div>
             </form>
@@ -49,29 +87,115 @@
     </div>
 </div>
 
+<!-- 処理中ポップアップモーダル -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">プロフィールを更新中...</h5>
+                </div>
+                <div id="modal-success" style="display: none;">
+                    <div class="success-icon-wrapper mb-4">
+                        <span class="material-icons text-success" style="font-size: 80px;">check_circle</span>
+                    </div>
+                    <h5 class="fw-800 text-dark">更新が完了しました！</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-    /* 
-       Djangoが生成するinputタグやtextareaタグに、
-       一括でBootstrapの form-control スタイルを適用させる 
-    */
-    input[type="text"], 
-    input[type="file"], 
-    textarea {
-        display: block;
-        width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    /* ご指定のスタイル */
+    .page-title {
+        font-size: 1.4rem;
+        border-left: 5px solid var(--primary-color);
+        padding-left: 15px;
     }
-    textarea {
-        height: 120px; /* 備考欄の高さ */
+
+    .fw-800 { font-weight: 800 !important; }
+    .extra-small { font-size: 0.7rem; }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; border-color: #ddd !important; }
+
+    /* 入力欄の共通スタイル */
+    .custom-input-group input, 
+    .custom-input-group select, 
+    .custom-input-group textarea {
+        display: block; width: 100%;
+        padding: 0.8rem 1.2rem; font-size: 1rem;
+        color: var(--text-color); background-color: var(--bg-color);
+        border: 2px solid transparent; border-radius: 16px; transition: 0.3s;
     }
+    .custom-input-group input:focus, 
+    .custom-input-group textarea:focus {
+        background-color: #fff; border-color: var(--primary-color); outline: 0;
+        box-shadow: 0 0 0 4px rgba(118, 177, 157, 0.1);
+    }
+    textarea { height: 140px !important; resize: none; }
+
+    /* アバタープレビュー */
+    .profile-preview-circle {
+        width: 64px; height: 64px; background-color: #fff; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; border: 2px solid white;
+    }
+    .profile-preview-circle img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Django標準の「現在：」「クリア」を隠す */
+    .django-file-custom { font-size: 0.75rem; color: #888; }
+    .django-file-custom input[type="checkbox"], 
+    .django-file-custom label[for$="-clear_id"] { display: none !important; }
+    .django-file-custom a { display: inline-block; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; font-weight: bold; text-decoration: none; color: var(--primary-color); }
+    .django-file-custom input[type="file"] { margin-top: 8px; display: block; width: 100%; font-size: 0.8rem; }
+
+    /* ポップアップ演出 */
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .success-icon-wrapper span { animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveBtn = document.getElementById('save-btn');
+    const form = document.getElementById('profile-edit-form');
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+    // 保存ボタンクリック時の演出
+    saveBtn.addEventListener('click', function() {
+        statusModal.show();
+        setTimeout(() => {
+            document.getElementById('modal-loading').style.display = 'none';
+            document.getElementById('modal-success').style.display = 'block';
+            setTimeout(() => { form.submit(); }, 700);
+        }, 1100);
+    });
+
+    // 画像選択時のリアルタイムプレビュー
+    const avatarInput = document.querySelector('input[type="file"]');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const previewImg = document.getElementById('img-preview');
+                    if (previewImg) {
+                        previewImg.src = event.target.result;
+                    } else {
+                        const placeholder = document.getElementById('img-placeholder');
+                        const newImg = document.createElement('img');
+                        newImg.src = event.target.result;
+                        newImg.id = 'img-preview';
+                        placeholder.parentNode.replaceChild(newImg, placeholder);
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

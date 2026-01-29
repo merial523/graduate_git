@@ -38,13 +38,13 @@
     <h2>コース・動画管理</h2>
     <p>教材の登録・更新</p>
   </a>
+  <a href="{% url 'mail:news_history' %}" class="admin-card">
+    <h2>お知らせ管理</h2>
+    <p>お知らせの登録・履歴確認</p>
+  </a>
   <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">
     <h2>バッジ管理</h2>
     <p>評価・称号設定</p>
-  </a>
-  <a href="{% url 'moderator:moderatorBadge' %}" class="admin-card">
-    <h2>お知らせ管理</h2>
-    <p>お知らせの登録・履歴確認</p>
   </a>
 </div>
 {% endblock %}

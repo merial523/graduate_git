@@ -45,10 +45,9 @@
 
         <nav class="sidebar-menu">
           <!-- ダッシュボード: パスが完全一致、または名前が index のとき -->
-          <a class="menu-item {% if request.path == '/' or request.resolver_match.url_name == 'index' %}active{% endif %}" 
-             href="{% url 'index' %}">
-            <span class="material-icons">dashboard</span>
-            <span class="menu-text">ダッシュボード</span>
+          <a class="menu-item {% if request.path == '/' or request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">
+          <span class="material-icons">dashboard</span>
+          <span class="menu-text">ダッシュボード</span>
           </a>
 
           
@@ -57,44 +56,41 @@
           href="{% url 'administer:user_list' %}">
           <span class="material-icons">group</span>
           <span class="menu-text">ユーザー管理</span>
-        </a>
+          </a>
         
-        <!-- 検定管理: URLに 'enrollments' が含まれるとき -->
-        <a class="menu-item {% if 'enrollments' in request.path %}active{% endif %}" 
-        href="{% url 'enrollments:exam_list' %}">
-        <span class="material-icons">rule</span>
-        <span class="menu-text">検定管理</span>
-      </a>
+          <!-- 検定管理: URLに 'enrollments' が含まれるとき -->
+          <a class="menu-item {% if 'enrollments' in request.path %}active{% endif %}" 
+          href="{% url 'enrollments:exam_list' %}">
+          <span class="material-icons">rule</span>
+          <span class="menu-text">検定管理</span>
+          </a>
       
       
-      <!-- コース一覧: URLに 'courses' が含まれるとき -->
-      <a class="menu-item {% if 'courses' in request.path %}active{% endif %}" 
-         href="{% url 'courses:courses_list' %}">
-        <span class="material-icons">layers</span>
-        <span class="menu-text">コース一覧</span>
-      </a>
+          <!-- コース一覧: URLに 'courses' が含まれるとき -->
+          <a class="menu-item {% if 'courses' in request.path %}active{% endif %}" 
+          href="{% url 'courses:courses_list' %}">
+          <span class="material-icons">layers</span>
+          <span class="menu-text">コース一覧</span>
+          </a>
       
-      <!-- バッジ管理: URLに 'Badge' または 'badge' が含まれるとき -->
-      <a class="menu-item {% if 'Badge' in request.path or 'badge' in request.path %}active{% endif %}" 
-      href="{% url 'moderator:moderatorBadge' %}">
-      <span class="material-icons">military_tech</span>
-      <span class="menu-text">登録バッジ一覧</span>
-    </a>
-    
-    <!-- お知らせ投稿: URLに 'News' または 'news' が含まれるとき -->
-    <a class="menu-item {% if 'News' in request.path or 'news' in request.path %}active{% endif %}" 
-    href="{% url 'mail:news_create' %}">
-    <span class="material-icons">campaign</span>
-    <span class="menu-text">お知らせ投稿</span>
-    </a>
+          <!-- バッジ管理: URLに 'Badge' または 'badge' が含まれるとき -->
+          <a class="menu-item {% if 'Badge' in request.path or 'badge' in request.path %}active{% endif %}" 
+          href="{% url 'moderator:moderatorBadge' %}">
+          <span class="material-icons">military_tech</span>
+          <span class="menu-text">登録バッジ一覧</span>
+          </a>
+      
+          <!-- お知らせ投稿 -->
+          <a class="menu-item {% if 'News' in request.path or 'news' in request.path %}active{% endif %}" 
+          href="{% url 'mail:news_history' %}">
+          <span class="material-icons">campaign</span>
+          <span class="menu-text">お知らせ管理</span>
+          </a>
 
-      <!-- <a href="{% url 'mail:news_history' %}">お知らせ履歴
-          </a>-->
-
-        <div class="sidebar-footer">
+          <div class="sidebar-footer">
           <a class="logout" href="{% url 'accounts:logout' %}">
-            <span class="material-icons">logout</span>
-            <span class="menu-text">ログアウト</span>
+          <span class="material-icons">logout</span>
+          <span class="menu-text">ログアウト</span>
           </a>
         </div>
       </aside>

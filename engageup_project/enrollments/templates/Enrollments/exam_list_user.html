@@ -6,8 +6,8 @@
 {% block content %}
 <div class="user-exam-container pb-5">
     <!-- 1. ヘッダー ＆ 統計 -->
-    <div class="user-welcome-section mb-4 text-start">
-        <h1 class="page-title text-dark m-0 fw-800">検定にチャレンジ</h1>
+    <div class="mb-4 text-start">
+        <h1 class="page-title text-dark m-0 fw-800">検定受講</h1>
         <div class="user-stats-mini mt-2 shadow-sm">
             <span class="stat-item text-muted small">合格済み：<strong class="text-primary">{{ passed_exam_ids|length }}</strong> 件</span>
         </div>
@@ -184,6 +184,11 @@
     .extra-small { font-size: 0.7rem; }
     .size-14 { font-size: 14px; }
     .size-18 { font-size: 18px; }
+    .page-title {
+        font-size: 1.4rem;
+        border-left: 5px solid var(--primary-color);
+        padding-left: 15px;
+    }
 
     /* --- ★網掛け（ロック中） --- */
     .shaded-mask {
@@ -236,7 +241,6 @@
     .chip { padding: 6px 18px; background: #fff; color: #888; text-decoration: none; border-radius: 50px; font-size: 0.8rem; font-weight: 800; border: 1px solid #f0f0f0; white-space: nowrap; }
     .chip.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
-    .page-title { font-size: 1.4rem; border-left: 5px solid var(--accent-color); padding-left: 15px; }
     .user-stats-mini { display: inline-block; background: #fff; padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
 
     /* モーダル内のボタン幅調整 */

@@ -213,17 +213,25 @@ class News(models.Model):
     title = models.CharField(max_length=200, verbose_name="タイトル")
     content = models.TextField(verbose_name="内容")
     is_active = models.BooleanField(default=True, verbose_name="公開状態")
-    
-    # ★追加フィールド
+    is_deleted = models.BooleanField(default=False, verbose_name="削除フラグ")
     is_important = models.BooleanField(default=False, verbose_name="重要")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="作成者")
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
 
+    CATEGORY_CHOICES = [
+        ('news', '一般'),
+        ('training', '復習通知'),
+        ('urgent', '重要告知'),
+    ]
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='news', verbose_name="ジャンル")
+
     def __str__(self):
         return self.title
 
+    class Meta:
+        verbose_name = "お知らせ"
 
 # =========================
 # ユーザー

@@ -73,15 +73,13 @@
             <span class="menu-text">コース・動画管理</span>
           </a>
 
-                <!-- お知らせ投稿: URLに 'News' または 'news' が含まれるとき -->
+          <!-- お知らせ投稿 -->
           <a class="menu-item {% if 'News' in request.path or 'news' in request.path %}active{% endif %}" 
-          href="{% url 'mail:news_create' %}">
+          href="{% url 'mail:news_history' %}">
           <span class="material-icons">campaign</span>
-          <span class="menu-text">お知らせ投稿</span>
+          <span class="menu-text">お知らせ管理</span>
           </a>
 
-            <!-- <a href="{% url 'mail:news_history' %}">お知らせ履歴
-                </a> -->
           <!-- バッジ管理 -->
           <a class="menu-item {% if 'Badge' in request.path or 'badge' in request.path %}active{% endif %}" href="{% url 'moderator:moderatorBadge' %}">
             <span class="material-icons">military_tech</span>

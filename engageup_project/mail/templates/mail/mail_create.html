@@ -1,13 +1,212 @@
 {% extends base_template %}
-
-
 {% load static %}
-{% block content %}
-  <h2>お知らせ作成</h2>
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">登録してメール送信</button>
-  </form>
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'mail:news_history' %}" class="text-decoration-none">お知らせ投稿履歴</a></li>
+<li class="breadcrumb-item active">新規投稿作成</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid pb-5 px-md-5">
+    <!-- タイトルエリア -->
+    <div class="mb-4 text-start">
+        <h1 class="fw-800 text-dark m-0">
+            新規投稿作成
+        </h1>
+    </div>
+
+    <form method="post" id="news-form">
+        {% csrf_token %}
+        <div class="row g-4">
+            
+            <!-- 左カラム：基本設定 -->
+            <div class="col-lg-5">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5 h-100 position-relative overflow-hidden">
+                    <!-- 背景の装飾アイコン -->
+                    <span class="material-icons position-absolute opacity-05" style="font-size: 160px; right: -30px; bottom: -30px; transform: rotate(-10deg); color: #76b19d;">send</span>
+
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="step-badge me-2">1</span>
+                        <h5 class="fw-800 m-0">配信設定</h5>
+                    </div>
+
+                    <!-- タイトル -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center">
+                            お知らせタイトル
+                            <span class="badge-required ms-2">必須</span>
+                        </label>
+                        {{ form.title }}
+                        <div class="form-text-ultra-light mt-2">例：【重要】システムメンテナンスのお知らせ</div>
+                    </div>
+
+                    <!-- ジャンル（カテゴリー） -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center">
+                            配信ジャンル
+                            <span class="badge-required ms-2">必須</span>
+                        </label>
+                        {{ form.category }}
+                        <div class="form-text-ultra-light mt-2">内容に合わせたアイコンと色で表示されます</div>
+                    </div>
+
+                    <!-- 重要度設定 -->
+                    <div class="importance-card rounded-5 p-4 mt-4">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <label class="fw-bold text-dark d-block mb-1">最優先設定</label>
+                                <p class="text-muted extra-small m-0">最優先ラベルとアイコンが付与されます</p>
+                            </div>
+                            <div class="col-auto">
+                                <div class="form-check form-switch custom-switch-cute">
+                                    {{ form.is_important }}
+                                    <label class="status-label fw-bold mt-1 text-muted" for="{{ form.is_important.id_for_label }}">
+                                        <span class="label-text"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右カラム：本文設定 -->
+            <div class="col-lg-7">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5 h-100">
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="step-badge me-2">2</span>
+                        <h5 class="fw-800 m-0">メッセージ本文</h5>
+                    </div>
+
+                    <!-- 内容 -->
+                    <div class="mb-0">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center">
+                            本文
+                            <span class="badge-required ms-2">必須</span>
+                        </label>
+                        {{ form.content }}
+                        <div class="form-text-ultra-light mt-2">メール本文としてそのまま送信されるため、丁寧な記述を心がけてください。</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下部：アクションボタン -->
+            <div class="col-12 mt-4 text-center">
+                <div class="d-flex flex-column align-items-center">
+                    <button type="submit" id="submit-btn" class="btn btn-primary btn-rounded-cute px-5 py-3 fw-800 shadow-sm mb-3" style="min-width: 350px;">
+                        <span class="material-icons align-middle me-2">mail</span>
+                        投稿を登録してメールを送信
+                    </button>
+                    <a href="{% url 'mail:news_history' %}" class="btn btn-link text-muted text-decoration-none fw-bold small hover-teal">
+                        キャンセルして戻る
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- 処理中ポップアップモーダル（ティール色ぐるぐる） -->
+<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body text-center p-5">
+                <div id="modal-loading">
+                    <div class="custom-loader mb-4"></div>
+                    <h5 class="fw-800 text-primary">お知らせを配信中...</h5>
+                    <p class="text-muted small mb-0">全ユーザーへメールを送信しています。<br>画面を閉じずにお待ちください</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    .extra-small { font-size: 0.72rem; }
+    .size-32 { font-size: 32px; }
+    .opacity-05 { opacity: 0.05; }
+
+    /* ヘルプテキストを極限まで薄く */
+    .form-text-ultra-light { color: #e0e0e0 !important; font-size: 0.75rem; font-weight: 300; }
+    input::placeholder, textarea::placeholder { color: #e0e0e0 !important; font-weight: 300; }
+
+    /* ステップバッジ */
+    .step-badge {
+        width: 28px; height: 28px; background-color: #76b19d; color: white;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 900; font-size: 0.9rem;
+    }
+
+    /* カードデザイン */
+    .admin-card { border-left: 10px solid #76b19d !important; border-radius: 2.5rem !important; }
+    .importance-card { background-color: #fcfdfe; border: 2px dashed #edf2f7; }
+
+    /* 必須ラベル */
+    .badge-required {
+        background-color: #ff7675; color: white; font-size: 0.62rem; padding: 2px 8px;
+        border-radius: 4px; font-weight: bold;
+    }
+
+    /* 入力フォーム */
+    input[type="text"], select, textarea {
+        width: 100%; padding: 14px 18px; border: 2px solid #f2f2f2;
+        border-radius: 16px; background-color: #fdfdfd; transition: 0.3s;
+        font-size: 1rem;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none; border-color: #76b19d; background-color: #fff;
+        box-shadow: 0 5px 15px rgba(118, 177, 157, 0.1);
+    }
+    textarea { height: 320px; resize: none; }
+
+    /* トグルスイッチ */
+    .custom-switch-cute { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+    .custom-switch-cute .form-check-input {
+        width: 3.2rem !important; height: 1.6rem !important; cursor: pointer;
+        background-color: #ced4da; border-color: #ced4da;
+    }
+    .custom-switch-cute .form-check-input:checked { background-color: #ff7675 !important; border-color: #ff7675 !important; }
+    .status-label { font-size: 0.72rem; }
+
+    /* ボタン */
+    .btn-rounded-cute { border-radius: 50px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .btn-primary { background-color: #76b19d; border: none; }
+    .btn-primary:hover {
+        background-color: #5fa089; transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(118, 177, 157, 0.25) !important;
+    }
+
+    /* ティール色ローダー */
+    .custom-loader { width: 50px; height: 50px; display: grid; border: 4px solid #0000; border-radius: 50%; border-right-color: #76b19d; animation: l15 1s infinite linear; margin: 0 auto; }
+    .custom-loader::before, .custom-loader::after { content: ""; grid-area: 1/1; margin: 2px; border: inherit; border-radius: 50%; animation: l15 2s infinite; }
+    .custom-loader::after { margin: 8px; animation-duration: 3s; }
+    @keyframes l15 { 100%{transform: rotate(1turn)} }
+
+    .hover-teal:hover { color: #76b19d !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const newsForm = document.getElementById('news-form');
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const submitBtn = document.getElementById('submit-btn');
+
+    // 送信時にローディングを表示（メール送信に時間がかかるため）
+    newsForm.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        statusModal.show();
+    });
+
+    // 重要スイッチのラベル連動
+    const importantSwitch = document.querySelector('.custom-switch-cute .form-check-input');
+    const labelText = document.querySelector('.label-text');
+    if (importantSwitch && labelText) {
+        importantSwitch.addEventListener('change', function() {
+            labelText.innerText = this.checked ? "最優先" : "通常";
+            labelText.parentElement.className = `status-label fw-bold mt-1 ${this.checked ? 'text-danger' : 'text-muted'}`;
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -57,15 +57,6 @@
       </a>
     </div>
 
-    <nav class="side-nav-left d-none d-lg-flex">
-      <!-- <a href="{% url 'index' %}">ホーム</a>
-      <a href="{% url 'enrollments:exam_list_user' %}">検定受講</a>
-      <a href="{% url 'courses:staff_course_list' %}">研修動画視聴</a>
-      <a href="{% url 'staff:news_list' %}">お知らせ</a>
-      <a href="{% url 'staff:staff_list' %}">プロフィール一覧</a> -->
-      <a href="{% url 'accounts:logout' %}" class="logout-v">ログアウト</a>
-    </nav>
-
     <div class="side-nav-right d-none d-lg-flex">
       <div class="qr-container">
         <div class="qr-box">
@@ -74,7 +65,7 @@
             alt="QR"
           />
         </div>
-        <p class="qr-text">Mobile Access</p>
+        <p class="qr-text">スマホはこちらから</p>
       </div>
     </div>
 
@@ -116,24 +107,6 @@
               </div>
               <div class="offcanvas-body">
                 <nav class="mobile-nav">
-                  <!-- <a href="{% url 'index' %}"
-                    ><span class="material-icons">home</span>ホーム</a
-                  >
-                  <a href="{% url 'enrollments:exam_list_user' %}"
-                    ><span class="material-icons">assignment</span
-                    >検定を受ける</a
-                  >
-                  <a href="{% url 'courses:staff_course_list' %}"
-                    ><span class="material-icons">school</span>研修動画を見る</a
-                  >
-                  <a href="{% url 'staff:news_list' %}"
-                    ><span class="material-icons">notifications</span
-                    >お知らせ</a
-                  >
-                  <a href="{% url 'staff:staff_list' %}"
-                    ><span class="material-icons">groups</span>スタッフ一覧</a
-                  > -->
-                  <div class="divider"></div>
                   <a href="{% url 'accounts:logout' %}" class="logout-btn"
                     ><span class="material-icons">logout</span>ログアウト</a
                   >

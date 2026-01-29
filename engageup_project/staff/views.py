@@ -111,9 +111,6 @@ class UserListView(
 
         return redirect(request.get_full_path())
     
-    
-    
-
 class StaffNewsListView(BaseTemplateMixin, ListView):
     """受講者用お知らせ一覧画面"""
     model = News
@@ -121,4 +118,5 @@ class StaffNewsListView(BaseTemplateMixin, ListView):
     context_object_name = "news_list"
 
     def get_queryset(self):
-        return News.objects.filter(is_active=True).order_by('-id')
+        # 公開中のお知らせを最新順（作成日時順）に取得
+        return News.objects.filter(is_active=True).order_by('-created_at')

@@ -1,120 +1,160 @@
 {% extends base_template %}
 {% load static %}
 
+{% block title %}スタッフ一覧 | EngageUp{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="user-management-container pb-5">
+    <!-- ヘッダーエリア -->
+    <div class="mb-4 text-start">
+        <h1 class="page-title text-dark m-0 fw-800">ユーザー一覧</h1>
+    </div>
 
-    <h2 class="mb-3">ユーザー一覧</h2>
+    <!-- 検索バー -->
+    <div class="mb-4">
+        <form method="get" action="" class="search-input-group shadow-sm bg-white border-0">
+            <span class="material-icons text-muted">search</span>
+            <input type="text" name="q" placeholder="名前やメールアドレスで検索..." value="{{ search_query|default:'' }}">
+            {% if search_query %}
+                <a href="?" class="text-muted text-decoration-none"><span class="material-icons small">cancel</span></a>
+            {% endif %}
+        </form>
+    </div>
 
-
-    
-        {% csrf_token %}
-            <form method="get" class="mb-4">
-                <div class="input-group">
-                    <!-- 削除済みを表示している状態を維持するための隠しパラメータ -->
-                    {% if is_trash_mode %}
-                        <input type="hidden" name="show" value="deleted">
-                    {% endif %}
-                    
-                    <input type="text" name="q" value="{{ search_query }}" 
-                        class="form-control" placeholder="メールアドレスまたは氏名で検索...",
-                        required>
-                    <button class="btn btn-dark" type="submit">検索</button>
-                    <a href="?" class="btn btn-outline-secondary">クリア</a>
+    <!-- スタッフリスト -->
+    <div class="staff-list-wrapper">
+        {% for user in users %}
+        <div class="admin-card border-0 shadow-sm mb-3 rounded-4 p-3 bg-white staff-item">
+            <div class="d-flex align-items-center gap-3">
+                <!-- 左側：アバターアイコン -->
+                <div class="avatar-circle-sm">
+                    <span class="material-icons">person</span>
                 </div>
-            </form>
 
-        <!-- <div class="mb-2">
-            <button type="submit" name="action" value="delete"
-                class="btn btn-danger btn-sm"
-                onclick="return confirm('選択したユーザーを無効化しますか？')">
-                削除（論理削除）
-            </button>
+                <!-- 中央：名前・Email -->
+                <div class="flex-grow-1 overflow-hidden">
+                    <h2 class="h6 fw-800 text-dark mb-1 text-truncate">{{ user.username }}</h2>
+                    <div class="d-flex align-items-center gap-1 text-muted extra-small">
+                        <span class="material-icons size-14">mail_outline</span>
+                        <span class="text-truncate">{{ user.email }}</span>
+                    </div>
+                </div>
 
-            <button type="submit" name="action" value="restore"
-                class="btn btn-success btn-sm"
-                onclick="return confirm('選択したユーザーを復元しますか？')">
-                復元
-            </button>
-        </div> -->
-
-        <table class="table table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <!-- <th style="width:40px;">
-                        <input type="checkbox" id="select-all">
-                    </th> -->
-                    <!-- <th>会員番号</th> -->
-                    <th>名前</th>
-                    <th>Email</th>
-                    <!-- <th>権限</th> -->
-                    <!-- <th>状態</th> -->
-                </tr>
-            </thead>
-            <tbody>
-                <!---スタッフのみ表示-->
-                {% for user in users %}
-                        <tr>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                        </tr>
-                    {% empty %}
-                        <!--  検索結果が空の場合の表示 -->
-                        <tr>
-                            <!-- 現在表示している列数（名前・Email）に合わせて colspan="2" にします -->
-                            <td colspan="2" class="text-center py-5">
-                                {% if search_query %}
-                                    <!-- 検索ワードがあるのに空の場合 -->
-                                    <h5 class="text-secondary">「<strong>{{ search_query }}</strong>」に一致するユーザーは見つかりませんでした。</h5>
-                                    <p class="small text-muted">キーワードを変えてもう一度お試しください。</p>
-                                {% else %}
-                                    <!-- そもそもデータが1件もない場合 -->
-                                    <p class="text-muted">ユーザーが登録されていません。</p>
-                                {% endif %}
-                            </td>
-                        </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <!-- 右側：装飾（矢印など） -->
+                <div class="text-muted opacity-25">
+                    <span class="material-icons">chevron_right</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <span class="material-icons text-muted opacity-25" style="font-size: 64px;">person_off</span>
+            </div>
+            {% if search_query %}
+                <h6 class="fw-800 text-dark">「{{ search_query }}」は見つかりませんでした</h6>
+                <p class="text-muted small">別のキーワードでお試しください</p>
+            {% else %}
+                <p class="text-muted small">登録されているスタッフはいません</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
 
     <!-- ページネーション -->
     {% if is_paginated %}
-    <nav>
-        <ul class="pagination">
+    <nav class="mt-5">
+        <ul class="pagination justify-content-center align-items-center gap-2">
             {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ page_obj.previous_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">
-                        前へ
-                    </a>
-                </li>
+            <li class="page-item">
+                <a class="page-link pagination-circle shadow-sm" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <span class="material-icons">chevron_left</span>
+                </a>
+            </li>
             {% endif %}
 
-            <li class="page-item disabled">
-                <span class="page-link">
-                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-                </span>
+            <li class="page-item active">
+                <span class="page-link pagination-circle shadow-sm fw-bold">{{ page_obj.number }}</span>
             </li>
 
             {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ page_obj.next_page_number }}{% if request.GET.show %}&show={{ request.GET.show }}{% endif %}">
-                        次へ
-                    </a>
-                </li>
+            <li class="page-item">
+                <a class="page-link pagination-circle shadow-sm" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <span class="material-icons">chevron_right</span>
+                </a>
+            </li>
             {% endif %}
         </ul>
     </nav>
     {% endif %}
-
 </div>
 
-<script>
-    // 全選択チェックボックス
-    document.getElementById("select-all").addEventListener("change", function () {
-        const checks = document.querySelectorAll("input[name='user_ids']");
-        checks.forEach(ch => ch.checked = this.checked);
-    });
-</script>
+<style>
+    .fw-800 { font-weight: 800 !important; }
+    .extra-small { font-size: 0.75rem; }
+    .size-14 { font-size: 14px; }
+
+    /* スタッフ用アバター */
+    .avatar-circle-sm {
+        width: 48px;
+        height: 48px;
+        background-color: var(--bg-color); /* 薄いベージュ */
+        color: var(--primary-color);   /* セージグリーン */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* スタッフカードのホバー演出 */
+    .staff-item {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.02) !important;
+    }
+    .staff-item:hover {
+        transform: translateX(5px);
+        background-color: #fdfcfb !important;
+    }
+
+    /* 検索バーのねこねこ風調整 */
+    .search-input-group {
+        border-radius: 50px;
+        padding: 8px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .search-input-group input {
+        border: none;
+        outline: none;
+        background: transparent;
+        width: 100%;
+        font-size: 0.95rem;
+        color: var(--text-color);
+    }
+
+    /* ページネーションの丸ボタン */
+    .pagination-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50% !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: white;
+        color: var(--primary-color);
+    }
+    .page-item.active .pagination-circle {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+        border-left: 5px solid var(--primary-color);
+        padding-left: 15px;
+    }
+</style>
 {% endblock %}
