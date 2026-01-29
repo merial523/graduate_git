@@ -8,6 +8,17 @@ class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = ['text']
+        #タイトルにrequired属性を追加
+        widgets = {
+            # TextInput ではなく Textarea を使うのが正解です
+            'text': forms.Textarea(attrs={
+                'required': 'required',
+                'class': 'form-control',
+                'rows': 4,  # 行数で高さを指定
+                'placeholder': 'ここに質問文を入力してください',
+                'autofocus': 'autofocus',
+            }),
+        }
 
 class BaseChoiceFormSet(BaseInlineFormSet):
     def clean(self):
@@ -37,9 +48,12 @@ ChoiceFormSet = inlineformset_factory(
     fields=['text', 'is_correct'],
     extra=4,
     can_delete=True,
-    formset=BaseChoiceFormSet
+    formset=BaseChoiceFormSet,
+    widgets={
+        'text': forms.TextInput(attrs={'class': 'form-control', 'required': 'required'}),
+        'is_correct': forms.CheckboxInput(attrs={'class': 'is-correct-check'}), # requiredを外す
+    }
 )
-
 # 編集用（既存の選択肢のみ表示）
 EditChoiceFormSet = inlineformset_factory(
     Question,
@@ -55,6 +69,17 @@ class ExamForm(forms.ModelForm):
         choices=[],
         required=False,
         label="保存済みから選ぶ")
+    
+    #タイトルにrequired属性を追加
+    title = forms.CharField(
+        label="試験タイトル",
+        widget=forms.TextInput(attrs={'required': 'required'})
+    )
+    #合格基準点にrequired属性を追加
+    passing_score = forms.IntegerField(
+        label="合格基準点",
+        widget=forms.NumberInput(attrs={'required': 'required'})
+    )
 
     class Meta:
         model = Exam
