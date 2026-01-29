@@ -82,10 +82,9 @@
                             </button>
                         </div>
                     </form>
-
                     <!-- B. AIコンテンツ生成（保存済みの場合のみ表示） -->
                     {% if object %}
-                    <div class="mt-5 p-4 border border-primary rounded-4 bg-primary-subtle bg-opacity-10 shadow-sm">
+                    <div id = "ai" class="mt-5 p-4 border border-primary rounded-4 bg-primary-subtle bg-opacity-10 shadow-sm">
                         <div class="d-flex align-items-center mb-3">
                             <span class="fs-4 me-2">✨</span>
                             <h6 class="fw-bold m-0 text-primary">AIコンテンツ作成アシスタント</h6>
@@ -108,6 +107,15 @@
                             {% endif %}
                         </form>
                     </div>
+                    {% else %}
+                    <button type="submit"
+                            form="mainTrainingForm"
+                            name="after_save"
+                            value="ai"
+                            class="btn btn-outline-primary btn-lg py-2 fw-bold rounded-3 mt-2">
+                        ✨ 保存してAIアシスタントを開く
+                    </button>
+
                     {% endif %}
                 </div>
             </div>
