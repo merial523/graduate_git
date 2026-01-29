@@ -23,8 +23,6 @@ class EnrollmentsHistoryView(BaseTemplateMixin, TemplateView):
 
 # --- 検定管理（管理者・モデレーター用） ---
 
-# enrollments/views.py の「検定管理」セクションあたりに追記
-
 class ExamListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
     model = Exam
     template_name = "enrollments/all_enrollments.html"
@@ -360,21 +358,35 @@ class UserExamListView(BaseTemplateMixin, ListView):
     model = Exam
     template_name = "enrollments/exam_list_user.html"
     context_object_name = "exams"
+
     def get_queryset(self):
-        # 削除されておらず、かつ公開中のものだけ表示
-        return Exam.objects.filter(is_deleted=False, is_active=True).order_by('-created_at')
+        # 1. 基本設定：削除されていない、かつ公開中の検定
+        queryset = Exam.objects.filter(is_deleted=False, is_active=True)
+
+        # 2. 【検索機能】キーワード(q)があればタイトルで絞り込み
+        q = self.request.GET.get('q')
+        if q:
+            queryset = queryset.filter(title__icontains=q)
+
+        # 3. 【フィルター機能】タイプ(type)があれば絞り込み
+        exam_type = self.request.GET.get('type')
+        if exam_type in ['main', 'mock']:
+            queryset = queryset.filter(exam_type=exam_type)
+
+        return queryset.order_by('-created_at')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            # 自分が「合格(is_passed=True)」した検定のIDだけを抜き出したリストを作る
-            context['passed_exam_ids'] = UserExamStatus.objects.filter(
+            # 合格済みリストを確実に「数値のリスト」として渡す
+            context['passed_exam_ids'] = list(UserExamStatus.objects.filter(
                 user=self.request.user, 
                 is_passed=True
-            ).values_list('exam_id', flat=True)
+            ).values_list('exam_id', flat=True))
         else:
             context['passed_exam_ids'] = []
         return context
+
 
 class ExamTakeView(BaseTemplateMixin, ContextMixin, View):
     def get(self, request, exam_id):

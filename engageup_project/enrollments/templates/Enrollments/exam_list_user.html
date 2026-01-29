@@ -6,24 +6,44 @@
 {% block content %}
 <div class="user-exam-container pb-5">
     <!-- 1. ヘッダー ＆ 統計 -->
-    <div class="user-welcome-section mb-4">
+    <div class="user-welcome-section mb-4 text-start">
         <h1 class="page-title text-dark m-0 fw-800">検定にチャレンジ</h1>
         <div class="user-stats-mini mt-2 shadow-sm">
-            <span class="stat-item">合格済み：<strong>{{ passed_exam_ids|length }}</strong> 件</span>
+            <span class="stat-item text-muted small">合格済み：<strong class="text-primary">{{ passed_exam_ids|length }}</strong> 件</span>
         </div>
     </div>
 
     <!-- 2. 検索 ＆ フィルターエリア -->
-    <div class="mb-4">
+    <div class="search-filter-section mb-4">
+        <!-- 検索フォーム -->
         <form method="get" action="" id="search-form">
             <div class="search-bar-wrapper mb-3">
                 <span class="material-icons search-icon">search</span>
                 <input type="text" name="q" placeholder="検定名で検索..." value="{{ request.GET.q|default:'' }}" class="search-input shadow-sm">
+                
+                {# ★重要：現在のフィルター状態を維持したまま検索するための隠しフィールド #}
+                {% if request.GET.type %}
+                    <input type="hidden" name="type" value="{{ request.GET.type }}">
+                {% endif %}
+
+                {% if request.GET.q %}
+                    <a href="?type={{ request.GET.type|default:'all' }}" class="clear-icon">
+                        <span class="material-icons">cancel</span>
+                    </a>
+                {% endif %}
             </div>
+
+            <!-- フィルターチップ -->
             <div class="filter-chips">
-                <a href="?type=all{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="chip {% if not request.GET.type or request.GET.type == 'all' %}active{% endif %}">全て</a>
-                <a href="?type=mock{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="chip {% if request.GET.type == 'mock' %}active{% endif %}">仮試験</a>
-                <a href="?type=main{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="chip {% if request.GET.type == 'main' %}active{% endif %}">本試験</a>
+                {# ★重要：現在の検索ワード(q)を維持したままリンクを作成 #}
+                <a href="?type=all{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                   class="chip {% if not request.GET.type or request.GET.type == 'all' %}active{% endif %}">全て</a>
+                
+                <a href="?type=mock{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                   class="chip {% if request.GET.type == 'mock' %}active{% endif %}">仮試験</a>
+                
+                <a href="?type=main{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                   class="chip {% if request.GET.type == 'main' %}active{% endif %}">本試験</a>
             </div>
         </form>
     </div>
@@ -32,106 +52,137 @@
     <div class="exam-list-wrapper">
         {% for exam in exams %}
             
-            {# ★ Python側で計算したフラグでシンプルに分岐 #}
-            {% if exam.is_locked %}
-                <!-- 【パターンA：ロック中（確実に網掛けになります）】 -->
+            {# --- A: ロック中（本試験 且つ 前提が未合格）の判定 --- #}
+            {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
                 <div class="exam-card-mobile is-locked shaded-mask mb-3 shadow-sm">
                     <div class="card-content p-3">
                         <div class="d-flex align-items-start gap-3">
                             <div class="status-icon-box"><span class="material-icons">lock</span></div>
                             <div class="flex-grow-1">
-                                <div class="d-flex align-items-center gap-2 mb-1">
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                     <span class="badge-type type-main">本試験</span>
+                                    {# ★画像なしエラー防止のガード #}
                                     {% if exam.badge and exam.badge.icon %}
                                         <div class="badge-reward-preview"><img src="{{ exam.badge.icon.url }}" alt="badge"></div>
                                     {% endif %}
                                 </div>
-                                <h2 class="exam-title h6 fw-800 mb-1">{{ exam.title }}</h2>
+                                <h2 class="exam-title h6 fw-800 mb-1 text-dark">{{ exam.title }}</h2>
                                 <p class="text-muted extra-small mb-0">先に「{{ exam.prerequisite.title }}」の合格が必要です</p>
                             </div>
                         </div>
-                        <!-- ボタンは網掛けより上に配置 (z-index: 20) -->
-                        <div class="mt-3 pt-3 border-top position-relative" style="z-index: 20;">
-                            <a href="{% url 'enrollments:exam_take' exam.prerequisite_id %}" class="btn btn-sm btn-outline-primary rounded-pill w-100 fw-bold py-2 bg-white">
-                                まずは仮試験を受ける
-                            </a>
-                        </div>
                     </div>
                 </div>
 
-            {% elif exam.is_passed %}
-                <!-- 【パターンB：合格済み】 -->
-                <div class="exam-card-mobile is-passed mb-3 shadow-sm">
-                    <div class="card-content p-3">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="status-icon-box"><span class="material-icons">check_circle</span></div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center gap-2 mb-1">
-                                    <span class="badge-type {% if exam.exam_type == 'mock' %}type-mock{% else %}type-main{% endif %}">{{ exam.get_exam_type_display }}</span>
-                                    <span class="badge-status status-passed">合格済み</span>
-                                </div>
-                                <h2 class="exam-title h6 fw-800 mb-1">{{ exam.title }}</h2>
-                                <div class="text-muted extra-small">{{ exam.questions.count }}問 / 合格済み</div>
-                            </div>
-                        </div>
-                        <div class="mt-3 pt-3 border-top row g-2">
-                            <div class="col-6">
-                                {% if exam.exams_file %}
-                                    <a href="{{ exam.exams_file.url }}" target="_blank" class="btn btn-outline-secondary w-100 rounded-pill py-2 extra-small fw-bold">研修テキスト</a>
-                                {% endif %}
-                            </div>
-                            <div class="col-6">
-                                <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-action-main w-100 rounded-pill py-2 shadow-sm">再挑戦</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+            {# --- B: 合格済み または 受験可能 の判定 --- #}
             {% else %}
-                <!-- 【パターンC：受験可能（通常）】 -->
-                <div class="exam-card-mobile mb-3 shadow-sm">
+                <div class="exam-card-mobile {% if exam.id in passed_exam_ids %}is-passed{% endif %} mb-3 shadow-sm">
                     <div class="card-content p-3">
                         <div class="d-flex align-items-start gap-3">
-                            <div class="status-icon-box"><span class="material-icons">{% if exam.exam_type == 'mock' %}edit_note{% else %}emoji_events{% endif %}</span></div>
+                            <div class="status-icon-box">
+                                <span class="material-icons">
+                                    {% if exam.id in passed_exam_ids %}check_circle{% else %}edit_note{% endif %}
+                                </span>
+                            </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     <span class="badge-type {% if exam.exam_type == 'mock' %}type-mock{% else %}type-main{% endif %}">{{ exam.get_exam_type_display }}</span>
+                                    {# ★ここでも画像なしエラーをガード #}
                                     {% if exam.exam_type == 'main' and exam.badge and exam.badge.icon %}
                                         <div class="badge-reward-preview"><img src="{{ exam.badge.icon.url }}" alt="badge"></div>
                                     {% endif %}
+                                    {% if exam.id in passed_exam_ids %}
+                                        <span class="badge-status status-passed">合格済み</span>
+                                    {% endif %}
                                 </div>
-                                <h2 class="exam-title h6 fw-800 mb-1">{{ exam.title }}</h2>
+                                <h2 class="exam-title h6 fw-800 mb-1 text-dark">{{ exam.title }}</h2>
                                 <div class="text-muted extra-small">{{ exam.questions.count }}問 / {{ exam.passing_score }}点合格</div>
                             </div>
                         </div>
+
+                        <!-- 横並びアクションボタン -->
                         <div class="mt-3 pt-3 border-top row g-2">
                             <div class="col-6">
                                 {% if exam.exams_file %}
-                                    <a href="{{ exam.exams_file.url }}" target="_blank" class="btn btn-outline-secondary w-100 rounded-pill py-2 extra-small fw-bold">研修テキスト</a>
+                                    <a href="{{ exam.exams_file.url }}" target="_blank" class="btn btn-outline-secondary w-100 rounded-pill py-2 extra-small fw-bold d-flex align-items-center justify-content-center">
+                                        <span class="material-icons size-14 me-1">description</span> 研修テキスト
+                                    </a>
                                 {% else %}
                                     <button class="btn btn-outline-light w-100 rounded-pill py-2 text-muted extra-small border" disabled>テキストなし</button>
                                 {% endif %}
                             </div>
                             <div class="col-6">
-                                <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-action-main w-100 rounded-pill py-2 shadow-sm">挑戦する</a>
+                                <button type="button" 
+                                        class="btn btn-action-main w-100 rounded-pill py-2 shadow-sm fw-bold challenge-btn"
+                                        data-exam-title="{{ exam.title }}"
+                                        data-exam-url="{% url 'enrollments:exam_take' exam.id %}"
+                                        data-exam-desc="{{ exam.description|default:'研修テキストの内容をよく理解した上で受験してください。' }}"
+                                        data-exam-score="{{ exam.passing_score }}">
+                                    {% if exam.id in passed_exam_ids %}再挑戦{% else %}挑戦する{% endif %}
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             {% endif %}
-            
+
+        {% empty %}
+            <div class="empty-state text-center py-5 text-muted">
+                <span class="material-icons opacity-25" style="font-size: 64px;">history_edu</span>
+                <p class="mt-3">該当する検定はありません</p>
+            </div>
         {% endfor %}
     </div>
 </div>
 
+<!-- 受験前確認ポップアップモーダル -->
+<div class="modal fade" id="examConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-4">
+                    <span class="material-icons text-primary" style="font-size: 64px;">assignment_late</span>
+                </div>
+                
+                <h5 class="fw-800 mb-2" id="modal-exam-title">検定の確認</h5>
+                <div class="badge bg-soft-blue text-primary mb-3 px-3 py-2 rounded-pill">
+                    合格ライン：<span id="modal-exam-score"></span>点
+                </div>
+
+                <div class="instruction-box text-start p-3 bg-light rounded-4 mb-4">
+                    <h6 class="extra-small fw-bold text-muted mb-2 d-flex align-items-center">
+                        <span class="material-icons size-16 me-1">menu_book</span> 説明・研修テキスト
+                    </h6>
+                    <p class="small mb-0 text-dark" id="modal-exam-desc" style="line-height: 1.6;"></p>
+                </div>
+
+                <div class="alert bg-soft-red text-danger small text-start border-0 rounded-4 mb-4">
+                    <p class="mb-1 fw-bold">【注意事項】</p>
+                    <ul class="ps-3 mb-0">
+                        <li>途中で画面を閉じると無効になります。</li>
+                        <li>制限時間はありませんが、集中して解きましょう。</li>
+                    </ul>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-2 fw-bold border" data-bs-dismiss="modal">戻る</button>
+                    <a href="#" id="modal-start-link" class="btn btn-primary rounded-pill flex-grow-2 py-2 fw-bold px-4 shadow-sm">
+                        試験を開始する
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <style>
-    /* --- 基本設定 --- */
+    /* --- 基本 & 文字 --- */
     .fw-800 { font-weight: 800 !important; }
     .extra-small { font-size: 0.7rem; }
     .size-14 { font-size: 14px; }
     .size-18 { font-size: 18px; }
 
-    /* --- ★網掛け（ロック中）の強力な設定 --- */
+    /* --- ★網掛け（ロック中） --- */
     .shaded-mask {
         position: relative !important;
         overflow: hidden;
@@ -141,7 +192,6 @@
         content: "";
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
-        /* 斜線のデザインを濃く、ハッキリさせる */
         background-image: repeating-linear-gradient(
             135deg,
             rgba(0, 0, 0, 0.08) 0px,
@@ -152,39 +202,71 @@
         pointer-events: none;
         z-index: 10;
     }
-    .is-locked .card-content {
-        filter: grayscale(1);
-        opacity: 0.6;
-    }
+    .is-locked .card-content { filter: grayscale(1); opacity: 0.6; }
 
-    /* --- その他カードデザイン --- */
+    /* --- カード共通デザイン --- */
     .exam-card-mobile { background: #fff; border-radius: 28px; border: 1px solid rgba(0,0,0,0.05); }
     .is-passed { background-color: #f8fcfb; border-color: #e8f5f1; }
     .status-icon-box { width: 50px; height: 50px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: #fdfaf5; color: var(--primary-color); }
     .is-passed .status-icon-box { background: #e8fcf1; color: #2ecc71; }
 
+    /* バッジ報酬表示 */
+    .badge-reward-preview { width: 24px; height: 24px; background: #fff; border-radius: 50%; padding: 3px; border: 1px solid #ffe8df; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .badge-reward-preview img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* バッジタイプ */
     .badge-type { font-size: 0.65rem; padding: 2px 10px; border-radius: 6px; font-weight: 800; color: #fff; }
     .type-mock { background: #5da9e9; }
     .type-main { background: #e86a6a; }
     .badge-status { font-size: 0.65rem; padding: 2px 10px; border-radius: 6px; font-weight: 800; background: #2ecc71; color: #fff; }
-    .badge-reward-preview { width: 24px; height: 24px; background: #fff; border-radius: 50%; padding: 3px; border: 1px solid #ffe8df; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .badge-reward-preview img { width: 100%; height: 100%; object-fit: contain; }
 
-    /* --- ボタン --- */
+    /* ボタン類 */
     .btn-action-main { background-color: var(--primary-color); color: #fff; border: none; }
     .btn-outline-primary { border-color: var(--primary-color); color: var(--primary-color); }
     .btn-outline-secondary { border-color: #ddd; color: #777; background: #fff; }
 
-    /* --- 検索バー ＆ チップ --- */
+    /* 検索 & チップ */
     .search-input { width: 100%; padding: 12px 45px; border: none; background: #fff; border-radius: 50px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); outline: none; }
     .search-bar-wrapper { position: relative; display: flex; align-items: center; }
     .search-icon { position: absolute; left: 15px; color: #aaa; }
     .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
-    .chip { padding: 6px 18px; background: #fff; color: #888; text-decoration: none; border-radius: 50px; font-size: 0.8rem; font-weight: 800; border: 1px solid #f0f0f0; }
+    .chip { padding: 6px 18px; background: #fff; color: #888; text-decoration: none; border-radius: 50px; font-size: 0.8rem; font-weight: 800; border: 1px solid #f0f0f0; white-space: nowrap; }
     .chip.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
     .page-title { font-size: 1.4rem; border-left: 5px solid var(--accent-color); padding-left: 15px; }
-    .user-stats-mini { display: inline-block; background: #fff; padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; }
-    .user-stats-mini strong { color: var(--primary-color); }
+    .user-stats-mini { display: inline-block; background: #fff; padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+
+    /* モーダル内のボタン幅調整 */
+    .flex-grow-2 { flex-grow: 2; }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmModal = new bootstrap.Modal(document.getElementById('examConfirmModal'));
+        const modalTitle = document.getElementById('modal-exam-title');
+        const modalDesc = document.getElementById('modal-exam-desc');
+        const modalScore = document.getElementById('modal-exam-score');
+        const modalLink = document.getElementById('modal-start-link');
+
+        // すべての挑戦ボタンにイベントを設定
+        document.querySelectorAll('.challenge-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // ボタンのdata属性から情報を取得
+                const title = this.getAttribute('data-exam-title');
+                const url = this.getAttribute('data-exam-url');
+                const desc = this.getAttribute('data-exam-desc');
+                const score = this.getAttribute('data-exam-score');
+
+                // モーダルの中身を書き換え
+                modalTitle.innerText = title;
+                modalDesc.innerText = desc;
+                modalScore.innerText = score;
+                modalLink.setAttribute('href', url);
+
+                // モーダルを表示
+                confirmModal.show();
+            });
+        });
+    });
+</script>
 {% endblock %}
