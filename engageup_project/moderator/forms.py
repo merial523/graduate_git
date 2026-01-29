@@ -26,3 +26,27 @@ class NewsForm(forms.ModelForm):
     class Meta:
         model = News
         fields = ["title", "content","is_active", 'is_important']
+
+
+from main.models import Badge # Badgeモデルの名前はプロジェクトに合わせて調整してください
+
+class BadgeForm(forms.ModelForm):
+    name = forms.CharField(
+        label="バッジ名称",
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'required': 'required',
+            'placeholder': 'バッジ名を入力してください'
+        })
+    )
+    # アイコンは画像がない場合もあるため required=False にしていますが、必須なら True にしてください
+    icon = forms.ImageField(
+        label="アイコン画像",
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Badge
+        fields = ['name', 'icon']
