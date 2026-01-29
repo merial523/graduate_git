@@ -43,6 +43,9 @@
                             </label>
                             <div class="custom-input-group">
                                 {{ form.name }}
+                                <div class="invalid-feedback">
+                                    バッジ名称を入力してください。
+                                </div>
                             </div>
                         </div>
 
@@ -110,6 +113,24 @@
 </div>
 
 <style>
+     /* はみ出しを許可してエラーメッセージを見えるようにする */
+    .admin-card, .card-body, .custom-input-group {
+        overflow: visible !important;
+    }
+     /* メッセージを強制的に表示させる設定 */
+    .was-validated .custom-input-group input:invalid ~ .invalid-feedback {
+        display: block !important;
+        color: #dc3545;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        text-align: left;
+    }
+
+    /* バリデーション時の枠線カラー強制適用 */
+    .was-validated .custom-input-group input:invalid {
+        border-color: #dc3545 !important;
+        background-color: #fff8f8;
+    }
     .fw-800 { font-weight: 800 !important; }
     .extra-small { font-size: 0.7rem; }
     .border-dashed { border-style: dashed !important; border-width: 2px !important; border-color: #ddd !important; }
@@ -175,21 +196,35 @@
         const form = document.getElementById('badge-edit-form');
         const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
 
-        // 保存ボタンクリック時のアニメーション演出
         saveBtn.addEventListener('click', function() {
+            // --- 追加：バリデーションチェック ---
+            if (!form.checkValidity()) {
+                // 入力に不備がある場合
+                form.classList.add('was-validated'); // 赤枠とメッセージを表示
+                const firstInvalid = form.querySelector(':invalid');
+                if (firstInvalid) firstInvalid.focus(); // 最初の未入力項目に移動
+                return; // ❌ ここで処理を終了（モーダルは出さない）
+            }
+
+            // --- 入力がOKな場合のみ、モーダルを表示して進む ---
             statusModal.show();
+            
+            document.getElementById('modal-loading').style.display = 'block';
+            document.getElementById('modal-success').style.display = 'none';
+
             // 1.2秒の処理中演出
             setTimeout(() => {
                 document.getElementById('modal-loading').style.display = 'none';
                 document.getElementById('modal-success').style.display = 'block';
-                // 0.8秒の完了表示のあとに実際に送信
+                
+                // 0.8秒の完了表示のあとに送信
                 setTimeout(() => {
                     form.submit();
                 }, 800);
             }, 1200);
         });
 
-        // ファイルが選択された際に左側のサークルプレビューを即座に更新する
+        // 画像プレビューJS（既存のまま）
         const iconInput = document.querySelector('input[type="file"]');
         if (iconInput) {
             iconInput.addEventListener('change', function(e) {
