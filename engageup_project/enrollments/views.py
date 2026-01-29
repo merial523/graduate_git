@@ -23,6 +23,8 @@ class EnrollmentsHistoryView(BaseTemplateMixin, TemplateView):
 
 # --- 検定管理（管理者・モデレーター用） ---
 
+# enrollments/views.py の「検定管理」セクションあたりに追記
+
 class ExamListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
     model = Exam
     template_name = "enrollments/all_enrollments.html"
@@ -60,6 +62,13 @@ class ExamListView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ListView):
         context['current_sort'] = self.request.GET.get('sort', 'newest')
         context['current_type'] = self.request.GET.get('type', 'all')
         context['q'] = self.request.GET.get('q', '')
+        
+        # 権限に応じたベーステンプレートの切り替えロジック
+        if self.request.user.is_authenticated:
+            if self.request.user.rank == 'administer':
+                context['base_template'] = "administer/administer_base.html"
+            else:
+                context['base_template'] = "moderator/moderator_base.html"
         return context
 
 

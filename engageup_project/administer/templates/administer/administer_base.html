@@ -81,8 +81,8 @@
                 </a>
               </nav>
 
-            <a href="{% url 'mail:news_history' %}">お知らせ履歴
-                </a>
+            <!-- <a href="{% url 'mail:news_history' %}">お知らせ履歴
+                </a> -->
               </nav>
           <!-- バッジ管理 -->
           <a class="menu-item {% if 'Badge' in request.path or 'badge' in request.path %}active{% endif %}" href="{% url 'moderator:moderatorBadge' %}">

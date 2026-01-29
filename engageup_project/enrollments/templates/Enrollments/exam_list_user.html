@@ -1,60 +1,190 @@
 {% extends base_template %}
 {% load static %}
+
+{% block title %}検定一覧 | EngageUp{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex align-items-center mb-4 border-bottom pb-3">
-        <i class="bi bi-journal-check fs-2 text-success me-3"></i>
-        <h2 class="h4 mb-0">検定一覧</h2>
-    </div>
-
-    <div class="row g-4">
-        {% for exam in exams %}
-    <div class="exam-item">
-        <strong>{{ exam.title }}</strong> [{{ exam.get_exam_type_display }}]
-        
-        <!-- 合格済みならチェックマークを出す -->
-        {% if exam.id in passed_exam_ids %}
-            <span class="text-success">✅合格済み</span>
-        {% endif %}
-
-        <div class="mt-2">
-            <!-- ★ 受験ボタンの出し分けロジック -->
-            {% if exam.exam_type == 'main' and exam.prerequisite and exam.prerequisite.id not in passed_exam_ids %}
-                <!-- 条件：本試験 且つ 前提試験があり 且つ その前提試験に合格していない場合 -->
-                <button class="btn btn-secondary" disabled style="cursor: not-allowed;">
-                    🔒 ロック中（{{ exam.prerequisite.title }}の合格が必要です）
-                </button>
-            {% else %}
-                <!-- それ以外（仮試験、または前提をクリア済みの本試験）は押せる -->
-                <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-primary">
-                    受験する
-                </a>
-            {% endif %}
+<div class="user-exam-container pb-5">
+    <!-- 1. ヘッダー ＆ 統計 -->
+    <div class="user-welcome-section mb-4">
+        <h1 class="page-title text-dark m-0 fw-800">検定にチャレンジ</h1>
+        <div class="user-stats-mini mt-2 shadow-sm">
+            <span class="stat-item">合格済み：<strong>{{ passed_exam_ids|length }}</strong> 件</span>
         </div>
     </div>
-    <hr>
-{% endfor %}
+
+    <!-- 2. 検索 ＆ フィルターエリア -->
+    <div class="mb-4">
+        <form method="get" action="" id="search-form">
+            <div class="search-bar-wrapper mb-3">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" name="q" placeholder="検定名で検索..." value="{{ request.GET.q|default:'' }}" class="search-input shadow-sm">
+            </div>
+            <div class="filter-chips">
+                <a href="?type=all{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="chip {% if not request.GET.type or request.GET.type == 'all' %}active{% endif %}">全て</a>
+                <a href="?type=mock{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="chip {% if request.GET.type == 'mock' %}active{% endif %}">仮試験</a>
+                <a href="?type=main{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="chip {% if request.GET.type == 'main' %}active{% endif %}">本試験</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. 検定リスト -->
+    <div class="exam-list-wrapper">
+        {% for exam in exams %}
+            
+            {# ★ Python側で計算したフラグでシンプルに分岐 #}
+            {% if exam.is_locked %}
+                <!-- 【パターンA：ロック中（確実に網掛けになります）】 -->
+                <div class="exam-card-mobile is-locked shaded-mask mb-3 shadow-sm">
+                    <div class="card-content p-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="status-icon-box"><span class="material-icons">lock</span></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge-type type-main">本試験</span>
+                                    {% if exam.badge and exam.badge.icon %}
+                                        <div class="badge-reward-preview"><img src="{{ exam.badge.icon.url }}" alt="badge"></div>
+                                    {% endif %}
+                                </div>
+                                <h2 class="exam-title h6 fw-800 mb-1">{{ exam.title }}</h2>
+                                <p class="text-muted extra-small mb-0">先に「{{ exam.prerequisite.title }}」の合格が必要です</p>
+                            </div>
+                        </div>
+                        <!-- ボタンは網掛けより上に配置 (z-index: 20) -->
+                        <div class="mt-3 pt-3 border-top position-relative" style="z-index: 20;">
+                            <a href="{% url 'enrollments:exam_take' exam.prerequisite_id %}" class="btn btn-sm btn-outline-primary rounded-pill w-100 fw-bold py-2 bg-white">
+                                まずは仮試験を受ける
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            {% elif exam.is_passed %}
+                <!-- 【パターンB：合格済み】 -->
+                <div class="exam-card-mobile is-passed mb-3 shadow-sm">
+                    <div class="card-content p-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="status-icon-box"><span class="material-icons">check_circle</span></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge-type {% if exam.exam_type == 'mock' %}type-mock{% else %}type-main{% endif %}">{{ exam.get_exam_type_display }}</span>
+                                    <span class="badge-status status-passed">合格済み</span>
+                                </div>
+                                <h2 class="exam-title h6 fw-800 mb-1">{{ exam.title }}</h2>
+                                <div class="text-muted extra-small">{{ exam.questions.count }}問 / 合格済み</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-top row g-2">
+                            <div class="col-6">
+                                {% if exam.exams_file %}
+                                    <a href="{{ exam.exams_file.url }}" target="_blank" class="btn btn-outline-secondary w-100 rounded-pill py-2 extra-small fw-bold">研修テキスト</a>
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-action-main w-100 rounded-pill py-2 shadow-sm">再挑戦</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+                <!-- 【パターンC：受験可能（通常）】 -->
+                <div class="exam-card-mobile mb-3 shadow-sm">
+                    <div class="card-content p-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="status-icon-box"><span class="material-icons">{% if exam.exam_type == 'mock' %}edit_note{% else %}emoji_events{% endif %}</span></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge-type {% if exam.exam_type == 'mock' %}type-mock{% else %}type-main{% endif %}">{{ exam.get_exam_type_display }}</span>
+                                    {% if exam.exam_type == 'main' and exam.badge and exam.badge.icon %}
+                                        <div class="badge-reward-preview"><img src="{{ exam.badge.icon.url }}" alt="badge"></div>
+                                    {% endif %}
+                                </div>
+                                <h2 class="exam-title h6 fw-800 mb-1">{{ exam.title }}</h2>
+                                <div class="text-muted extra-small">{{ exam.questions.count }}問 / {{ exam.passing_score }}点合格</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-top row g-2">
+                            <div class="col-6">
+                                {% if exam.exams_file %}
+                                    <a href="{{ exam.exams_file.url }}" target="_blank" class="btn btn-outline-secondary w-100 rounded-pill py-2 extra-small fw-bold">研修テキスト</a>
+                                {% else %}
+                                    <button class="btn btn-outline-light w-100 rounded-pill py-2 text-muted extra-small border" disabled>テキストなし</button>
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <a href="{% url 'enrollments:exam_take' exam.id %}" class="btn btn-action-main w-100 rounded-pill py-2 shadow-sm">挑戦する</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+        {% endfor %}
     </div>
 </div>
 
 <style>
-    /* カードのホバー演出 */
-    .card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    /* --- 基本設定 --- */
+    .fw-800 { font-weight: 800 !important; }
+    .extra-small { font-size: 0.7rem; }
+    .size-14 { font-size: 14px; }
+    .size-18 { font-size: 18px; }
+
+    /* --- ★網掛け（ロック中）の強力な設定 --- */
+    .shaded-mask {
+        position: relative !important;
+        overflow: hidden;
+        background-color: #f0f0f0 !important;
     }
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    .shaded-mask::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        /* 斜線のデザインを濃く、ハッキリさせる */
+        background-image: repeating-linear-gradient(
+            135deg,
+            rgba(0, 0, 0, 0.08) 0px,
+            rgba(0, 0, 0, 0.08) 2px,
+            transparent 2px,
+            transparent 12px
+        );
+        pointer-events: none;
+        z-index: 10;
     }
-    
-    /* ボタンの配色をEngageUpグリーンに統一 */
-    .btn-success {
-        background-color: #28a745;
-        border-color: #28a745;
+    .is-locked .card-content {
+        filter: grayscale(1);
+        opacity: 0.6;
     }
-    .btn-success:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-    }
+
+    /* --- その他カードデザイン --- */
+    .exam-card-mobile { background: #fff; border-radius: 28px; border: 1px solid rgba(0,0,0,0.05); }
+    .is-passed { background-color: #f8fcfb; border-color: #e8f5f1; }
+    .status-icon-box { width: 50px; height: 50px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: #fdfaf5; color: var(--primary-color); }
+    .is-passed .status-icon-box { background: #e8fcf1; color: #2ecc71; }
+
+    .badge-type { font-size: 0.65rem; padding: 2px 10px; border-radius: 6px; font-weight: 800; color: #fff; }
+    .type-mock { background: #5da9e9; }
+    .type-main { background: #e86a6a; }
+    .badge-status { font-size: 0.65rem; padding: 2px 10px; border-radius: 6px; font-weight: 800; background: #2ecc71; color: #fff; }
+    .badge-reward-preview { width: 24px; height: 24px; background: #fff; border-radius: 50%; padding: 3px; border: 1px solid #ffe8df; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .badge-reward-preview img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* --- ボタン --- */
+    .btn-action-main { background-color: var(--primary-color); color: #fff; border: none; }
+    .btn-outline-primary { border-color: var(--primary-color); color: var(--primary-color); }
+    .btn-outline-secondary { border-color: #ddd; color: #777; background: #fff; }
+
+    /* --- 検索バー ＆ チップ --- */
+    .search-input { width: 100%; padding: 12px 45px; border: none; background: #fff; border-radius: 50px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); outline: none; }
+    .search-bar-wrapper { position: relative; display: flex; align-items: center; }
+    .search-icon { position: absolute; left: 15px; color: #aaa; }
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+    .chip { padding: 6px 18px; background: #fff; color: #888; text-decoration: none; border-radius: 50px; font-size: 0.8rem; font-weight: 800; border: 1px solid #f0f0f0; }
+    .chip.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+
+    .page-title { font-size: 1.4rem; border-left: 5px solid var(--accent-color); padding-left: 15px; }
+    .user-stats-mini { display: inline-block; background: #fff; padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; }
+    .user-stats-mini strong { color: var(--primary-color); }
 </style>
 {% endblock %}
