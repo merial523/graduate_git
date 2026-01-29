@@ -1,165 +1,192 @@
-/* --- スタイルガイド --- */
+/* --- デザイン変数 --- */
 :root {
-  --primary-color: #76b19d; /* 清潔感のあるグリーン */
-  --accent-color: #e88d6a; /* 温かみのあるオレンジ */
-  --bg-color: #f8f2f2; /* 背景色 */
-  --text-color: #444;
-  --card-bg: #ffffff;
-  --transition-base: 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+  --primary-color: #76b19d;
+  --hover-mint: #cbdad5; /* 画像2枚目のミントグリーン */
+  --accent-red: #e86a6a; /* ログアウト用赤 */
+  --bg-color: #f8f2f2;
+  --text-black: #333333;
+  --white: #ffffff;
+  --transition-studio: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
-  color: var(--text-color);
+  color: var(--text-black);
   background-color: var(--bg-color);
-  font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4",
-    "M PLUS Rounded 1c", sans-serif;
-  min-height: 100vh;
+  font-family: "M PLUS Rounded 1c", sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
-
-  /* --- 背景画像の設定（ねこねこ薬局風スクロール演出） --- */
-  
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  /* これが「背景が動く（または固定されて中身が動く）」ポイントです */
-  background-attachment: fixed;
 }
 
-.font-serif {
-  font-family: "Libre Baskerville", serif;
+/* --- 【左側】ねこねこ薬局風・縦書きナビ --- */
+.side-nav-left {
+  position: fixed;
+  left: 60px;
+  top: 60%;
+  transform: translateY(-50%);
+}
+.side-nav-left a {
+  align-content: center;
+  align-items: center;
+  flex: 1;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  padding: 5px;
+  width: auto;
+  max-width: 100%;
+  writing-mode: vertical-rl; /* 縦書き */
+  text-orientation: upright; /* 文字を立てる */
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2e2726;
+  text-decoration: none;
+  margin: 20px 0;
+  transition:
+    color 0.3s,
+    transform 0.3s;
+}
+/* ホバー時：ミントグリーン */
+.side-nav-left a:hover {
+  color: var(--primary-color);
+  transform: translateY(-5px);
+}
+/* ログアウトのみホバー時に赤 */
+.side-nav-left a.logout-v:hover {
+  color: var(--accent-red);
 }
 
-.center {
+/* --- 【右側】固定QR --- */
+.side-nav-right {
+  position: fixed;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+}
+.qr-box {
+  background: white;
+  padding: 15px;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+}
+.qr-text {
+  font-size: 0.7rem;
+  color: #bbb;
+  margin-top: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* --- メインコンテンツボックス（丸み） --- */
+.center-box {
   width: 100%;
-  min-height: calc(100vh - 48px);
-  background: #ffffff;
-  max-width: 600px; /* ダッシュボード用に少し広めに調整 */
-  margin: 24px auto;
-  border-radius: 32px;
-  box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  min-height: 100vh;
+  background: var(--white);
+  max-width: 600px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  transition: var(--transition-base);
 }
 
-/* ナビゲーション */
-.navbar {
-  background-color: var(--primary-color) !important;
-  padding: 1rem 1.5rem;
+@media (min-width: 992px) {
+  .center-box {
+    margin: 50px auto;
+    min-height: calc(100vh - 100px);
+    border-radius: 60px; /* 大きな丸み */
+    box-shadow: 0 50px 100px -20px rgba(50, 50, 93, 0.15);
+  }
 }
-.navbar-brand {
+
+/* --- ヘッダー --- */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+}
+.logo-font {
   font-family: "Libre Baskerville", serif;
   font-weight: 700;
   font-size: 1.4rem;
-}
-
-/* メニュー */
-.offcanvas {
-  background-color: var(--primary-color) !important;
-  border-radius: 0 32px 32px 0;
-}
-.nav-link {
-  transition: var(--transition-base);
-  padding: 12px 1rem !important;
-  border-radius: 12px;
-  margin-bottom: 4px;
-}
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(5px);
-}
-
-/* --- メインコンテンツ（ダッシュボード） --- */
-main {
-  flex: 1;
-  padding: 2rem 1.5rem !important;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 900;
   color: var(--primary-color);
-  margin-bottom: 1.5rem;
-  position: relative;
-  padding-left: 15px;
-}
-
-.page-title::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 24px;
-  background-color: var(--accent-color);
-  border-radius: 3px;
-}
-
-.dashboard-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* カード共通スタイル */
-a.content-box {
   text-decoration: none;
-  color: inherit;
+}
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+}
+.icon-btn .material-icons {
+  font-size: 30px;
+}
+
+/* --- 【アニメーション改造】Studio.Design風メニュー --- */
+.custom-studio-menu {
+  width: 100% !important;
+  background-color: var(--primary-color) !important;
+  border: none !important;
+  /* 標準の横スライドを上書きしてフェードインに変更 */
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  opacity: 0;
+  transform: translateY(-20px) !important; /* 少し上から降ってくる演出 */
+}
+.custom-studio-menu.show {
+  opacity: 1;
+  transform: translateY(0) !important;
+}
+
+.mobile-nav {
   display: flex;
   flex-direction: column;
-  background-color: var(--card-bg);
-  border-radius: 24px; /* 丸みを強く */
-  padding: 20px;
-  border: 1px solid #f0efef;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  transition: var(--transition-base);
-  cursor: pointer;
+  padding: 10px 20px;
 }
-
-a.content-box:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-  border-color: var(--primary-color);
-}
-
-.content-box h2 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-color);
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 2px dashed #f0f0f0; /* 点線で柔らかい印象に */
+.mobile-nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.4rem;
+  font-weight: 800;
+  padding: 15px 25px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 20px;
+  transition: 0.3s;
+}
+.mobile-nav a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--hover-mint); /* スマホメニュー内でもホバー色を適用 */
+}
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 15px 20px;
+}
+.logout-btn {
+  color: var(--accent-red) !important;
 }
 
-.box-placeholder {
-  color: #aaa;
-  font-size: 0.9rem;
-  font-style: italic;
-  padding: 10px 0;
+/* --- コンテンツエリア --- */
+.main-content-area {
+  flex: 1 0 auto;
+  padding: 20px 40px;
 }
 
-/* フッター */
-footer {
-  background-color: #fafafa !important;
-  color: #bbb !important;
-  font-size: 0.8rem;
-  border-top: 1px solid #f0f0f0;
+/* --- フッター --- */
+.app-footer {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 40px 20px;
+  color: #ccc;
 }
-
-/* レスポンシブ調整（PC時のみ2カラムにする場合） */
-@media (min-width: 992px) {
-  /* 今回はcenter幅が560px〜600px固定のため、基本は1カラムが綺麗です */
-}
-
-@media (max-width: 576px) {
-  .center {
-    margin: 0;
-    border-radius: 0;
-  }
+.footer-dot-line {
+  width: 4px;
+  height: 4px;
+  background: #ddd;
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  box-shadow:
+    10px 0 0 #ddd,
+    -10px 0 0 #ddd;
 }
