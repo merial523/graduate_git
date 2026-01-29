@@ -6,7 +6,6 @@
     <div class="row justify-content-center">
         <div class="col-md-9 col-lg-8">
             <div class="card shadow-sm mt-4 border-0 rounded-4">
-                <!-- 1. ヘッダー -->
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h2 class="h5 mb-0 text-dark fw-bold">
                         <i class="bi bi-play-circle-fill me-2 text-primary"></i>
@@ -16,8 +15,8 @@
                 </div>
 
                 <div class="card-body p-4">
-                    <!-- A. 通常の保存フォーム -->
-                    <form method="post" enctype="multipart/form-data">
+                    <!-- A. 保存フォーム（novalidateを追加） -->
+                    <form method="post" enctype="multipart/form-data" id="mainTrainingForm" class="needs-validation" novalidate>
                         {% csrf_token %}
 
                         {% if form.errors %}
@@ -25,9 +24,21 @@
                         {% endif %}
 
                         <div class="form-container">
+                            <!-- 研修タイトル（必須項目） -->
                             <div class="mb-4">
-                                <label class="form-label fw-bold small text-secondary">研修タイトル</label>
+                                <label class="form-label fw-bold small text-secondary">
+                                    研修タイトル <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">必須</span>
+                                </label>
                                 {{ form.title }}
+                                <!-- Bootstrapバリデーション用メッセージ -->
+                                <div class="invalid-feedback">
+                                    研修タイトルを入力してください。
+                                </div>
+                                {% if form.title.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
 
                             <!-- 動画 -->
@@ -36,7 +47,7 @@
                                 {{ form.video }}
                             </div>
 
-                            <!-- 教材（検定との共通） -->
+                            <!-- 教材 -->
                             <div class="mb-4 p-3 rounded-3 border border-primary-subtle bg-primary-subtle bg-opacity-10">
                                 <label class="form-label fw-bold text-primary small">📖 教材資料 (AI要約の元データ)</label>
                                 <div class="mb-3">
@@ -57,7 +68,7 @@
                                 </div>
                             </div>
 
-                            <!-- 研修テキスト：AIの結果がここに書き込まれます -->
+                            <!-- 研修テキスト -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">研修テキスト</label>
                                 {{ form.content_text }}
@@ -72,39 +83,32 @@
                         </div>
                     </form>
 
-                    <!-- B. AIコンテンツ生成セクション（保存済みの場合のみ表示） -->
+                    <!-- B. AIコンテンツ生成（保存済みの場合のみ表示） -->
                     {% if object %}
                     <div class="mt-5 p-4 border border-primary rounded-4 bg-primary-subtle bg-opacity-10 shadow-sm">
                         <div class="d-flex align-items-center mb-3">
                             <span class="fs-4 me-2">✨</span>
                             <h6 class="fw-bold m-0 text-primary">AIコンテンツ作成アシスタント</h6>
                         </div>
-                        
-                        <p class="small text-muted mb-3">
-                            教材PDFを元に、最適な「要約テキスト」と「復習用例題」を自動生成します。
-                        </p>
+                        <p class="small text-muted mb-3">教材PDFを元に「要約」と「復習用例題」を生成します。</p>
 
                         <form action="{% url 'courses:ai_full_generate' object.id %}" method="post" id="ai-gen-form">
                             {% csrf_token %}
-                            
                             <div class="mb-3">
                                 <label class="small fw-bold text-dark mb-1">AIへのこだわり指示（任意）</label>
                                 <textarea name="user_instruction" class="form-control form-control-sm border-primary-subtle" 
-                                          rows="2" placeholder="例：新入社員向けに優しく、重要な箇所は箇条書きを多めにしてください。"></textarea>
+                                          rows="2" placeholder="例：箇条書きを多めにしてください。"></textarea>
                             </div>
-
                             <button type="submit" id="ai-generate-btn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" 
                                     {% if not object.training_file %}disabled{% endif %}>
                                 AIに要約と例題をまるごとおまかせで作らせる
                             </button>
-                            
                             {% if not object.training_file %}
                                 <small class="text-danger mt-2 d-block text-center">※先に教材資料を保存してください。</small>
                             {% endif %}
                         </form>
                     </div>
                     {% endif %}
-
                 </div>
             </div>
         </div>
@@ -112,7 +116,11 @@
 </div>
 
 <style>
-    /* フォーム共通スタイル */
+    /* はみ出しを許可してエラーメッセージを見えるようにする */
+    .card, .card-body, .form-container {
+        overflow: visible !important;
+    }
+
     .form-container input:not([type="checkbox"]), 
     .form-container select, 
     .form-container textarea {
@@ -120,17 +128,25 @@
         border: 1px solid #ced4da; border-radius: 0.5rem; background-color: #fff;
     }
     textarea { height: 150px; }
-    
-    /* AI用テキストエリアは少し小さく */
     #ai-gen-form textarea { height: 80px; }
 </style>
 
 <script>
-    // AI生成中にボタンを「考え中」にする
+    // メインフォームのバリデーション
+    const mainForm = document.getElementById('mainTrainingForm');
+    mainForm.addEventListener('submit', function (event) {
+        if (!mainForm.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        mainForm.classList.add('was-validated');
+    }, false);
+
+    // AI生成ボタンの状態管理
     document.getElementById('ai-gen-form')?.addEventListener('submit', function() {
         const btn = document.getElementById('ai-generate-btn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>AIが資料を読み込んで作成中...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>作成中...';
     });
 </script>
 {% endblock %}

@@ -17,6 +17,17 @@ class CourseForm(forms.ModelForm):
 
 # 2. 研修モジュール（動画・テキスト）作成・編集用
 class TrainingModuleForm(forms.ModelForm):
+    # タイトルを明示的に定義（必須バリデーションを確実に有効化）
+    title = forms.CharField(
+        label="研修モジュールタイトル",
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'required': 'required',
+            'placeholder': '研修のタイトルを入力してください'
+        })
+    )
+    
     existing_file = forms.ChoiceField(
         choices=[], 
         required=False, 
@@ -27,9 +38,7 @@ class TrainingModuleForm(forms.ModelForm):
     class Meta:
         model = TrainingModule
         fields = ["title", "video", "training_file", "content_text", "estimated_time"]
-        
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
             'video': forms.FileInput(attrs={'class': 'form-control'}),
             'training_file': forms.FileInput(attrs={'class': 'form-control'}), 
             'content_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
@@ -38,15 +47,12 @@ class TrainingModuleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 検定(exams_files)フォルダから過去のPDFリストを取得してセット
         library_path = os.path.join(settings.MEDIA_ROOT, 'exams_files')
         file_choices = [('', '--- 新しくアップロードする ---')]
-        
         if os.path.exists(library_path):
             files = [f for f in os.listdir(library_path) if f.endswith(('.pdf', '.jpg', '.jpeg', '.png'))]
             for f in files:
                 file_choices.append((f, f))
-        
         self.fields['existing_file'].choices = file_choices
 
 # 3. 研修内の「例題」作成用
