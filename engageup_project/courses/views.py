@@ -167,12 +167,19 @@ class CourseUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateV
 # =====================================================
 # 2. 研修モジュール管理 (管理者用)
 # =====================================================
+from django.shortcuts import redirect, get_object_or_404, render
+from django.urls import reverse
 
-class TrainingModuleCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, ContextMixin, View):
+class TrainingModuleCreateView(
+    AdminOrModeratorRequiredMixin,
+    BaseTemplateMixin,
+    ContextMixin,
+    View
+):
     def get(self, request, course_id):
         course = get_object_or_404(Course, pk=course_id)
         context = self.get_context_data(
-            course=course, 
+            course=course,
             form=TrainingModuleForm(),
             base_template=self.get_base_template()
         )
@@ -181,16 +188,33 @@ class TrainingModuleCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin,
     def post(self, request, course_id):
         course = get_object_or_404(Course, pk=course_id)
         form = TrainingModuleForm(request.POST, request.FILES)
+
         if form.is_valid():
             module = form.save(commit=False)
             module.course = course
-            module.is_active = True # 初期値
+            module.is_active = True
+
             existing = form.cleaned_data.get('existing_file')
             if existing and not request.FILES.get('training_file'):
                 module.training_file.name = f"exams_files/{existing}"
+
             module.save()
+
+            # 🔽 ここが追加ポイント
+            if request.POST.get("after_save") == "ai":
+                return redirect(
+                    reverse("courses:module_edit", args=[module.pk]) + "#ai"
+                )
+
+
+            # 通常保存
             return redirect('courses:courses_list')
-        return render(request, 'courses/mo_module_form.html', self.get_context_data(course=course, form=form))
+
+        return render(
+            request,
+            'courses/mo_module_form.html',
+            self.get_context_data(course=course, form=form)
+        )
 
 class TrainingModuleUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
     model = TrainingModule

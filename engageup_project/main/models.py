@@ -3,7 +3,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 import random
 
-
 def random_num():
     """
     会員番号を生成
@@ -204,6 +203,26 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
 
         return self._create_user(username, password, **extra_fields)
+# =========================
+# お知らせ
+# =========================
+from django.db import models
+from django.conf import settings
+
+class News(models.Model):
+    title = models.CharField(max_length=200, verbose_name="タイトル")
+    content = models.TextField(verbose_name="内容")
+    is_active = models.BooleanField(default=True, verbose_name="公開状態")
+    
+    # ★追加フィールド
+    is_important = models.BooleanField(default=False, verbose_name="重要")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="作成者")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+
+    def __str__(self):
+        return self.title
 
 
 # =========================
@@ -240,7 +259,12 @@ class User(AbstractUser):       #名前、ランク、会員番号、メール�
         verbose_name="メールアドレス",
         unique=True
     )
-
+    mylist = models.ManyToManyField(
+        News,
+        through="Mylist",
+        related_name = "mylist_users",
+        blank = True,
+    )
     is_password_encrypted = models.BooleanField(
         default=False,
         verbose_name="パスワード暗号化フラグ"
@@ -268,8 +292,6 @@ class User(AbstractUser):       #名前、ランク、会員番号、メール�
 
     def __str__(self):
         return self.username
-
-
 # =========================
 # バッジ
 # =========================
@@ -406,26 +428,6 @@ class Choice(models.Model):
         return self.text
 
 
-# =========================
-# お知らせ
-# =========================
-from django.db import models
-from django.conf import settings
-
-class News(models.Model):
-    title = models.CharField(max_length=200, verbose_name="タイトル")
-    content = models.TextField(verbose_name="内容")
-    is_active = models.BooleanField(default=True, verbose_name="公開状態")
-    
-    # ★追加フィールド
-    is_important = models.BooleanField(default=False, verbose_name="重要")
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="作成者")
-    
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
-
-    def __str__(self):
-        return self.title
 
 
 # =========================
@@ -456,3 +458,30 @@ class UserExamStatus(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.exam.title} ({'合格' if self.is_passed else '未'})"
+
+
+# =========================
+# マイリスト(中間テーブル)
+# =========================
+class Mylist(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="mylist_items"  # ← 追加
+    )
+    news = models.ForeignKey(
+        News,
+        on_delete=models.CASCADE,
+        related_name="mylist_items"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "news"],
+                name="unique_mylist"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.news.title}"
