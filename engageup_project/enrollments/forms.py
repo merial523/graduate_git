@@ -83,7 +83,7 @@ class ExamForm(forms.ModelForm):
 
     class Meta:
         model = Exam
-        fields = ["title", "description", "passing_score", "exams_file", "exam_type", "prerequisite"]
+        fields = ["title", "description", "passing_score", 'time_limit', "exams_file", "exam_type", "prerequisite"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,6 +97,22 @@ class ExamForm(forms.ModelForm):
 
         file_choices = [('', '--- 選択してください ---')] + [(f, f) for f in files]
         self.fields['exam_file'].choices = file_choices
+
+        # デザインをねこねこ薬局風にするための設定
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': '例：2024年度 新人研修テスト'}),
+            'passing_score': forms.NumberInput(attrs={'min': 0, 'max': 100}),
+            
+            # ★ 制限時間のウィジェット設定
+            'time_limit': forms.NumberInput(attrs={
+                'min': 0, 
+                'placeholder': '30',
+                'class': 'form-control' # CSS側でスタイルを当てやすくするため
+            }),
+            
+            'description': forms.Textarea(attrs={'rows': 5}),
+            'exam_type': forms.Select(),
+        }
 
     
 

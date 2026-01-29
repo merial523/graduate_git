@@ -1,16 +1,19 @@
 {% extends base_template %}
 {% load static %}
 
+{% block title %}検定作成・編集 | EngageUp{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'enrollments:exam_list' %}" class="text-decoration-none">検定管理</a></li>
-<li class="breadcrumb-item active">新規検定作成</li>
+<li class="breadcrumb-item active">{% if form.instance.pk %}検定の編集{% else %}新規検定作成{% endif %}</li>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid pb-5 px-md-5">
     <!-- タイトルエリア -->
     <div class="mb-4 text-start">
-        <h1 class="fw-800 text-dark m-0 fw-bold">新規検定作成</h1>
+        <h1 class="fw-800 text-dark m-0 fw-bold">{% if form.instance.pk %}検定の編集{% else %}新規検定作成{% endif %}</h1>
+        <p class="text-muted small">受講者が受験する検定の基本ルールと教材を設定します。</p>
     </div>
 
     <form method="POST" enctype="multipart/form-data" id="exam-form">
@@ -18,7 +21,7 @@
         <div class="row g-4">
             
             <!-- 左カラム：基本設定 -->
-            <div class="col-lg-6">
+            <div class="col-lg-7">
                 <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 h-100">
                     <div class="d-flex align-items-center mb-4">
                         <span class="material-icons text-primary me-2">settings</span>
@@ -32,32 +35,43 @@
                             <span class="badge-required ms-2">必須</span>
                         </label>
                         {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger extra-small mt-1">{{ form.title.errors }}</div>{% endif %}
                     </div>
 
-                    <div class="row">
+                    <div class="row g-3">
                         <!-- 試験タイプ -->
-                        <div class="col-sm-6 mb-4">
-                            <label class="form-label fw-bold text-dark">
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold text-dark small">
                                 試験タイプ
-                                <span class="badge-required ms-2">必須</span>
+                                <span class="badge-required ms-1">必須</span>
                             </label>
                             {{ form.exam_type }}
                         </div>
 
                         <!-- 合格基準点 -->
                         <div class="col-sm-6 mb-4">
-                            <label class="form-label fw-bold text-dark">
-                                合格基準点（％）<br>
-                                <span class="badge-required ms-2">必須</span>
+                            <label class="form-label fw-bold text-dark small">
+                                合格基準点（％）
+                                <span class="badge-required ms-1">必須</span>
                             </label>
                             {{ form.passing_score }}
+                        </div>
+
+                        <!-- ★追加：制限時間の設定 -->
+                        <div class="col-sm-6 mb-4">
+                            <label class="form-label fw-bold text-dark small">
+                                制限時間（分）
+                                <span class="badge-required ms-1">必須</span>
+                            </label>
+                            {{ form.time_limit }}
+                            <div class="form-text extra-small">※0で無制限</div>
                         </div>
                     </div>
 
                     <!-- 前提となる仮試験（本試験の時だけ動的に表示） -->
-                    <div id="prerequisite-section" class="mt-2" style="display: none;">
+                    <div id="prerequisite-section" class="mt-2">
                         <div class="p-3 rounded-4 bg-light-blue border-blue">
-                            <label class="form-label fw-bold text-dark d-flex align-items-center">
+                            <label class="form-label fw-bold text-dark d-flex align-items-center small">
                                 <span class="material-icons size-18 me-1 text-primary">link</span>
                                 前提となる仮試験(推奨)
                             </label>
@@ -69,7 +83,7 @@
             </div>
 
             <!-- 右カラム：教材 ＆ 説明 -->
-            <div class="col-lg-6">
+            <div class="col-lg-5">
                 <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 h-100">
                     <div class="d-flex align-items-center mb-4">
                         <span class="material-icons text-primary me-2">auto_stories</span>
@@ -80,26 +94,26 @@
                     <div class="resource-card rounded-4 p-3 mb-4">
                         <label class="form-label fw-bold small d-block mb-3">教材ファイルの設定</label>
                         
-                        <div class="row align-items-center">
-                            <div class="col-md-12 mb-2 mb-md-0">
-                                <div class="extra-small text-muted mb-1">新規アップロード</div>
+                        <div class="mb-3">
+                            <div class="extra-small text-muted mb-1 fw-bold">新規アップロード</div>
+                            <div class="bg-white p-2 rounded-3 border">
                                 {{ form.exams_file }}
                             </div>
-                            <div class="col-md-2 text-center opacity-25 fw-bold extra-small">
-                                OR
-                            </div>
-                            <div class="col-md-12">
-                                <div class="extra-small text-muted mb-1">過去のファイルから選ぶ</div>
-                                {{ form.exam_file }}
-                            </div>
+                        </div>
+                        
+                        <div class="text-center opacity-25 fw-bold extra-small mb-3">--- OR ---</div>
+                        
+                        <div>
+                            <div class="extra-small text-muted mb-1 fw-bold">過去のファイルから再利用</div>
+                            {{ form.exam_file }}
                         </div>
                     </div>
 
                     <!-- 説明文 -->
                     <div class="mb-0">
-                        <label class="form-label fw-bold text-dark">説明・研修テキスト</label>
+                        <label class="form-label fw-bold text-dark small">説明・研修テキスト</label>
                         {{ form.description }}
-                        <div class="form-text extra-small mt-2">受講者に向けた検定の概要や注意事項を記入してください。</div>
+                        <div class="form-text extra-small mt-2">受験前のポップアップに表示される注意事項や説明文です。</div>
                     </div>
                 </div>
             </div>
@@ -107,8 +121,8 @@
             <!-- 下部：操作ボタン -->
             <div class="col-12 mt-4 text-center">
                 <div class="d-flex flex-column align-items-center">
-                    <button type="submit" class="btn btn-primary btn-rounded-cute px-5 py-3 fw-800 shadow-sm mb-3" style="min-width: 300px;">
-                        検定を登録して次へ
+                    <button type="submit" class="btn btn-primary btn-rounded-cute px-5 py-3 fw-800 shadow-sm mb-3" style="min-width: 320px;">
+                        {% if form.instance.pk %}設定を更新して問題管理へ{% else %}検定を登録して問題作成へ{% endif %}
                         <span class="material-icons align-middle ms-2">arrow_forward</span>
                     </button>
                     <a href="{% url 'enrollments:exam_list' %}" class="btn btn-link text-muted text-decoration-none fw-bold small">
@@ -125,15 +139,14 @@
     .extra-small { font-size: 0.72rem; }
     .size-18 { font-size: 18px; }
 
-    /* 必須ラベルを赤に統一 */
+    /* 必須ラベル */
     .badge-required {
         background-color: #ff7675;
         color: white;
         font-size: 0.62rem;
-        padding: 2px 8px;
+        padding: 2px 6px;
         border-radius: 4px;
         font-weight: bold;
-        vertical-align: middle;
     }
 
     /* 共通フォームパーツ */
@@ -148,6 +161,7 @@
         background-color: #fdfdfd;
         transition: all 0.25s ease;
         font-size: 0.92rem;
+        color: #444;
     }
 
     input:focus, select:focus, textarea:focus {
@@ -157,18 +171,12 @@
         box-shadow: 0 5px 15px rgba(118, 177, 157, 0.1);
     }
 
-    textarea { height: 160px; resize: none; }
+    textarea { height: 180px; resize: none; }
 
     /* 教材セクション */
     .resource-card {
         background-color: #f8faf9;
         border: 2px dashed #e2e8e5;
-    }
-
-    /* ファイル選択のデザイン */
-    input[type="file"] {
-        font-size: 0.8rem;
-        color: #777;
     }
 
     /* 本試験用アクセント（青系） */
@@ -190,7 +198,6 @@
         box-shadow: 0 10px 20px rgba(118, 177, 157, 0.2) !important;
     }
 
-    /* カードデザイン */
     .admin-card { border-radius: 2.5rem !important; }
 </style>
 
@@ -200,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const prereqSection = document.getElementById('prerequisite-section');
 
     function togglePrereq() {
-        // 本試験 (main) の時だけ前提条件を表示
         if (examTypeSelect.value === 'main') {
             prereqSection.style.display = 'block';
             prereqSection.style.animation = 'slideIn 0.3s ease-out forwards';

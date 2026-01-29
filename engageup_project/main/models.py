@@ -309,7 +309,7 @@ class Exam(models.Model):
 
     title = models.CharField(
         verbose_name="検定名",
-        max_length=100
+        max_length=200
     )
     exams_file = models.FileField(
         verbose_name="教材ファイル",
@@ -351,9 +351,17 @@ class Exam(models.Model):
         related_name="next_exams",
         verbose_name="前提となる仮試験"
     )
+    time_limit = models.PositiveIntegerField(
+        default=30, 
+        verbose_name="制限時間（分）",
+        help_text="0を入力すると無制限になります"
+    )
 
     def __str__(self):
         return f"[{self.get_exam_type_display()}] {self.title}"
+
+    def __str__(self):
+        return self.title
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None

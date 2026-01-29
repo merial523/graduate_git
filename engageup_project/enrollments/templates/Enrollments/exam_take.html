@@ -1,70 +1,255 @@
 {% extends base_template %}
 {% load static %}
 
+{% block title %}{{ exam.title }} | 受験中{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <!-- 検定タイトル -->
-    <div class="mb-5 border-bottom pb-3">
-        <h2 class="fw-bold">📝 {{ exam.title }}</h2>
-        <p class="text-muted">{{ exam.description|default:"検定の説明はありません。" }}</p>
-    </div>
+<!-- 試験中専用レイアウト：サイドバーやヘッダーを物理的に隠す -->
+<style>
+    /* 没入感を出すため、ベーステンプレートの要素を隠す */
+    .sidebar, .main-header, .app-header, .side-nav-left, .side-nav-right { display: none !important; }
+    .main-content, .center-box-sd, .center { margin: 0 !important; max-width: 100% !important; border-radius: 0 !important; width: 100vw !important; height: 100vh !important; }
+    body { background-color: #f4f7f6 !important; overflow: hidden; } /* 背景を試験専用に */
 
-    <!-- 解答フォーム -->
-    <form method="post" action="{% url 'enrollments:exam_grade' exam.id %}">
+    /* CBT専用スタイル */
+    .cbt-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        background: #fff;
+    }
+    .cbt-header {
+        background: #2d3436;
+        color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .cbt-timer {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        background: #e17055;
+        padding: 5px 15px;
+        border-radius: 8px;
+    }
+    .cbt-main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 40px 20px;
+    }
+    .question-card {
+        max-width: 800px;
+        margin: 0 auto;
+        display: none; /* JSで一つずつ表示 */
+    }
+    .question-card.active { display: block; animation: fadeIn 0.3s ease; }
+    
+    .choice-label {
+        display: block;
+        padding: 20px;
+        margin-bottom: 12px;
+        background: #f8f9fa;
+        border: 2px solid #eee;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+    .choice-input:checked + .choice-label {
+        border-color: var(--primary-color);
+        background-color: #f0f7f5;
+        color: var(--primary-color);
+    }
+    .cbt-footer {
+        background: #f8f9fa;
+        padding: 20px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+    }
+    .progress-dots { display: flex; gap: 5px; align-items: center; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; }
+    .dot.active { background: var(--primary-color); }
+    .dot.answered { background: #636e72; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* 不正防止：テキスト選択不可 */
+    .no-select {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+</style>
+
+<div class="cbt-container no-select">
+    <!-- ヘッダー：試験名とタイマー -->
+    <header class="cbt-header shadow-sm">
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-light text-dark rounded-pill">受験中</span>
+            <h5 class="m-0 fw-bold small text-truncate" style="max-width: 200px;">{{ exam.title }}</h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="material-icons size-18">timer</span>
+            <div class="cbt-timer" id="timer">00:00</div>
+        </div>
+    </header>
+
+    <!-- メイン：問題エリア -->
+    <form id="exam-form" method="post" action="{% url 'enrollments:exam_grade' exam.id %}">
         {% csrf_token %}
-        
-        {% for q in questions %}
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body p-4">
-                <!-- 問題文 -->
-                <h5 class="fw-bold mb-4">問{{ forloop.counter }}. {{ q.text }}</h5>
+        <div class="cbt-main">
+            {% for q in questions %}
+            <div class="question-card" id="q-{{ forloop.counter }}" data-index="{{ forloop.counter }}">
+                <div class="mb-4">
+                    <span class="text-primary fw-bold">第 {{ forloop.counter }} 問 / 全 {{ questions|length }} 問</span>
+                    <h4 class="fw-800 mt-2">{{ q.text }}</h4>
+                </div>
 
-                <!-- 選択肢エリア（標準のラジオボタン） -->
-                <div class="ps-3">
+                <div class="choices-list">
                     {% for choice in q.choices.all %}
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" 
+                    <div class="choice-item">
+                        <input type="radio" class="choice-input d-none" 
                                name="question_{{ q.id }}" 
                                id="choice_{{ choice.id }}" 
-                               value="{{ choice.id }}" required>
-                        <label class="form-check-label ms-2" for="choice_{{ choice.id }}" style="cursor: pointer;">
-                            {{ choice.text }}
+                               value="{{ choice.id }}"
+                               onchange="markAnswered({{ forloop.parentloop.counter }})">
+                        <label class="choice-label" for="choice_{{ choice.id }}">
+                            <span class="me-2 fw-bold text-muted">{{ forloop.counter|yesno:"A,B,C,D,E" }}.</span> {{ choice.text }}
                         </label>
                     </div>
                     {% endfor %}
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
 
-        <!-- 送信ボタン -->
-        <div class="text-center py-5">
-            <button type="submit" class="btn btn-primary btn-lg px-5">
-                解答を送信して採点する
-            </button>
-            <div class="mt-3">
-                <a href="{% url 'enrollments:exam_list_user' %}" class="text-muted">一覧に戻る</a>
+        <!-- フッター：ナビゲーション -->
+        <footer class="cbt-footer">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-light rounded-pill px-4 border" id="prev-btn" onclick="prevQuestion()" disabled>
+                    <span class="material-icons align-middle">chevron_left</span> 戻る
+                </button>
             </div>
-        </div>
+
+            <div class="progress-dots d-none d-md-flex">
+                {% for q in questions %}<div class="dot" id="dot-{{ forloop.counter }}"></div>{% endfor %}
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="next-btn" onclick="nextQuestion()">
+                    次へ <span class="material-icons align-middle">chevron_right</span>
+                </button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm d-none" id="finish-btn" onclick="confirmSubmit()">
+                    試験を終了する
+                </button>
+            </div>
+        </footer>
     </form>
 </div>
 
-<style>
-    /* ラジオボタンを少しだけ大きく、押しやすくする調整 */
-    .form-check-input {
-        width: 1.2em;
-        height: 1.2em;
-        margin-top: 0.2em;
-        cursor: pointer;
+<!-- 終了確認モーダル -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-5 p-3 text-center">
+            <h5 class="fw-800 mt-3">試験を終了しますか？</h5>
+            <p class="text-muted small">送信後は解答の修正ができません。</p>
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-success rounded-pill py-2 fw-bold" onclick="forceSubmit()">解答を送信する</button>
+                <button type="button" class="btn btn-light rounded-pill py-2" data-bs-dismiss="modal">まだ続ける</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentIdx = 1;
+    const totalQuestions = {{ questions|length }};
+    const examForm = document.getElementById('exam-form');
+    
+    // 1. 制限時間の設定 (views.pyから秒単位で渡す想定、なければ30分)
+    let timeLeft = {{ exam.time_limit|default:30 }} * 60;
+
+    function startTimer() {
+        const timerEl = document.getElementById('timer');
+        const interval = setInterval(() => {
+            let mins = Math.floor(timeLeft / 60);
+            let secs = timeLeft % 60;
+            timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            
+            if (timeLeft <= 60) timerEl.parentElement.style.background = "#d63031"; // 残り1分で赤く
+            
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                alert("制限時間終了です。自動的に解答を送信します。");
+                forceSubmit();
+            }
+            timeLeft--;
+        }, 1000);
     }
-    .form-check-label {
-        cursor: pointer;
-        font-size: 1.05rem;
+
+    // 2. ナビゲーション
+    function showQuestion(idx) {
+        document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+        document.getElementById(`q-${idx}`).classList.add('active');
+        
+        // ドットの更新
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+        document.getElementById(`dot-${idx}`).classList.add('active');
+
+        // ボタンの制御
+        document.getElementById('prev-btn').disabled = (idx === 1);
+        if (idx === totalQuestions) {
+            document.getElementById('next-btn').classList.add('d-none');
+            document.getElementById('finish-btn').classList.remove('d-none');
+        } else {
+            document.getElementById('next-btn').classList.remove('d-none');
+            document.getElementById('finish-btn').classList.add('d-none');
+        }
     }
-    /* 問題カードの枠を少し柔らかく */
-    .card {
-        border-radius: 10px;
-        border: 1px solid #eee;
+
+    function nextQuestion() { if (currentIdx < totalQuestions) { currentIdx++; showQuestion(currentIdx); } }
+    function prevQuestion() { if (currentIdx > 1) { currentIdx--; showQuestion(currentIdx); } }
+    
+    function markAnswered(idx) {
+        document.getElementById(`dot-${idx}`).classList.add('answered');
     }
-</style>
+
+    function confirmSubmit() {
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    }
+
+    function forceSubmit() {
+        window.onbeforeunload = null; // 警告を解除
+        examForm.submit();
+    }
+
+    // 3. 不正防止・警告
+    window.onbeforeunload = function() {
+        return "試験を終了せずにページを離れると、解答が保存されない可能性があります。";
+    };
+
+    // 右クリック禁止
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    
+    // コピー禁止
+    document.addEventListener('copy', event => event.preventDefault());
+
+    // 画面切り替え（タブ変更）検知
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            console.warn("タブを離れました");
+            // 必要に応じてここにペナルティロジックを追加
+        }
+    });
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+        showQuestion(1);
+        startTimer();
+    });
+</script>
 {% endblock %}
