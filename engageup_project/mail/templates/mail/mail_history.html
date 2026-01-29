@@ -1,0 +1,28 @@
+{% extends base_template %}
+
+
+{% load static %}
+{% block content %}
+<table border="1">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>ユーザー名</th>
+      <th>メール</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for news in news_list %}
+      <tr>
+        <td>{{ news.created_at }}</td>
+        <td>{{ news.author }}</td>
+        <td>{{ news.title }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="3">データがありません</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

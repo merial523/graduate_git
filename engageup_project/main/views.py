@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView
 from common.views import BaseTemplateMixin
+
 class IndexView(BaseTemplateMixin,TemplateView):
 
     def get_template_names(self):
@@ -16,3 +17,4 @@ class IndexView(BaseTemplateMixin,TemplateView):
                 return ["visitor/visitor_index.html"]
 
         return ["main/a.html"]
+

@@ -66,6 +66,7 @@
         <span class="menu-text">検定管理</span>
       </a>
       
+      
       <!-- コース一覧: URLに 'courses' が含まれるとき -->
       <a class="menu-item {% if 'courses' in request.path %}active{% endif %}" 
          href="{% url 'courses:courses_list' %}">
@@ -82,9 +83,13 @@
     
     <!-- お知らせ投稿: URLに 'News' または 'news' が含まれるとき -->
     <a class="menu-item {% if 'News' in request.path or 'news' in request.path %}active{% endif %}" 
-    href="{% url 'moderator:news_list' %}">
+    href="{% url 'mail:news_create' %}">
     <span class="material-icons">campaign</span>
     <span class="menu-text">お知らせ投稿</span>
+          </a>
+        </nav>
+
+      <a href="{% url 'mail:news_history' %}">お知らせ履歴
           </a>
         </nav>
 

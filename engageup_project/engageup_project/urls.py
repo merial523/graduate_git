@@ -33,6 +33,7 @@ urlpatterns = [
     path("staff/", include("staff.urls", namespace="staff")),  # トップページは staff アプリに委譲
     path("visitor/",include("visitor.urls",namespace="visitor")),#visitor
     path("index/", views.IndexView.as_view(), name="index"),  # トップページ用
+    path("mail/",include("mail.urls",namespace="mail")),
 ]
 
 # 開発環境（DEBUG=True）の場合のみメディアファイルを配信する設定
