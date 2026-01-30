@@ -15,12 +15,6 @@ class SequentialUserCreateForm(forms.Form):
         max_value=100
     )
 
-    rank = forms.ChoiceField(
-        label="ランク",
-        choices=User.RANK_CHOICES,
-        initial="visitor",
-        widget=forms.RadioSelect
-    )
 
 class NewsForm(forms.ModelForm):
     class Meta:
