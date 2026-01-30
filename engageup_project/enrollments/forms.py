@@ -89,37 +89,34 @@ class ExamForm(forms.ModelForm):
             'exams_file': forms.ClearableFileInput(attrs={'accept': '.pdf'}),
         }
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-            # 保存済みファイルのリストを取得
-            files_dir = os.path.join(settings.MEDIA_ROOT, 'exams_files')
-            if os.path.exists(files_dir):
-                files = os.listdir(files_dir)
-            else:
-                files = []
+        # 保存済みファイルのリストを取得
+        files_dir = os.path.join(settings.MEDIA_ROOT, 'exams_files')
+        if os.path.exists(files_dir):
+            files = os.listdir(files_dir)
+        else:
+            files = []
 
-            file_choices = [('', '--- 選択してください ---')] + [(f, f) for f in files]
-            self.fields['exam_file'].choices = file_choices
+        file_choices = [('', '--- 選択してください ---')] + [(f, f) for f in files]
+        self.fields['exam_file'].choices = file_choices
 
-            # デザインをねこねこ薬局風にするための設定
-            widgets = {
-                'title': forms.TextInput(attrs={'placeholder': '例：2024年度 新人研修テスト'}),
-
-                'passing_score': forms.NumberInput(attrs={
-                    'min': 0, 
-                    'placeholder': '80',
-                    'class': 'form-control' # CSS側でスタイルを当てやすくするため
-                }),
-                'time_limit': forms.NumberInput(attrs={
-                    'min': 0, 
-                    'placeholder': '30',
-                    'class': 'form-control' # CSS側でスタイルを当てやすくするため
-                }),
-                
-                'description': forms.Textarea(attrs={'rows': 5}),
-                'exam_type': forms.Select(),
-            }
+        # デザインをねこねこ薬局風にするための設定
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': '例：2024年度 新人研修テスト'}),
+            'passing_score': forms.NumberInput(attrs={'min': 0, 'max': 100}),
+            
+            # ★ 制限時間のウィジェット設定
+            'time_limit': forms.NumberInput(attrs={
+                'min': 0, 
+                'placeholder': '30',
+                'class': 'form-control' # CSS側でスタイルを当てやすくするため
+            }),
+            
+            'description': forms.Textarea(attrs={'rows': 5}),
+            'exam_type': forms.Select(),
+        }
 
     
 
