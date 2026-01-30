@@ -62,9 +62,9 @@
           </a>
           {% endif %}
           
-          <a href="javascript:void(0)" class="text-muted small text-decoration-none d-inline-flex align-items-center ms-3 help-trigger" data-bs-toggle="modal" data-bs-target="#helpModal">
-            <span class="material-icons size-18 me-1">help_outline</span> ヘルプ
-          </a>
+          <a href="javascript:void(0)" class="text-muted small text-decoration-none ms-3 d-inline-flex align-items-center help-trigger" data-bs-toggle="modal" data-bs-target="#helpModal">
+          <span class="material-icons size-18 me-1">help_outline</span> ヘルプ
+        </a>
         </div>
       </form>
     </div>
@@ -351,6 +351,16 @@
   .extra-small { font-size: 0.72rem; }
   .size-14 { font-size: 14px; }
   .size-18 { font-size: 18px; }
+
+  /* ヘルプボタンのスタイル */
+  .help-trigger {
+    transition: 0.2s;
+    opacity: 0.7;
+  }
+  .help-trigger:hover {
+    opacity: 1;
+    color: var(--primary-color) !important;
+  }
 
   /* コントロール */
   .search-input-group { border-radius: 50px; padding: 6px 15px; display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.1); }
