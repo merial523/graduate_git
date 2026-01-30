@@ -3,10 +3,64 @@
   --primary-color: #76b19d;
   --hover-mint: #cbdad5; /* 画像2枚目のミントグリーン */
   --accent-red: #e86a6a; /* ログアウト用赤 */
+  --warning-color: #e8b06a;
   --bg-color: #f8f2f2;
   --text-black: #333333;
   --white: #ffffff;
   --transition-studio: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 1. 青色ボタン（ユーザー作成・Info） -> ソフトブルー */
+.btn-primary,
+.btn-info {
+  background-color: #5da9e9 !important;
+  color: #fff !important;
+}
+.btn-primary::before {
+  font-family: "Material Icons";
+}
+
+/* 2. 緑色ボタン（ランク変更・Success） -> ねこねこグリーン */
+.btn-success {
+  background-color: #76b19d !important;
+  color: #fff !important;
+}
+.btn-success::before {
+  font-family: "Material Icons";
+}
+
+/* 3. 赤色ボタン（削除・Danger） -> ソフトレッド */
+.btn-danger {
+  background-color: #e86a6a !important;
+  color: #fff !important;
+}
+.btn-danger::before {
+  font-family: "Material Icons";
+}
+
+/* 4. 白色・枠線ボタン（戻る・削除済み表示・Secondary） */
+.btn-secondary,
+.btn-light,
+.btn-outline-secondary {
+  background-color: #fff !important;
+  color: #777 !important;
+  border: 1px solid #ddd !important;
+}
+/* 5. オレンジボタン（復元・Warning） */
+.btn-warning {
+  background-color: var(--warning-color) !important;
+  color: #fff !important;
+}
+.btn-outline-secondary::before {
+  font-family: "Material Icons";
+}
+/* 「戻る」ボタン用（もしクラスが特定できれば） */
+.btn-back::before {
+  content: "arrow_back";
+  font-family: "Material Icons";
+}
+.btn-warning::before {
+  font-family: "Material Icons";
 }
 
 body {

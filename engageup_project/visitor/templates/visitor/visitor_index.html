@@ -1,66 +1,92 @@
 {% extends 'visitor/visitor_base.html' %}
+{% load static %}
 
 {% block title %}初回登録 | EngageUp{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10 col-xl-9">
-            <div class="card shadow-sm mt-5 border-0 overflow-hidden">
-                <div class="card-body p-0">
-                    <div class="row g-0 align-items-stretch">
-                        
-                        <div class="col-sm-3 bg-success d-flex align-items-center justify-content-center p-4">
-                            <div class="text-center text-white">
-                                <i class="bi bi-person-check-fill" style="font-size: 3.5rem;"></i>
-                                <div class="mt-1 fw-bold small opacity-75">USER SETUP</div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-sm-9 p-4 p-md-5 bg-white d-flex flex-column justify-content-center">
-                            <h2 class="fw-bold mb-3 text-dark" style="font-size: 1.8rem; line-height: 1.4;">
-                                EngageUpへ<br class="d-block d-sm-none"><span class="d-inline-block">ようこそ！</span>
-                            </h2>
-                            
-                            <p class="text-secondary mb-4 small" style="line-height: 1.6; max-width: 550px;">
-                                サービスをご利用いただくには、プロフィールの初期設定が必要です。
-                                <br class="d-none d-md-block">
-                                下のボタンから初回登録画面へ進み、必要な情報を入力してください。
-                            </p>
-
-                            <div class="d-flex flex-wrap align-items-center gap-3">
-                                <a href="{% url 'visitor:visitor_update' request.user.pk %}" 
-                                   class="btn btn-success px-4 py-2 fw-bold shadow-sm"
-                                   style="font-size: 0.9rem; min-width: 220px;">
-                                    <i class="bi bi-arrow-right-circle me-1"></i>初回登録を完了する
-                                </a>
-                                
-                                <div class="text-muted border-start ps-3 d-none d-lg-block" style="font-size: 0.75rem;">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    登録完了後、すべての機能が<br>利用可能になります。
-                                </div>
-                            </div>
-                        </div>
-                        
+    <!-- メイン案内カード -->
+    <div class=" border-0  rounded-5">
+        <div class="card-body p-4 p-md-5">
+            <div class="row align-items-center g-4">
+                
+                <h2 class="fw-800 text-warning mb-3" style="font-size: 1.5rem;">
+                    <span class="material-icons size-20 align-middle">report_problem</span>プロフィールの初期設定が必要です
+                </h2>
+                <!-- 左側：ビジュアルアイコン（ねこねこ風セージグリーン） -->
+                <div class="col-md-4 text-center">
+                    <div class="d-inline-block p-4 bg-soft-green rounded-circle mb-3 shadow-sm">
+                        <span class="material-icons text-primary" style="font-size: 80px;">how_to_reg</span>
                     </div>
                 </div>
+                
+                <!-- 右側：テキスト案内 -->
+                <div class="col-md-8 text-center text-md-start">
+                    
+                    <p class="text-muted mb-4" style="line-height: 1.8;">
+                        サービスをご利用いただくには、プロフィールの初期設定<br><b>・名前の確認<br>・パスワード変更</b>が必要です<br>
+                        これらを完了後、正式な利用者として検定や研修への参加が可能になります
+                    </p>
+
+                </div>
+                    <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+                        <!-- ボタン：前回の設定を反映したカプセル型 -->
+                        <a href="{% url 'visitor:visitor_update' request.user.pk %}"
+                           class="btn btn-primary rounded-pill px-5 py-3 fw-800 shadow-sm">
+                            <span class="material-icons align-middle">touch_app</span>
+                            初回登録へ進む
+                        </a>
+                        
+                        <div class="text-muted small border-start ps-3 d-none d-lg-block" style="border-width: 2px !important;">
+                            <span class="material-icons size-16 align-middle">info</span>
+                            数分で完了します<br>
+                            すぐに始められます
+                        </div>
+                    </div>
+
             </div>
         </div>
     </div>
-</div>
 
 <style>
-    body { background-color: #f0f2f5; }
-    .card { border-radius: 12px; }
-    .btn-success {
-        background-color: #28a745;
-        border-color: #28a745;
-        transition: all 0.2s ease;
+    /* ご指定のタイトルスタイル */
+    .page-title {
+        font-size: 1.4rem;
+        border-left: 5px solid var(--primary-color);
+        padding-left: 15px;
+        font-weight: 800;
     }
-    .btn-success:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-        transform: translateY(-1px);
+
+    /* ねこねこ風 補助スタイル */
+    .fw-800 { font-weight: 800 !important; }
+    .bg-soft-green { background-color: rgba(118, 177, 157, 0.1); }
+    .size-16 { font-size: 16px; }
+    .text-warning { color: var(--warning-color) !important; }
+
+    /* 管理画面共通カードのスタイル微調整 */
+    .admin-card {
+        border-radius: 2.5rem !important; /* 角を大きく丸める */
+        transition: transform 0.4s cubic-bezier(0.4, 0.4, 0, 1);
+    }
+    
+    /* ボタンのホバーアクションを共通化 */
+    .btn-primary {
+        background-color: var(--primary-color) !important;
+        border: none !important;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }
+    .btn-primary:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 10px 20px rgba(118, 177, 157, 0.2) !important;
+    }
+
+    /* レスポンシブ：モバイルではカードの余白を調整 */
+    @media (max-width: 576px) {
+        .admin-card {
+            border-radius: 2rem !important;
+        }
+        .page-title {
+            font-size: 1.2rem;
+        }
     }
 </style>
 {% endblock %}

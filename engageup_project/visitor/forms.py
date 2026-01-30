@@ -8,7 +8,7 @@ class UserUpdateForm(forms.ModelForm):
         required=True
     )
     password_check = forms.CharField(
-        label="パスワード確認用",
+        label="パスワード（確認用）",
         widget=forms.PasswordInput,
         required=True,
     )
