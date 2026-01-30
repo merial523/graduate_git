@@ -84,6 +84,10 @@ class ExamForm(forms.ModelForm):
     class Meta:
         model = Exam
         fields = ["title", "description", "passing_score", 'time_limit', "exams_file", "exam_type", "prerequisite"]
+        #テキストをpdfのみに制限をかける
+        widgets = {
+            'exams_file': forms.ClearableFileInput(attrs={'accept': '.pdf'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

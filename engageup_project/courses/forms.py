@@ -32,7 +32,18 @@ class TrainingModuleForm(forms.ModelForm):
         choices=[], 
         required=False, 
         label="保存済みライブラリから選ぶ",
-        widget=forms.Select(attrs={'class': 'form-select'})
+
+        widget=forms.Select(attrs={'class': 'form-select'}))
+        #テキストをpdfのみに制限をかける
+
+    training_file = forms.FileField(
+        label="研修ファイルをアップロード",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,'  # PDFおよびテキストファイルのみ許可
+        })
+
     )
 
     class Meta:
@@ -40,7 +51,6 @@ class TrainingModuleForm(forms.ModelForm):
         fields = ["title", "video", "training_file", "content_text", "estimated_time"]
         widgets = {
             'video': forms.FileInput(attrs={'class': 'form-control'}),
-            'training_file': forms.FileInput(attrs={'class': 'form-control'}), 
             'content_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'estimated_time': forms.NumberInput(attrs={'class': 'form-control'}),
         }
