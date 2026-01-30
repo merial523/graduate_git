@@ -45,7 +45,7 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for news in news_list %}
         <div class="col">
-            <div class="admin-card h-100 border-0 shadow-sm rounded-5 bg-white overflow-hidden d-flex flex-column transition-hover">
+            <div class="admin-card h-100 border-0 shadow-sm rounded-5 bg-white overflow-hidden d-flex flex-column transition-hover news-card-trigger">
                 <!-- 上部：ジャンル別の背景色 -->
                 <div class="news-thumbnail-header d-flex align-items-center justify-content-center 
                     {% if news.category == 'training' %}bg-purple-light{% elif news.category == 'urgent' %}bg-red-light{% else %}bg-teal-light{% endif %}">
@@ -78,10 +78,6 @@
                     <div class="d-flex align-items-center text-muted ">
                         <span class="material-icons size-20 me-1">person_outline</span>{{ news.author.username }}
                     </div>
-                    <button type="button" class="btn btn-danger btn-sm rounded-circle p-2 delete-trigger border-0 shadow-none" 
-                            data-url="{% url 'mail:news_delete' news.id %}" data-title="{{ news.title }}">
-                        <span class="material-icons">delete_outline</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -96,60 +92,27 @@
     </div>
 </div>
 
-<!-- 1. 削除確認モーダル -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+<!-- お知らせ詳細ポップアップモーダル -->
+<div class="modal fade" id="newsDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-5">
-            <div class="modal-header border-0 pt-4 px-4">
-                <h5 class="modal-title fw-800 text-danger d-flex align-items-center">
-                    <span class="material-icons me-2">warning</span>削除の確認
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <div class="d-flex flex-column">
+                    <span id="modal-date" class="text-muted extra-small mb-1"></span>
+                    <h5 id="modal-title" class="fw-800 text-dark mb-0"></h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body px-4">
-                <h5 class="mb-0">お知らせ「<strong id="target-title"></strong>」を削除しますか？</h5>
-                <p class="fw-bold text-danger small mt-2">※一度削除すると復元することはできません</p>
+            <div class="modal-body p-4">
+                <!-- ここに本文が入ります -->
+                <div id="modal-content" class="news-detail-text"></div>
             </div>
-            <div class="modal-footer border-0 pb-4 px-4">
-                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">キャンセル</button>
-                <form id="actionForm" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">削除を実行する</button>
-                </form>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-5 w-100 fw-bold border" data-bs-dismiss="modal">閉じる</button>
             </div>
         </div>
     </div>
 </div>
-
-<!-- 2. 処理中モーダル -->
-<div class="modal fade" id="statusModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-5 text-center p-5">
-            <div id="modal-loading">
-                <div class="custom-loader mb-4"></div>
-                <h5 class="fw-800 text-primary" id="loading-text">削除しています...</h5>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 操作ガイド -->
-<div class="modal fade" id="helpModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
-        <div class="modal-header bg-dark text-white border-0 py-3">
-          <h5 class="modal-title fw-bold small"><span class="material-icons me-2">help_outline</span> 操作ガイド</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body p-4 small text-muted">
-            <p>● 過去に投稿されたお知らせの履歴をグリッド形式で確認できます。</p>
-            <p>● 不要になったお知らせは、右下の<b>ゴミ箱アイコン</b>から個別に削除できます。</p>
-            <p>● キーワード検索やジャンル分けを利用して、特定の投稿を素早く見つけることができます。</p>
-        </div>
-      </div>
-    </div>
-</div>
-
 <style>
     .fw-bold { font-weight: 700; }
     .extra-small { font-size: 0.7rem; }
@@ -182,11 +145,14 @@
     .bg-light-soft { background-color: #fcfdfe; }
     .transition-hover:hover { transform: translateY(-5px); transition: 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important; }
 
-    /* 指定のティール色ローダー */
-    .custom-loader { width: 50px; height: 50px; display: grid; border: 4px solid #0000; border-radius: 50%; border-right-color: #76b19d; animation: l15 1s infinite linear; margin: 0 auto; }
-    .custom-loader::before, .custom-loader::after { content: ""; grid-area: 1/1; margin: 2px; border: inherit; border-radius: 50%; animation: l15 2s infinite; }
-    .custom-loader::after { margin: 8px; animation-duration: 3s; }
-    @keyframes l15{ 100%{transform: rotate(1turn)} }
+    .news-detail-text {
+        white-space: pre-wrap;
+        line-height: 1.8;
+        color: #444;
+        font-size: 0.95rem;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
 </style>
 
 <script>
@@ -196,22 +162,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const actionForm = document.getElementById('actionForm');
     const targetTitleDisplay = document.getElementById('target-title');
 
-    // 削除ボタンのクリック処理
-    document.querySelectorAll('.delete-trigger').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const url = this.dataset.url;
-            const title = this.dataset.title;
-            targetTitleDisplay.innerText = title;
-            actionForm.action = url;
-            confirmModal.show();
-        });
-    });
-
     // 送信時の処理
     actionForm.addEventListener('submit', function() {
         confirmModal.hide();
         statusModal.show();
     });
 });
+
+        // モーダルの準備
+        const newsModalEl = document.getElementById('newsDetailModal');
+        const newsModal = new bootstrap.Modal(newsModalEl);
+
+        // すべてのお知らせカードにクリックイベントを設定
+        const triggers = document.querySelectorAll('.news-card-trigger');
+        
+        triggers.forEach(card => {
+            card.addEventListener('click', function() {
+                // data属性からタイトルと日付を取得
+                const title = this.getAttribute('data-title');
+                const date = this.getAttribute('data-date');
+                // 隠しdivから本文を取得（改行が壊れない方法）
+                const content = this.querySelector('.hidden-news-content').innerHTML;
+
+                // モーダルの要素を更新
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-date').textContent = date;
+                document.getElementById('modal-content').innerHTML = content;
+                
+                // モーダルを表示
+                newsModal.show();
+            });
+        });
+    });
 </script>
 {% endblock %}
