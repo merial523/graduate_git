@@ -42,6 +42,15 @@ class TrainingModuleForm(forms.ModelForm):
         widget=forms.ClearableFileInput(attrs={
             'class': 'form-control',
             'accept': '.pdf,'  # PDFおよびテキストファイルのみ許可
+        }))
+    
+    #動画の形式の制限（.mp4,.mov,.avi）
+    video = forms.FileField(
+        label="研修動画をアップロード",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.mp4,.mov,.avi'  # 動画ファイル形式を制限
         })
 
     )
@@ -50,10 +59,27 @@ class TrainingModuleForm(forms.ModelForm):
         model = TrainingModule
         fields = ["title", "video", "training_file", "content_text", "estimated_time"]
         widgets = {
-            'video': forms.FileInput(attrs={'class': 'form-control'}),
             'content_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'estimated_time': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+        def clean_video(self):
+            video = self.cleaned_data.get('video')
+            if video:
+                # 許可する拡張子のリスト
+                valid_extensions = ['.mp4', '.mov', '.avi']
+                # ファイル名から拡張子を取り出して小文字にする
+                ext = os.path.splitext(video.name)[1].lower()
+                if ext not in valid_extensions:
+                    raise forms.ValidationError("動画は .mp4, .mov, .avi 形式のみアップロード可能です。")
+            return video
+
+    # サーバー側での教材ファイル最終チェック（以前の分）
+    def clean_training_file(self):
+        file = self.cleaned_data.get('training_file')
+        if file:
+            if not file.name.lower().endswith('.pdf'):
+                raise forms.ValidationError("教材資料はPDFファイルのみアップロード可能です。")
+        return file
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
