@@ -33,7 +33,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="text-muted extra-small">{{ news.created_at|date:"Y.m.d" }}</span>
                             {% if news.is_important %}
-                                <span class="badge-important">重要</span>
+                                <span class="badge-important bg-danger">重要</span>
                             {% endif %}
                         </div>
                         <h2 class="h6 fw-800 text-dark mb-0 text-truncate">{{ news.title }}</h2>
