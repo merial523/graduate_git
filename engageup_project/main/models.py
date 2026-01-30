@@ -400,7 +400,7 @@ class Exam(models.Model):
         if is_new and self.exam_type == "main":
             Badge.objects.create(
                 exam=self,
-                name=f"{self.title}合格バッジ"
+                name=f"{self.title}"
             )
         else:
             if hasattr(self, "badge"):
