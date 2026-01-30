@@ -47,8 +47,7 @@ class ModeratorNewsView(
 
 # =====================================================
 # アカウント連番作成
-# =====================================================
-from django.views.generic import FormView
+# =====================================================from django.views.generic import FormView
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
 from django.conf import settings
@@ -92,7 +91,8 @@ class SequentialUserCreateView(
 
         start_number = form.cleaned_data["start_number"]
         count = form.cleaned_data["count"]
-        rank = form.cleaned_data["rank"]
+
+        FIXED_RANK = "visitor"
 
         users = []
 
@@ -101,15 +101,17 @@ class SequentialUserCreateView(
             username = f"user{number}"
             email = f"{company_code}{number}@{email_address}"
 
+            # 🔒 重複チェック
             if User.objects.filter(username=username).exists():
                 form.add_error(None, f"{username} は既に存在します")
                 return self.form_invalid(form)
 
             raw_password = self.generate_password()
+
             user = User(
                 username=username,
                 email=email,
-                rank=rank
+                rank=FIXED_RANK   # ← ★ここが正解
             )
             user.set_password(raw_password)
 
@@ -121,10 +123,8 @@ class SequentialUserCreateView(
         with transaction.atomic():
             User.objects.bulk_create(users)
 
-        # メール送信（console backendならターミナルに出る）
+        # メール送信
         for user in users:
-            print(f"[MAIL DEBUG] to={user.email}")  # ← 確認用
-
             send_mail(
                 subject="アカウント作成のお知らせ",
                 message=f"""
@@ -143,6 +143,37 @@ class SequentialUserCreateView(
 
         return super().form_valid(form)
 
+
+
+def check_user_duplicate(request):
+    start_number = int(request.POST.get("start_number"))
+    count = int(request.POST.get("count"))
+
+    company_code = Constant.objects.values_list(
+        "company_code", flat=True
+    ).first()
+    email_address = Constant.objects.values_list(
+        "address", flat=True
+    ).first()
+
+    duplicates = []
+
+    for i in range(count):
+        number = start_number + i
+        username = f"user{number}"
+        email = f"{company_code}{number}@{email_address}"
+
+        if User.objects.filter(username=username).exists() or \
+           User.objects.filter(email=email).exists():
+            duplicates.append(username)
+
+    if duplicates:
+        return JsonResponse({
+            "ok": False,
+            "duplicates": duplicates
+        })
+
+    return JsonResponse({"ok": True})
 # =====================================================
 # Badge 管理
 # =====================================================

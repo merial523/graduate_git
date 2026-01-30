@@ -57,7 +57,7 @@
           </div>
 
           <!-- ランク選択 -->
-          <div class="col-lg-4">
+          <!-- <div class="col-lg-4">
             <label
               class="form-label fw-800 d-flex align-items-center gap-2 mb-2"
             >
@@ -66,7 +66,7 @@
             </label>
             <div class="custom-radio-group">{{ form.rank }}</div>
             <div class="small text-danger mt-1">{{ form.rank.errors }}</div>
-          </div>
+          </div> -->
         </div>
 
         <div
@@ -152,63 +152,68 @@
     </div>
   </div>
 </div>
-
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("create-user-form");
-    const submitBtn = document.getElementById("submit-btn");
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("create-user-form");
+  const submitBtn = document.getElementById("submit-btn");
 
-    const statusModal = new bootstrap.Modal(
-      document.getElementById("statusModal"),
-    );
-    const alertModal = new bootstrap.Modal(
-      document.getElementById("alertModal"),
-    );
-    const alertMsg = document.getElementById("alert-modal-msg");
+  const statusModal = new bootstrap.Modal(
+    document.getElementById("statusModal")
+  );
+  const alertModal = new bootstrap.Modal(
+    document.getElementById("alertModal")
+  );
+  const alertMsg = document.getElementById("alert-modal-msg");
 
-    submitBtn.addEventListener("click", function () {
-      const requiredFields = form.querySelectorAll("[required]");
-      let missingNames = [];
+  submitBtn.addEventListener("click", function () {
 
-      requiredFields.forEach((field) => {
-        let isMissing = false;
-        if (field.type === "radio") {
-          if (!form.querySelector(`input[name="${field.name}"]:checked`))
-            isMissing = true;
-        } else if (!field.value.trim()) {
-          isMissing = true;
+    // ===== 必須チェック（今まで通り）=====
+    const requiredFields = form.querySelectorAll("[required]");
+    let missingNames = [];
+
+    requiredFields.forEach((field) => {
+      if (!field.value.trim()) {
+        const container = field.closest(".col-md-4");
+        const labelEl = container?.querySelector(".form-label");
+        if (labelEl) {
+          missingNames.push(labelEl.innerText.trim());
         }
+      }
+    });
 
-        if (isMissing) {
-          const container =
-            field.closest(".col-md-4") || field.closest(".col-lg-4");
-          if (container) {
-            const labelEl = container.querySelector(".form-label");
-            // label直下のテキストノードのみを取得（span内の英語を避ける）
-            let labelText = "";
-            labelEl.childNodes.forEach((node) => {
-              if (node.nodeType === Node.TEXT_NODE) {
-                labelText += node.textContent.trim();
-              }
-            });
+    if (missingNames.length > 0) {
+      alertMsg.innerHTML =
+        "以下の項目を入力してください：<br><strong>" +
+        missingNames.join(", ") +
+        "</strong>";
+      alertModal.show();
+      return;
+    }
 
-            if (labelText && !missingNames.includes(labelText)) {
-              missingNames.push(labelText);
-            }
-          }
-        }
-      });
+    // ===== 重複チェック（Ajax）=====
+    const formData = new FormData(form);
 
-      if (missingNames.length > 0) {
+    fetch("{% url 'moderator:check_user_duplicate' %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+      },
+      body: formData,
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.ok) {
         alertMsg.innerHTML =
-          "以下の項目を入力してください：<br><strong class='text-dark'>" +
-          missingNames.join(", ") +
+          "以下のユーザーは既に存在します：<br><strong class='text-danger'>" +
+          data.duplicates.join(", ") +
           "</strong>";
         alertModal.show();
         return;
       }
 
+      // ===== 問題なければ初めてローディング =====
       statusModal.show();
+
       setTimeout(() => {
         document.getElementById("modal-loading").style.display = "none";
         document.getElementById("modal-success").style.display = "block";
@@ -218,7 +223,9 @@
       }, 1200);
     });
   });
+});
 </script>
+
 
 <style>
   .fw-800 {

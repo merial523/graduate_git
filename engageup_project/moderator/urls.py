@@ -24,5 +24,10 @@ urlpatterns = [
     path('news-toggle-active/<int:pk>/', views.NewsToggleActiveView.as_view(), name='news_toggle_active'),
     path('news-bulk-action/', views.NewsBulkActionView.as_view(), name='news_bulk_action'),
     path('news-delete/<int:pk>/', views.NewsDeleteView.as_view(), name='news_delete'),
+    path(
+    "check-user-duplicate/",
+    views.check_user_duplicate,
+    name="check_user_duplicate"
+),
 
 ]
