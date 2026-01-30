@@ -1,10 +1,66 @@
 {% extends 'visitor/visitor_base.html' %}
 
-{% block title %}ホーム{% endblock %}
+{% block title %}初回登録 | EngageUp{% endblock %}
 
 {% block content %}
-<div class="container text-center">
-  <h1>初回登録画面</h1>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-9">
+            <div class="card shadow-sm mt-5 border-0 overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="row g-0 align-items-stretch">
+                        
+                        <div class="col-sm-3 bg-success d-flex align-items-center justify-content-center p-4">
+                            <div class="text-center text-white">
+                                <i class="bi bi-person-check-fill" style="font-size: 3.5rem;"></i>
+                                <div class="mt-1 fw-bold small opacity-75">USER SETUP</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-sm-9 p-4 p-md-5 bg-white d-flex flex-column justify-content-center">
+                            <h2 class="fw-bold mb-3 text-dark" style="font-size: 1.8rem; line-height: 1.4;">
+                                EngageUpへ<br class="d-block d-sm-none"><span class="d-inline-block">ようこそ！</span>
+                            </h2>
+                            
+                            <p class="text-secondary mb-4 small" style="line-height: 1.6; max-width: 550px;">
+                                サービスをご利用いただくには、プロフィールの初期設定が必要です。
+                                <br class="d-none d-md-block">
+                                下のボタンから初回登録画面へ進み、必要な情報を入力してください。
+                            </p>
+
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <a href="{% url 'visitor:visitor_update' request.user.pk %}" 
+                                   class="btn btn-success px-4 py-2 fw-bold shadow-sm"
+                                   style="font-size: 0.9rem; min-width: 220px;">
+                                    <i class="bi bi-arrow-right-circle me-1"></i>初回登録を完了する
+                                </a>
+                                
+                                <div class="text-muted border-start ps-3 d-none d-lg-block" style="font-size: 0.75rem;">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    登録完了後、すべての機能が<br>利用可能になります。
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<a href="{% url 'visitor:visitor_update' request.user.pk %}">a</a>
+
+<style>
+    body { background-color: #f0f2f5; }
+    .card { border-radius: 12px; }
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+        transition: all 0.2s ease;
+    }
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        transform: translateY(-1px);
+    }
+</style>
 {% endblock %}
