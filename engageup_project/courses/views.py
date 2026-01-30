@@ -326,16 +326,23 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            # ★ 末尾に list() を付けて、確実に数値のリストにする
+            # 完了済みモジュールID
             ids = UserModuleProgress.objects.filter(
                 user_id=self.request.user.pk, 
                 is_completed=True
             ).values_list('module_id', flat=True)
-            
-            context['completed_module_ids'] = list(ids) # リスト化
+            context['completed_module_ids'] = list(ids)
+
+            # ★ 追加：マイリストに登録済みのコースIDリストを取得
+            # (MyListモデルがある前提。なければお使いのモデル名に合わせてください)
+            mylist_ids = self.request.user.mylist_items.values_list('id', flat=True)
+            context['mylist_course_ids'] = list(mylist_ids)
         else:
             context['completed_module_ids'] = []
+            context['mylist_course_ids'] = []
             
+        # ★ 追加：カテゴリ一覧（重複排除）
+        context['categories'] = Course.objects.filter(is_active=True, is_deleted=False).values_list('subject', flat=True).distinct()
         return context
     
 class UpdateVideoProgressView(LoginRequiredCustomMixin, View):
