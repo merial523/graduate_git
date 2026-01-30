@@ -1,16 +1,15 @@
 {% extends base_template %}
 {% load static %}
 
-{% block title %}研修コース一覧 | EngageUp{% endblock %}
+{% block title %}研修プログラム | EngageUp{% endblock %}
 
 {% block content %}
 <div class="user-exam-container pb-5">
-    <!-- 1. ヘッダー ＆ 検索エリア -->
     <div class="mb-4 text-start">
         <h1 class="page-title text-dark m-0 fw-800">研修プログラム</h1>
     </div>
 
-    <!-- 2. 検索 ＆ カテゴリフィルタ -->
+    <!-- 検索 ＆ フィルター -->
     <div class="search-filter-section mb-4">
         <div class="search-bar-wrapper mb-3">
             <span class="material-icons search-icon">search</span>
@@ -18,69 +17,78 @@
         </div>
 
         <div class="filter-chips">
-            <button class="chip active" onclick="filterCategory('all')">全て</button>
-            <button class="chip text-orange" onclick="filterCategory('mylist')">
+            <button class="chip active" onclick="filterCategory('all', event)">全て</button>
+            <button class="chip text-orange" onclick="filterCategory('mylist', event)">
                 <span class="material-icons size-14 align-middle">favorite</span> お気に入り
-            </button>
+            </a>
         </div>
     </div>
 
-    <!-- 3. コースリスト（アコーディオン） -->
     <div class="accordion-container" id="courseAccordion">
         {% for course in courses %}
-        <div class="course-card-wrapper mb-4" data-subject="{{ course.subject }}" data-title="{{ course.subject }}" data-favorite="{% if course.id in mylist_course_ids %}true{% else %}false{% endif %}">
-            <div class="course-main-card shadow-sm">
-                <!-- お気に入りボタン（右上固定） -->
-                <button class="btn-favorite {% if course.id in mylist_course_ids %}active{% endif %}" 
-                        onclick="toggleFavorite(this, '{{ course.id }}')"
-                        title="お気に入りに追加/解除">
-                    <span class="material-icons">{% if course.id in mylist_course_ids %}favorite{% else %}favorite_border{% endif %}</span>
-                </button>
-
-                <!-- カードヘッダー（展開スイッチ） -->
-                <div class="card-header-content p-3" data-bs-toggle="collapse" data-bs-target="#collapse{{ course.id }}">
-                    <!-- <div class="d-flex align-items-center gap-2 mb-2">
-                        <span class="badge-category">{{ course.subject }}</span>
-                    </div> -->
-                    <h2 class="h6 fw-800 text-dark mb-3">{{ course.subject }}</h2>
-                    
-                    <!-- 進捗バー -->
-                    <div class="progress-box">
-                        <div class="d-flex justify-content-between extra-small mb-1">
-                            <span class="text-muted">進捗状況</span>
-                            <span class="fw-bold text-primary">{{ course.modules.count }}本中 0本完了</span> <!-- 動的計算は将来的にViewで -->
+        <div class="course-card-wrapper mb-3" 
+             data-subject="{{ course.subject }}" 
+             data-title="{{ course.subject }}" 
+             data-favorite="{% if course.is_mylist %}true{% else %}false{% endif %}">
+            
+            <div class="course-main-card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="d-flex align-items-stretch">
+                        
+                        <!-- 左側：お気に入りボタン -->
+                        <div class="favorite-side-action">
+                            <button class="btn-favorite-circle {% if course.is_mylist %}active{% endif %}" 
+                                    onclick="toggleFavorite(this, '{{ course.id }}', event)">
+                                <span class="material-icons" style="color: #e88d6a;">
+                                    {% if course.is_mylist %}favorite{% else %}favorite_border{% endif %}
+                                </span>
+                            </button>
                         </div>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar rounded-pill" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+
+                        <!-- 中央〜右：コース情報 ＆ アコーディオン -->
+                        <div class="flex-grow-1 p-3" data-bs-toggle="collapse" data-bs-target="#collapse{{ course.id }}" style="cursor: pointer;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge-category">{{ course.subject }}</span>
+                                <span class="material-icons text-muted opacity-25">expand_more</span>
+                            </div>
+                            
+                            <h2 class="h6 fw-800 text-dark mb-3">{{ course.subject }}</h2>
+                            
+                            <div class="progress-container-home">
+                                <div class="d-flex justify-content-between extra-small mb-1">
+                                    <span class="text-muted fw-bold">進捗 {{ course.progress_percent }}%</span>
+                                    <span class="text-primary fw-800">{{ course.done_count }}/{{ course.courseCount }} 完了</span>
+                                </div>
+                                <div class="progress" style="height: 6px; background-color: #eee; border-radius: 10px;">
+                                    <div class="progress-bar rounded-pill" 
+                                         role="progressbar" 
+                                         style="width: {{ course.progress_percent }}%; background-color: var(--primary-color);">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 展開される研修一覧（リストグループ） -->
                 <div id="collapse{{ course.id }}" class="collapse" data-bs-parent="#courseAccordion">
-                    <div class="module-list border-top">
+                    <div class="module-list border-top bg-light-subtle">
                         {% for module in course.modules.all %}
                             {% if module.is_active %}
-                            <a href="{% url 'courses:training_detail' module.id %}" class="module-item text-decoration-none">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="module-icon {% if module.id in completed_module_ids %}is-done{% endif %}">
-                                        <span class="material-icons">
-                                            {% if module.id in completed_module_ids %}check_circle{% else %}play_circle{% endif %}
-                                        </span>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <p class="module-title mb-0">{{ module.title }}</p>
-                                        <div class="d-flex align-items-center gap-2 text-muted extra-small">
-                                            <span class="material-icons size-14">timer</span>
-                                            <span>約{{ module.estimated_time }}分</span>
-                                        </div>
-                                    </div>
-                                    <span class="material-icons text-muted opacity-50">chevron_right</span>
+                            <a href="{% url 'courses:training_detail' module.id %}" class="module-item text-decoration-none d-flex align-items-center p-3">
+                                <div class="module-icon me-3 {% if module.id in completed_module_ids %}is-done{% endif %}">
+                                    <span class="material-icons">
+                                        {% if module.id in completed_module_ids %}check_circle{% else %}play_circle_filled{% endif %}
+                                    </span>
                                 </div>
+                                <div class="flex-grow-1">
+                                    <p class="module-title mb-0 text-dark">{{ module.title }}</p>
+                                    <span class="text-muted extra-small">約{{ module.estimated_time }}分</span>
+                                </div>
+                                <span class="material-icons text-muted size-18">chevron_right</span>
                             </a>
                             {% endif %}
                         {% empty %}
-                            <div class="p-4 text-center text-muted extra-small">公開中の研修はありません。</div>
+                            <div class="p-3 text-center text-muted extra-small">研修コンテンツを準備中です</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -92,8 +100,7 @@
 
 <style>
     .fw-800 { font-weight: 800 !important; }
-    .extra-small { font-size: 0.7rem; }
-    .size-14 { font-size: 14px; }
+    .extra-small { font-size: 0.72rem; }
 
     .page-title {
         font-size: 1.4rem;
@@ -101,104 +108,69 @@
         padding-left: 15px;
     }
 
-    /* コースカード */
-    .course-card-wrapper { position: relative; }
-    .course-main-card {
-        background: #fff;
-        border-radius: 28px;
-        border: 1px solid rgba(0,0,0,0.02);
-        transition: 0.3s;
+    /* 検索バーの重なり修正 */
+    .search-bar-wrapper { position: relative; display: flex; align-items: center; }
+    .search-icon { position: absolute; left: 15px; color: #aaa; z-index: 2; pointer-events: none; }
+    .search-input { width: 100%; padding: 12px 15px 12px 45px; border: none; background: #fff; border-radius: 50px; font-size: 0.95rem; outline: none; }
+
+    /* 左側のお気に入りエリア */
+    .favorite-side-action {
+        width: 60px; display: flex; align-items: center; justify-content: center;
+        background-color: #fcfcfc; border-right: 1px solid #f0f0f0;
     }
-    .card-header-content { cursor: pointer; }
-
-    /* お気に入りボタン */
-    .btn-favorite {
-        position: absolute; top: 15px; right: 15px;
-        z-index: 10; background: none; border: none;
-        color: #ddd; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .btn-favorite-circle {
+        background: none; border: none; color: #ccc; 
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .btn-favorite.active { color: var(--accent-color); transform: scale(1.1); }
-    .btn-favorite:hover { transform: scale(1.2); }
+    .btn-favorite-circle.active { color: var(--accent-color) !important; transform: scale(1.2); }
 
-    /* 進捗バー */
-    .progress { background-color: #f0f0f0; border-radius: 50px; }
-    .progress-bar { background-color: var(--primary-color); }
-
-    /* モジュールアイテム */
-    .module-list { background-color: #fcfcfc; border-bottom-left-radius: 28px; border-bottom-right-radius: 28px; }
-    .module-item {
-        display: block; padding: 15px 20px;
-        border-bottom: 1px solid #f0f0f0;
-        transition: 0.2s;
-    }
-    .module-item:last-child { border-bottom: none; }
-    .module-item:hover { background-color: #f5f9f8; }
-
-    .module-icon { color: var(--primary-color); }
-    .module-icon.is-done { color: #2ecc71; }
-    .module-title { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); }
-
-    /* 検索バー ＆ チップ */
-    .search-input { width: 100%; padding: 12px 45px; border: none; background: #fff; border-radius: 50px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); outline: none; }
-    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+    /* その他共通スタイル */
+    .course-main-card { background: #fff; border-radius: 24px; overflow: hidden; }
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
     .chip { padding: 6px 18px; background: #fff; color: #888; border: 1px solid #f0f0f0; border-radius: 50px; font-size: 0.8rem; font-weight: 800; white-space: nowrap; }
-    .chip.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
-
-    .badge-category { font-size: 0.6rem; padding: 2px 8px; background: #eef7f4; color: var(--primary-color); border-radius: 4px; font-weight: 800; }
+    .chip.active { background: var(--primary-color); color: #fff; }
 </style>
 
 <script>
-// 1. カテゴリ ＆ 検索フィルタリング
-function filterCategory(cat) {
-    // ボタンのactive切り替え
-    document.querySelectorAll('.chip').forEach(btn => btn.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+// お気に入りAjaxトグル
+function toggleFavorite(btn, courseId, event) {
+    event.stopPropagation(); // アコーディオンが開かないようにする
+    const isAdding = !btn.classList.contains('active');
+    
+    btn.classList.toggle('active');
+    btn.querySelector('.material-icons').innerText = isAdding ? 'favorite' : 'favorite_border';
+    btn.closest('.course-card-wrapper').dataset.favorite = isAdding ? 'true' : 'false';
 
-    const cards = document.querySelectorAll('.course-card-wrapper');
-    cards.forEach(card => {
-        const title = card.dataset.title.toLowerCase();
-        const subject = card.dataset.subject;
-        const isFav = card.dataset.favorite === 'true';
-
-        let show = false;
-        if (cat === 'all') show = true;
-        else if (cat === 'mylist') show = isFav;
-        else if (cat === subject) show = true;
-
-        card.style.display = show ? 'block' : 'none';
+    fetch(`/courses/mylist/toggle/${courseId}/`, {
+        method: 'POST',
+        headers: { 
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    }).then(res => {
+        if (!res.ok) location.reload(); // エラー時は整合性をとるためリロード
     });
 }
 
 // リアルタイム検索
 document.getElementById('courseSearch').addEventListener('input', function(e) {
     const term = e.target.value.toLowerCase();
-    const cards = document.querySelectorAll('.course-card-wrapper');
-    cards.forEach(card => {
+    document.querySelectorAll('.course-card-wrapper').forEach(card => {
         const title = card.dataset.title.toLowerCase();
         card.style.display = title.includes(term) ? 'block' : 'none';
     });
 });
 
-// 2. お気に入り（マイリスト）登録トグル
-function toggleFavorite(btn, courseId) {
-    const isAdding = !btn.classList.contains('active');
-    
-    // UIを即座に変更（楽観的UI更新）
-    btn.classList.toggle('active');
-    const icon = btn.querySelector('.material-icons');
-    icon.innerText = isAdding ? 'favorite' : 'favorite_border';
-    btn.closest('.course-card-wrapper').dataset.favorite = isAdding;
+// カテゴリフィルタ
+function filterCategory(cat, event) {
+    document.querySelectorAll('.chip').forEach(btn => btn.classList.remove('active'));
+    event.currentTarget.classList.add('active');
 
-    // Ajaxでサーバーへ送信
-    fetch(`/courses/mylist/toggle/${courseId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-    }).then(res => {
-        if (!res.ok) {
-            // エラー時は元に戻す
-            btn.classList.toggle('active');
-            icon.innerText = isAdding ? 'favorite_border' : 'favorite';
-        }
+    document.querySelectorAll('.course-card-wrapper').forEach(card => {
+        const subject = card.dataset.subject;
+        const isFav = card.dataset.favorite === 'true';
+        let show = (cat === 'all') || (cat === 'mylist' && isFav) || (cat === subject);
+        card.style.display = show ? 'block' : 'none';
     });
 }
 </script>

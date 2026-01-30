@@ -374,20 +374,75 @@ class UpdateVideoProgressView(LoginRequiredCustomMixin, View):
 class StaffTrainingDetailView(BaseTemplateMixin, ContextMixin, View):
     """研修学習画面 (動画再生位置の復元に対応)"""
     def get(self, request, module_id):
-        # 公開中かつ削除されていないモジュールを取得
         module = get_object_or_404(TrainingModule, pk=module_id, is_active=True)
         
-        # このユーザーの再生進捗を取得
-        progress = UserModuleProgress.objects.filter(
-            user_id=request.user.pk, 
-            module=module
-        ).first()
+        # ★ 前後の研修を取得するロジックを追加
+        # 同じコース内の有効なモジュールを順序通りに取得（ここではID順と仮定）
+        all_modules = list(module.course.modules.filter(is_active=True).order_by('id'))
+        current_idx = all_modules.index(module)
+        
+        prev_module = all_modules[current_idx - 1] if current_idx > 0 else None
+        next_module = all_modules[current_idx + 1] if current_idx < len(all_modules) - 1 else None
+        
+        progress = UserModuleProgress.objects.filter(user_id=request.user.pk, module=module).first()
         
         context = self.get_context_data(
             module=module,
-            # データがなければ 0.0 を渡す（JSでエラーにならないように）
             last_position=progress.last_position if progress else 0.0,
             is_completed=progress.is_completed if progress else False,
+            prev_module=prev_module, # ★ 追加
+            next_module=next_module, # ★ 追加
             base_template=self.get_base_template()
         )
         return render(request, 'courses/staff_training_detail.html', context)
+
+    
+
+class StaffCourseListView(BaseTemplateMixin, ListView):
+    model = Course
+    template_name = "courses/staff_course_list.html"
+    context_object_name = "courses"
+
+    def get_queryset(self):
+        # 削除されておらず、かつ公開中のものだけ表示
+        return Course.objects.filter(is_deleted=False, is_active=True).prefetch_related('modules')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        if user.is_authenticated:
+            # 完了済みモジュールのIDリスト
+            context['completed_module_ids'] = list(UserModuleProgress.objects.filter(
+                user=user, is_completed=True
+            ).values_list('module_id', flat=True))
+
+            # 各コースの進捗率を計算
+            for course in context['courses']:
+                total_modules = course.modules.filter(is_active=True).count()
+                if total_modules > 0:
+                    done_count = UserModuleProgress.objects.filter(
+                        user=user, module__course=course, is_completed=True
+                    ).count()
+                    course.progress_percent = int((done_count / total_modules) * 100)
+                    course.done_count = done_count
+                else:
+                    course.progress_percent = 0
+                    course.done_count = 0
+        
+        # カテゴリ一覧
+        context['categories'] = Course.objects.filter(is_active=True, is_deleted=False).values_list('subject', flat=True).distinct()
+        return context
+
+# お気に入り登録・解除のAjax用View
+class ToggleMyListView(View):
+    def post(self, request, course_id):
+        # モデルに合わせて is_mylist (BooleanField) を操作する
+        course = get_object_or_404(Course, id=course_id)
+        
+        # True/Falseを反転させる
+        course.is_mylist = not course.is_mylist
+        course.save()
+        
+        action = 'added' if course.is_mylist else 'removed'
+        return JsonResponse({'status': 'success', 'action': action})

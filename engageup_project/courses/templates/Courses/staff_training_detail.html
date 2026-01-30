@@ -1,179 +1,236 @@
 {% extends base_template %}
+{% load static %}
+
+{% block title %}{{ module.title }} | 研修受講{% endblock %}
+
 {% block content %}
-<div class="container py-4" style="max-width: 1100px;">
-
-    <!-- 1. パンくず -->
-    <nav class="mb-2">
-        <a href="{% url 'courses:staff_course_list' %}" class="text-decoration-none small" style="color: #0d6efd;">研修一覧</a>
-        <span class="small text-muted"> / {{ module.course.subject }}</span>
-    </nav>
-
-    <!-- 2. タイトル＋学習時間 -->
-    <div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
-        <h1 class="fw-bold mb-2" style="font-size: 2rem;">{{ module.title }}</h1>
-        <div class="badge rounded-pill bg-primary fs-6 px-3 py-2">⏱ {{ module.estimated_time }}分</div>
-    </div>
-
-    <!-- 3. 動画エリア -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-dark">
-        {% if module.video %}
-        <video id="trainingVideo" controls class="w-100" style="max-height: 480px;">
-            <source src="{{ module.video.url }}" type="video/mp4">
-        </video>
-        {% else %}
-        <div class="text-white d-flex align-items-center justify-content-center" style="height: 380px;">
-            <p class="mb-0">動画準備中</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- 4. テキストエリア -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>研修テキスト・要約</h5>
-            <hr>
-            <div class="training-content" style="line-height: 1.7; color: #333; max-height: 280px; overflow-y: auto; padding-right: 8px;">
-                {{ module.content_text|safe|default:"テキスト情報はありません。" }}
+<div class="user-exam-container pb-5">
+    
+    <!-- 1. ヘッダー：タイトルセクション -->
+    <div class="mb-4 d-flex justify-content-between align-items-end flex-wrap gap-2">
+        <div>
+            <h1 class="page-title text-dark m-0 fw-800">{{ module.title }}</h1>
+            <div class="d-flex align-items-center gap-2 mt-2">
+                <span class="badge-time">
+                    <span class="material-icons size-14">timer</span> 目安 {{ module.estimated_time }}分
+                </span>
+                {% if is_completed %}
+                <span class="badge-status-done">
+                    <span class="material-icons size-14 align-middle">check_circle</span> 受講完了
+                </span>
+                {% endif %}
             </div>
         </div>
+        <div class="text-end">
+            <span class="extra-small text-muted d-block">現在の視聴状況</span>
+            <span id="progressText" class="fw-800 text-primary fs-5">0%</span>
+        </div>
     </div>
 
-    <!-- 5. 理解度チェック -->
-    <div class="card border-0 shadow-sm rounded-4 mb-5">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-4">💡 理解度チェック</h5>
-            {% for example in module.examples.all %}
-            <div class="example-section mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
-                <p class="text-primary fw-bold small mb-1">例題 {{ forloop.counter }}</p>
-                <p class="fw-bold mb-3" style="font-size: 1.05rem;">{{ example.text }}</p>
-                <div class="row g-2">
-                    {% for choice in example.choices.all %}
-                    <div class="col-md-6">
-                        <!-- ここで checkAnswer を呼び出しています -->
-                        <button class="btn btn-outline-secondary w-100 text-start py-2 px-3 small-choice"
-                                onclick="checkAnswer(this, {{ choice.is_correct|yesno:'true,false' }})">
-                            {{ choice.text }}
-                        </button>
+    <!-- 2. 動画セクション (16:9固定) -->
+    <div class="video-fixed-wrapper mb-5">
+        <div class="video-aspect-container shadow-lg">
+            {% if module.video %}
+            <video id="trainingVideo" controls playsinline poster="{% if module.thumbnail %}{{ module.thumbnail.url }}{% endif %}">
+                <source src="{{ module.video.url }}" type="video/mp4">
+            </video>
+            {% else %}
+            <div class="video-placeholder">
+                <span class="material-icons">videocam_off</span>
+                <p>動画を準備しています</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. 学習コンテンツエリア -->
+    <div class="row g-4">
+        
+        <!-- 研修のポイント ＆ PDF資料 -->
+        <div class="col-12">
+            <div class="admin-card border-0 shadow-sm bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="h5 fw-800 m-0 d-flex align-items-center gap-2">
+                        <span class="material-icons text-primary">menu_book</span>
+                        研修のポイント
+                    </h2>
+                    <!-- ★ PDF資料を開くボタン -->
+                    {% if module.reference_pdf %}
+                    <a href="{{ module.reference_pdf.url }}" target="_blank" class="btn btn-primary btn-sm rounded-pill extra-small fw-bold px-4 shadow-sm d-flex align-items-center gap-1">
+                        <span class="material-icons size-16">picture_as_pdf</span>
+                        PDF資料を開く
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="training-content-body text-dark">
+                    {{ module.content_text|safe|default:"この研修に要約資料はありません。動画およびPDF資料を確認してください。" }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 理解度チェック -->
+        <div class="col-12">
+            <div class="admin-card border-0 shadow-sm bg-white">
+                <h2 class="h5 fw-800 mb-4 d-flex align-items-center gap-2">
+                    <span class="material-icons text-warning">lightbulb</span>
+                    理解度チェック（何度でも挑戦可能）
+                </h2>
+                
+                <div class="quiz-stack">
+                    {% for example in module.examples.all %}
+                    <div class="quiz-item-card p-4 rounded-4 mb-4">
+                        <p class="extra-small fw-bold text-primary mb-1">例題 {{ forloop.counter }}</p>
+                        <p class="fw-bold text-dark mb-4" style="font-size: 1.1rem;">{{ example.text }}</p>
+                        <div class="row g-3">
+                            {% for choice in example.choices.all %}
+                            <div class="col-md-6">
+                                <button class="quiz-choice-btn w-100" onclick="checkAnswer(this, {{ choice.is_correct|yesno:'true,false' }})">
+                                    {{ choice.text }}
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="explanation-box mt-4 p-3 rounded-4 bg-white border d-none">
+                            <div class="res-label fw-800 mb-2"></div>
+                            <div class="small text-muted" style="line-height: 1.6;">
+                                <strong class="text-dark">【解説】</strong><br>
+                                {{ example.explanation }}
+                            </div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-                <!-- 解説エリア -->
-                <div class="explanation-area d-none mt-3 p-3 rounded-3 border bg-light" style="font-size: 1rem; max-height: 140px; overflow-y: auto;">
-                    <div class="result-msg fw-bold mb-1"></div>
-                    <div class="text-secondary"><strong>【解説】</strong><br>{{ example.explanation }}</div>
-                </div>
             </div>
-            {% empty %}
-            <p class="text-muted small">この研修に例題はありません。</p>
-            {% endfor %}
         </div>
     </div>
 
-    <!-- ★ 6. 進捗操作エリア（一番下） -->
-    <div class="bg-white border-top p-4 shadow-sm mt-5" style="border-radius: 20px 20px 0 0;">
-        <div class="row align-items-center">
-            <div class="col-sm-6 text-center text-sm-start mb-3 mb-sm-0">
-                <div id="complete-status" class="{% if not is_completed %}d-none{% endif %} text-success fw-bold fs-5">
-                    <i class="bi bi-check-circle-fill me-2"></i> 受講完了済み
-                </div>
-                <div id="learning-status" class="{% if is_completed %}d-none{% endif %} text-primary small">
-                    <i class="bi bi-info-circle me-1"></i> 動画を最後まで見ると完了として記録されます
-                </div>
+    <!-- 4. ページ最下部：ナビゲーション ＆ 保存ボタン -->
+    <div class="mt-5 pt-5 border-top">
+        <!-- 前後の研修へのリンク -->
+        <div class="row g-3 mb-5 justify-content-center">
+            <div class="col-6 col-md-4">
+                {% if prev_module %}
+                <a href="{% url 'courses:training_detail' prev_module.id %}" class="nav-step-btn prev w-100">
+                    <span class="material-icons">arrow_back</span>
+                    <div class="text-start ms-2">
+                        <span class="extra-small d-block opacity-75">前の研修</span>
+                        <span class="small fw-bold text-truncate d-block" style="max-width: 120px;">{{ prev_module.title }}</span>
+                    </div>
+                </a>
+                {% endif %}
             </div>
-            <div class="col-sm-6 text-center text-sm-end">
-                <button type="button" id="saveExitBtn" class="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onclick="saveAndExit()">
-                    <i class="bi bi-box-arrow-left me-2"></i> 保存して戻る
-                </button>
+            <div class="col-6 col-md-4">
+                {% if next_module %}
+                <a href="{% url 'courses:training_detail' next_module.id %}" class="nav-step-btn next w-100">
+                    <div class="text-end me-2">
+                        <span class="extra-small d-block opacity-75">次の研修</span>
+                        <span class="small fw-bold text-truncate d-block" style="max-width: 120px;">{{ next_module.title }}</span>
+                    </div>
+                    <span class="material-icons">arrow_forward</span>
+                </a>
+                {% endif %}
             </div>
+        </div>
+
+        <div class="text-center">
+            <p class="text-muted extra-small mb-4">お疲れ様でした！学習内容を保存して一覧に戻ります。</p>
+            <button type="button" id="saveExitBtn" class="btn btn-success rounded-pill px-5 py-3 fw-800 shadow-lg" onclick="saveAndExit()">
+                <span class="material-icons me-2 align-middle">task_alt</span>
+                学習を完了して一覧へ戻る
+            </button>
         </div>
     </div>
 
 </div>
 
-<!-- JavaScript -->
+<style>
+    .page-title { font-size: 1.4rem; border-left: 5px solid var(--primary-color); padding-left: 15px; font-weight: 800; }
+    .fw-800 { font-weight: 800 !important; }
+    .extra-small { font-size: 0.72rem; }
+    .badge-time { background: #eef7f4; color: var(--primary-color); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-status-done { background: #2ecc71; color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; }
+
+    /* 動画 */
+    .video-aspect-container { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 28px; overflow: hidden; }
+    .video-aspect-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; }
+
+    /* クイズ */
+    .quiz-item-card { background: #fdfaf5; border: 2px dashed #eee; }
+    .quiz-choice-btn { background: white; border: 2px solid #eee; border-radius: 14px; padding: 15px; text-align: left; font-size: 0.95rem; font-weight: 700; transition: 0.2s; color: #555; }
+    .quiz-choice-btn:hover { border-color: var(--primary-color); background: #f0f7f5; }
+    .quiz-choice-btn.is-correct { background-color: #2ecc71 !important; color: white !important; border-color: #2ecc71 !important; }
+    .quiz-choice-btn.is-wrong { background-color: #e86a6a !important; color: white !important; border-color: #e86a6a !important; }
+
+    /* 前後ボタン */
+    .nav-step-btn {
+        display: flex; align-items: center; padding: 12px 20px; background: white; border: 1px solid #eee; border-radius: 20px;
+        text-decoration: none; color: #444; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .nav-step-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+    .nav-step-btn.next { justify-content: flex-end; }
+    .nav-step-btn .material-icons { color: var(--primary-color); }
+
+    .admin-card { border-radius: 32px !important; }
+
+    @media (max-width: 768px) {
+        .admin-card { border-radius: 20px !important; padding: 20px !important; }
+        .video-aspect-container { border-radius: 0; margin-left: -20px; margin-right: -20px; width: calc(100% + 40px); }
+    }
+</style>
+
 <script>
 const video = document.getElementById('trainingVideo');
 const moduleId = "{{ module.id }}";
+const progressText = document.getElementById('progressText');
 
-// --- A. 例題の正解判定機能（★ここを追加しました） ---
-function checkAnswer(button, isCorrect) {
-    const parent = button.closest('.example-section');
-    const explanation = parent.querySelector('.explanation-area');
-    const resultMsg = parent.querySelector('.result-msg');
-    const allButtons = parent.querySelectorAll('.small-choice');
-
-    // 他の選択肢を選べないようにする
-    allButtons.forEach(btn => btn.classList.add('disabled'));
+function checkAnswer(btn, isCorrect) {
+    const parent = btn.closest('.quiz-item-card');
+    const explanation = parent.querySelector('.explanation-box');
+    const resLabel = parent.querySelector('.res-label');
+    const allBtns = parent.querySelectorAll('.quiz-choice-btn');
+    allBtns.forEach(b => b.classList.remove('is-correct', 'is-wrong'));
 
     if (isCorrect) {
-        button.classList.replace('btn-outline-secondary', 'btn-success');
-        button.classList.add('text-white');
-        resultMsg.innerHTML = '<span class="text-success">✨ 正解！</span>';
+        btn.classList.add('is-correct');
+        resLabel.innerHTML = '<span class="text-success fw-bold">✨ 正解です！</span>';
     } else {
-        button.classList.replace('btn-outline-secondary', 'btn-danger');
-        button.classList.add('text-white');
-        resultMsg.innerHTML = '<span class="text-danger">❌ 残念！</span>';
+        btn.classList.add('is-wrong');
+        resLabel.innerHTML = '<span class="text-danger fw-bold">❌ 違います</span>';
     }
-    // 解説を表示
     explanation.classList.remove('d-none');
 }
 
-// --- B. 動画進捗保存機能 ---
-
-// 1. 再生位置の復元
 if (video) {
-    video.addEventListener('loadedmetadata', function() {
+    video.addEventListener('loadedmetadata', () => {
         const lastPos = parseFloat("{{ last_position|default:0 }}");
-        if (lastPos > 0 && lastPos < video.duration) {
-            video.currentTime = lastPos;
-        }
+        if (lastPos > 0) video.currentTime = lastPos;
     });
-}
-
-// 2. サーバーへデータを送る関数
-function saveProgress(position, isDone = false) {
-    return fetch("{% url 'courses:save_progress' %}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-            module_id: moduleId,
-            position: position,
-            is_done: isDone
-        })
+    video.addEventListener('timeupdate', () => {
+        const percent = Math.floor((video.currentTime / video.duration) * 100);
+        progressText.innerText = `${percent}%`;
     });
-}
-
-// 3. 動画終了時：自動保存
-if (video) {
-    video.onended = function() {
-        saveProgress(video.currentTime, true).then(() => {
-            document.getElementById('complete-status')?.classList.remove('d-none');
-            document.getElementById('learning-status')?.classList.add('d-none');
-            alert("研修を完了しました！お疲れ様でした。");
-        });
+    video.onended = () => {
+        saveProgress(video.currentTime, true);
+        progressText.innerText = "100%";
+        progressText.className = "fw-800 text-success fs-5";
     };
 }
 
-// 4. 保存して戻るボタン
+function saveProgress(position, isDone = false) {
+    return fetch("{% url 'courses:save_progress' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
+        body: JSON.stringify({ module_id: moduleId, position: position, is_done: isDone })
+    });
+}
+
 function saveAndExit() {
     const btn = document.getElementById('saveExitBtn');
     btn.disabled = true;
-    btn.innerHTML = '保存中...';
-
     const currentPos = video ? video.currentTime : 0;
     saveProgress(currentPos, false).then(() => {
         window.location.href = "{% url 'courses:staff_course_list' %}";
     });
 }
 </script>
-
-<style>
-body { background-color: #f0f2f5; font-family: sans-serif; }
-.small-choice { transition: all 0.2s; border-radius: 10px; }
-.small-choice:hover:not(.disabled) { background-color: #f8f9fa; border-color: #0d6efd; color: #0d6efd; }
-.training-content ul { padding-left: 1.2rem; }
-</style>
 {% endblock %}
