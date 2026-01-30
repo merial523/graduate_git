@@ -45,8 +45,11 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for news in news_list %}
         <div class="col">
-            <div class="admin-card h-100 border-0 shadow-sm rounded-5 bg-white overflow-hidden d-flex flex-column transition-hover news-card-trigger">
-                <!-- 上部：ジャンル別の背景色 -->
+            <div class="admin-card h-100 border-0 shadow-sm rounded-5 bg-white overflow-hidden d-flex flex-column transition-hover news-card-trigger" 
+                style="cursor: pointer;"
+                data-title="{{ news.title }}" 
+                data-date="{{ news.created_at|date:'Y/m/d H:i' }}">
+                
                 <div class="news-thumbnail-header d-flex align-items-center justify-content-center 
                     {% if news.category == 'training' %}bg-purple-light{% elif news.category == 'urgent' %}bg-red-light{% else %}bg-teal-light{% endif %}">
                     <span class="material-icons text-white opacity-50" style="font-size: 60px;">
@@ -59,7 +62,6 @@
                     </div>
                 </div>
 
-                <!-- 中部：タイトル・本文サマリー -->
                 <div class="p-4 flex-grow-1">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         {% if news.is_important %}
@@ -71,11 +73,12 @@
                     </div>
                     <h3 class="h6 fw-bold text-dark mb-3 line-clamp-2" style="min-height: 2.8em;">{{ news.title }}</h3>
                     <p class="text-muted small line-clamp-3 mb-0">{{ news.content|striptags|truncatechars:80 }}</p>
+                    
+                    <div class="hidden-news-content d-none">{{ news.content|linebreaksbr }}</div>
                 </div>
 
-                <!-- 下部：フッター（削除ボタンのみ） -->
                 <div class="px-4 py-3 bg-light-soft border-top d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center text-muted ">
+                    <div class="d-flex align-items-center text-muted">
                         <span class="material-icons size-20 me-1">person_outline</span>{{ news.author.username }}
                     </div>
                 </div>
@@ -157,42 +160,40 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
-    const actionForm = document.getElementById('actionForm');
-    const targetTitleDisplay = document.getElementById('target-title');
+    // 1. モーダルの準備
+    const newsModalEl = document.getElementById('newsDetailModal');
+    if (!newsModalEl) return; // 要素がない場合は終了
+    const newsModal = new bootstrap.Modal(newsModalEl);
 
-    // 送信時の処理
-    actionForm.addEventListener('submit', function() {
-        confirmModal.hide();
-        statusModal.show();
-    });
-});
+    // 2. すべてのお知らせカードにクリックイベントを設定
+    const triggers = document.querySelectorAll('.news-card-trigger');
+    
+    triggers.forEach(card => {
+        card.addEventListener('click', function() {
+            // data属性から情報を取得
+            const title = this.getAttribute('data-title');
+            const date = this.getAttribute('data-date');
+            
+            // 隠しdivから本文を取得
+            const contentEl = this.querySelector('.hidden-news-content');
+            const content = contentEl ? contentEl.innerHTML : '';
 
-        // モーダルの準備
-        const newsModalEl = document.getElementById('newsDetailModal');
-        const newsModal = new bootstrap.Modal(newsModalEl);
-
-        // すべてのお知らせカードにクリックイベントを設定
-        const triggers = document.querySelectorAll('.news-card-trigger');
-        
-        triggers.forEach(card => {
-            card.addEventListener('click', function() {
-                // data属性からタイトルと日付を取得
-                const title = this.getAttribute('data-title');
-                const date = this.getAttribute('data-date');
-                // 隠しdivから本文を取得（改行が壊れない方法）
-                const content = this.querySelector('.hidden-news-content').innerHTML;
-
-                // モーダルの要素を更新
-                document.getElementById('modal-title').textContent = title;
-                document.getElementById('modal-date').textContent = date;
-                document.getElementById('modal-content').innerHTML = content;
-                
-                // モーダルを表示
-                newsModal.show();
-            });
+            // モーダルの要素に流し込む
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-date').textContent = date;
+            document.getElementById('modal-content').innerHTML = content;
+            
+            // モーダルを表示
+            newsModal.show();
         });
     });
-</script>
+
+    // 3. その他、削除確認等のモーダルがある場合の処理（必要に応じて）
+    const confirmModalEl = document.getElementById('confirmModal');
+    if (confirmModalEl) {
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        // 削除ボタン等のロジックがあればここに記述
+    }
+});
+</script>t>
 {% endblock %}
