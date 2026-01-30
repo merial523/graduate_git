@@ -54,8 +54,8 @@
                     <div class="importance-card rounded-5 p-4 mt-4">
                         <div class="row align-items-center">
                             <div class="col">
-                                <label class="fw-bold text-dark d-block mb-1">最優先設定</label>
-                                <p class="text-muted extra-small m-0">最優先ラベルとアイコンが付与されます</p>
+                                <label class="fw-bold text-dark d-block mb-1">最重要設定</label>
+                                <p class="text-muted extra-small m-0">最重要ラベルとアイコンが付与されます</p>
                             </div>
                             <div class="col-auto">
                                 <div class="form-check form-switch custom-switch-cute">
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const labelText = document.querySelector('.label-text');
     if (importantSwitch && labelText) {
         importantSwitch.addEventListener('change', function() {
-            labelText.innerText = this.checked ? "最優先" : "通常";
+            labelText.innerText = this.checked ? "最重要" : "通常";
             labelText.parentElement.className = `status-label fw-bold mt-1 ${this.checked ? 'text-danger' : 'text-muted'}`;
         });
     }
