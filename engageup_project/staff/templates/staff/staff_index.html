@@ -84,31 +84,40 @@
         </div>
 
         <div class="ranking-podium-container p-4">
-            {% if badge_ranking %}
-                <div class="ranking-podium mb-4">
-                    {% for ranked_user in badge_ranking %}
-                        {% if forloop.counter <= 3 %}
-                            <div class="podium-item podium-{{ forloop.counter }}">
-                                <div class="podium-user-avatar">
-                                    {% if ranked_user.avatar %}
-                                        <img src="{{ ranked_user.avatar.url }}">
-                                    {% else %}
-                                        <span class="material-icons">account_circle</span>
-                                    {% endif %}
-                                    <div class="podium-rank-circle">
-                                        {% if forloop.counter == 1 %}1{% elif forloop.counter == 2 %}2{% else %}3{% endif %}
+                {% if badge_ranking %}
+                    <div class="ranking-podium">
+                        {% for ranked_user in badge_ranking %}
+                            {% if forloop.counter <= 3 %}
+                                <div class="podium-item podium-{{ forloop.counter }}">
+                                    <div class="podium-user-avatar">
+                                        {% if ranked_user.avatar %}
+                                            {# ★末尾に ?v={{ ... }} を追加してキャッシュを強制的に回避 #}
+                                            <img src="{{ ranked_user.avatar.url }}?v={{ ranked_user.updated_at|date:'U' }}" 
+                                                class="avatar-img" 
+                                                alt="{{ ranked_user.username }}">
+                                        {% else %}
+                                            <div class="avatar-placeholder">
+                                                <span class="material-icons">account_circle</span>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <div class="podium-rank-circle">
+                                            {% if forloop.counter == 1 %}1{% elif forloop.counter == 2 %}2{% else %}3{% endif %}
+                                        </div>
                                     </div>
+                                    
+                                    <div class="podium-info text-center mt-2">
+                                        <p class="podium-name fw-bold text-dark mb-0">{{ ranked_user.username }}</p>
+                                        <p class="podium-score fw-800 text-primary mb-0">{{ ranked_user.badge_count }}個</p>
+                                    </div>
+                                    
+                                    <div class="podium-base-line"></div>
                                 </div>
-                                <p class="podium-name fw-bold text-dark">{{ ranked_user.username }}</p>
-                                <p class="podium-score fw-800 text-primary">{{ ranked_user.badge_count }}個</p>
-                                <div class="podium-base shadow-sm"></div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                <!-- 4位以降のリストは省略（必要に応じて以前のコードを維持） -->
-            {% endif %}
-        </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
     </div>
 </div>
 
@@ -207,37 +216,105 @@
 .extra-small { font-size: 0.75rem; }
 .page-title { font-size: 1.4rem; border-left: 5px solid var(--primary-color); padding-left: 15px; font-weight: 800; }
 
-/* 3. ランキング表彰台 */
+/* --- ランキング表彰台の修正スタイル --- */
+
 .ranking-podium {
-    display: flex; justify-content: center; align-items: flex-end;
-    padding-top: 40px; gap: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* 下揃えにして高低差を出す */
+    gap: 10px;
+    padding-top: 20px;
 }
-.podium-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.podium-1 { order: 2; transform: scale(1.15); z-index: 2; }
-.podium-2 { order: 1; margin-bottom: -10px; }
-.podium-3 { order: 3; margin-bottom: -15px; }
 
-.podium-user-avatar { position: relative; margin-bottom: 10px; }
-.podium-user-avatar img, .podium-user-avatar span {
-    width: 50px; height: 50px; border-radius: 50%; border: 3px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); background: white;
+.podium-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
 }
-.podium-1 .podium-user-avatar img { width: 65px; height: 65px; border-color: #FFD700; }
+
+/* 順位ごとのサイズ・重なり順設定 */
+.podium-1 { order: 2; z-index: 2; transform: translateY(-10px); } /* 1位を中央・最前面 */
+.podium-2 { order: 1; z-index: 1; } /* 2位を左 */
+.podium-3 { order: 3; z-index: 1; } /* 3位を右 */
+
+/* アバターコンテナ */
+.podium-user-avatar {
+    position: relative;
+    background: white;
+    border-radius: 50%;
+    padding: 4px; /* 白枠 */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+/* 画像自体のサイズ指定（ここが重要） */
+.avatar-img, .avatar-placeholder {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover; /* 画像を正円の中に綺麗に収める */
+    display: block;
+}
+
+/* 1位のアバターだけ大きくする */
+.podium-1 .avatar-img, .podium-1 .avatar-placeholder {
+    width: 90px;
+    height: 90px;
+    border: 3px solid #FFD700; /* 金枠 */
+}
+
+/* 画像がない時のプレビュー用 */
+.avatar-placeholder {
+    background-color: #f0f0f0;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.avatar-placeholder .material-icons {
+    font-size: 40px;
+}
+.podium-1 .avatar-placeholder .material-icons {
+    font-size: 60px;
+}
+
+/* 順位バッジ */
 .podium-rank-circle {
-    position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-    width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; color: white; font-weight: 900;
-    display: flex; align-items: center; justify-content: center;
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    background-color: #ddd;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
 }
-.podium-1 .podium-rank-circle { background: #FFD700; }
-.podium-2 .podium-rank-circle { background: #C0C0C0; }
-.podium-3 .podium-rank-circle { background: #CD7F32; }
+.podium-1 .podium-rank-circle { background-color: #FFC107; }
+.podium-2 .podium-rank-circle { background-color: #adb5bd; }
+.podium-3 .podium-rank-circle { background-color: #cd7f32; }
 
-.podium-name { font-size: 0.75rem; margin-bottom: 2px; text-align: center; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.podium-score { font-size: 0.85rem; margin-bottom: 10px; }
-.podium-base { height: 8px; width: 80%; background: #eee; border-radius: 50px; }
-.podium-1 .podium-base { background: #FFD700; height: 10px; width: 100%; opacity: 0.3; }
+/* 土台の線 */
+.podium-base-line {
+    width: 80%;
+    height: 6px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 10px;
+    margin-top: 10px;
+}
+.podium-1 .podium-base-line {
+    background: #FFD700;
+    opacity: 0.3;
+}
 
-.ranking-row { background: #fafafa; transition: 0.2s; }
-.rank-num { width: 24px; font-weight: 900; color: #ccc; font-size: 0.8rem; }
-.mini-avatar img { width: 30px; height: 30px; }
+/* テキストの調整 */
+.podium-name { font-size: 0.85rem; margin-top: 5px; }
+.podium-score { font-size: 1rem; }
 </style>
 {% endblock %}
