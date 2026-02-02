@@ -41,10 +41,6 @@ class Course(models.Model):
     courseCount = models.IntegerField(
         verbose_name="講座数"
     )
-    is_mylist = models.BooleanField(
-        verbose_name="マイリストに入っているか",
-        default=False
-    )
     is_active = models.BooleanField(
         verbose_name = "有効かどうか",
         default=True
