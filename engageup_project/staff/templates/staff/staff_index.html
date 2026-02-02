@@ -55,7 +55,6 @@
                 <div class="ranking-visual-grid mb-4">
                     {% for ranked_user in badge_ranking %}
                         {% if forloop.counter <= 3 %}
-                            {# 上位3名は特別なカード形式 #}
                             <div class="rank-top-card rank-{{ forloop.counter }} shadow-sm">
                                 <div class="rank-number">
                                     {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
@@ -76,7 +75,6 @@
                     {% endfor %}
                 </div>
 
-                {# 4位以降をリスト表示 #}
                 <div class="ranking-sub-list">
                     {% for ranked_user in badge_ranking %}
                         {% if forloop.counter > 3 %}
@@ -100,14 +98,15 @@
     <!-- 4. 通知 ＆ マイリスト -->
     <div class="row g-3">
         <div class="col-12">
-            <a href="#" class="admin-card border-0 shadow-sm d-flex align-items-center justify-content-between text-decoration-none bg-white p-3">
+            <!-- お知らせ通知リンク（現在は仮に # としています） -->
+            <a href="{% url 'staff:news_list' %}" class="admin-card border-0 shadow-sm d-flex align-items-center justify-content-between text-decoration-none bg-white p-3">
                 <div class="d-flex align-items-center gap-3">
                     <div class="icon-circle bg-soft-orange text-orange">
                         <span class="material-icons">notifications_active</span>
                     </div>
                     <div>
                         <h2 class="h6 fw-bold text-dark mb-0">復習が必要な検定</h2>
-                        <p class="text-muted extra-small mb-0">ビジネスマナー基礎（残り3日）</p>
+                        <p class="text-muted extra-small mb-0">最新のお知らせをチェック</p>
                     </div>
                 </div>
                 <span class="material-icons text-muted">chevron_right</span>
@@ -115,13 +114,14 @@
         </div>
 
         <div class="col-12">
-            <a href="#" class="admin-card border-0 shadow-sm d-flex align-items-center justify-content-between text-decoration-none bg-white p-3">
+            <!-- ★ 修正ポイント：カード全体をマイリストへのリンクに設定しました -->
+            <a href="{% url 'mylist:mylistIndex' %}" class="admin-card border-0 shadow-sm d-flex align-items-center justify-content-between text-decoration-none bg-white p-3">
                 <div class="d-flex align-items-center gap-3">
                     <div class="icon-circle bg-soft-green text-green">
                         <span class="material-icons">bookmark_added</span>
                     </div>
                     <div>
-                        <h2 class="h6 fw-bold text-dark mb-0">マイリスト</h2>
+                        <h2 class="h6 fw-bold text-dark mb-0">マイリスト</h2>   
                         <p class="text-muted extra-small mb-0">保存した動画やテキストをチェック</p>
                     </div>
                 </div>
@@ -166,7 +166,7 @@
 /* ランキング ビジュアル */
 .ranking-visual-grid {
     display: grid;
-    grid-template-columns: 1fr 1.2fr 1fr; /* 1位を少し大きく */
+    grid-template-columns: 1fr 1.2fr 1fr;
     gap: 12px;
     align-items: flex-end;
 }
@@ -197,7 +197,10 @@
 }
 
 /* アニメーション */
-.admin-card { transition: transform 0.3s ease; }
-.admin-card:hover { transform: translateY(-3px); }
+.admin-card { transition: all 0.3s ease; }
+.admin-card:hover { 
+    transform: translateY(-3px); 
+    background-color: #f8fcfb !important; /* ホバー時にうっすら緑にする */
+}
 </style>
 {% endblock %}

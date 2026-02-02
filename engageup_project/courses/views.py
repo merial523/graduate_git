@@ -435,14 +435,26 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
         return context
 
 # お気に入り登録・解除のAjax用View
+from main.models import Course, Mylist # Mylistをインポート
+
 class ToggleMyListView(View):
     def post(self, request, course_id):
-        # モデルに合わせて is_mylist (BooleanField) を操作する
+        # 1. ログインチェック
+        if not request.user.is_authenticated:
+            return JsonResponse({'status': 'error', 'message': 'ログインが必要です'}, status=401)
+        
         course = get_object_or_404(Course, id=course_id)
         
-        # True/Falseを反転させる
-        course.is_mylist = not course.is_mylist
-        course.save()
+        # 2. 自分のマイリストにこのコースが既にあるか探す
+        favorite = Mylist.objects.filter(user=request.user, course=course)
         
-        action = 'added' if course.is_mylist else 'removed'
+        if favorite.exists():
+            # 既に登録されているなら削除（お気に入り解除）
+            favorite.delete()
+            action = 'removed'
+        else:
+            # 登録されていないなら作成（お気に入り登録）
+            Mylist.objects.create(user=request.user, course=course)
+            action = 'added'
+        
         return JsonResponse({'status': 'success', 'action': action})

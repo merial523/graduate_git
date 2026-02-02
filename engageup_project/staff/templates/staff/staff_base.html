@@ -75,7 +75,7 @@
     </div>
 
     <nav class="side-nav-left d-none d-lg-flex">
-      <a href="{% url 'index' %}">ホーム</a>
+      <a href="{% url 'mylist:mylistIndex' %}">マイリスト</a>
       <a href="{% url 'enrollments:exam_list_user' %}">検定受講</a>
       <a href="{% url 'courses:staff_course_list' %}">研修動画視聴</a>
       <a href="{% url 'staff:news_list' %}">お知らせ</a>
@@ -132,8 +132,8 @@
               </div>
               <div class="offcanvas-body">
                 <nav class="mobile-nav">
-                  <a href="{% url 'index' %}"
-                    ><span class="material-icons">home</span>ホーム</a
+                  <a href="{% url 'mylist:mylistIndex' %}"
+                    ><span class="material-icons">favorite</span>マイリスト</a
                   >
                   <a href="{% url 'enrollments:exam_list_user' %}"
                     ><span class="material-icons">assignment</span
