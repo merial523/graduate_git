@@ -264,7 +264,7 @@ class User(AbstractUser):       #名前、ランク、会員番号、メール�
         unique=True
     )
     mylist = models.ManyToManyField(
-        News,
+        Course,
         through="Mylist",
         related_name = "mylist_users",
         blank = True,
@@ -481,8 +481,8 @@ class Mylist(models.Model):
         on_delete=models.CASCADE,
         related_name="mylist_items"  # ← 追加
     )
-    news = models.ForeignKey(
-        News,
+    course = models.ForeignKey(
+        Course,
         on_delete=models.CASCADE,
         related_name="mylist_items"
     )
@@ -490,7 +490,7 @@ class Mylist(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "news"],
+                fields=["user", "course"],
                 name="unique_mylist"
             )
         ]
