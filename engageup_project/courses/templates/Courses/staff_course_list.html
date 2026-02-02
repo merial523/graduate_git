@@ -15,13 +15,6 @@
             <span class="material-icons search-icon">search</span>
             <input type="text" id="courseSearch" placeholder="コース名で検索..." class="search-input shadow-sm">
         </div>
-
-        <div class="filter-chips">
-            <button class="chip active" onclick="filterCategory('all', event)">全て</button>
-            <button class="chip text-orange" onclick="filterCategory('mylist', event)">
-                <span class="material-icons size-14 align-middle">favorite</span> お気に入り
-            </a>
-        </div>
     </div>
 
     <div class="accordion-container" id="courseAccordion">
@@ -158,19 +151,6 @@ document.getElementById('courseSearch').addEventListener('input', function(e) {
         const title = card.dataset.title.toLowerCase();
         card.style.display = title.includes(term) ? 'block' : 'none';
     });
-});
-
-// カテゴリフィルタ
-function filterCategory(cat, event) {
-    document.querySelectorAll('.chip').forEach(btn => btn.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
-    document.querySelectorAll('.course-card-wrapper').forEach(card => {
-        const subject = card.dataset.subject;
-        const isFav = card.dataset.favorite === 'true';
-        let show = (cat === 'all') || (cat === 'mylist' && isFav) || (cat === subject);
-        card.style.display = show ? 'block' : 'none';
-    });
-}
+}); 
 </script>
 {% endblock %}
