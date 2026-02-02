@@ -22,7 +22,7 @@
                     <input type="text" name="q" placeholder="名前やメールで検索..." value="{{ request.GET.q }}">
                 </div>
                 <!-- 権限フィルタ -->
-                <select name="rank_filter" class="form-select border-0 shadow-sm rounded-4 px-3" style="width: 160px; background-color: var(--card-bg)" onchange="this.form.submit()">
+                <select name="rank_filter" class="form-select border-0 shadow-sm rounded-4 px-3" style="width: 160px; background-color: white" onchange="this.form.submit()">
                     <option value="all" {% if current_rank == "all" %}selected{% endif %}>全ての権限</option>
                     {% for r_choice in rank_choices %}
                         <option value="{{ r_choice }}" {% if current_rank == r_choice %}selected{% endif %}>{{ r_choice }}</option>

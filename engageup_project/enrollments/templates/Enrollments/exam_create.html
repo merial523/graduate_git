@@ -5,14 +5,14 @@
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'enrollments:exam_list' %}" class="text-decoration-none">検定管理</a></li>
-<li class="breadcrumb-item active">{% if form.instance.pk %}検定の編集{% else %}新規検定作成{% endif %}</li>
+<li class="breadcrumb-item active">{% if form.instance.pk %}検定編集{% else %}新規検定作成{% endif %}</li>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid pb-5 px-md-5">
     <!-- タイトルエリア -->
     <div class="mb-4 text-start">
-        <h1 class="fw-800 text-dark m-0 fw-bold">{% if form.instance.pk %}検定の編集{% else %}新規検定作成{% endif %}</h1>
+        <h1 class="fw-800 text-dark m-0 fw-bold">{% if form.instance.pk %}検定編集{% else %}新規検定作成{% endif %}</h1>
     </div>
 
     <form method="POST" enctype="multipart/form-data" id="exam-form">
@@ -137,6 +137,7 @@
     .fw-800 { font-weight: 800; }
     .extra-small { font-size: 0.72rem; }
     .size-18 { font-size: 18px; }
+    .admin-card { border-left: 10px solid #76b19d !important; }
 
     /* 必須ラベル */
     .badge-required {
