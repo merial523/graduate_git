@@ -14,11 +14,7 @@
 
             <div class="d-grid gap-2">
                 <!-- 教材がない場合などに、再設定画面へ誘導するボタン -->
-                {% if exam_id %}
-                    <a href="{% url 'enrollments:exam_edit' exam_id %}" class="btn btn-primary btn-lg">
-                        📁 教材をアップロードしに行く
-                    </a>
-                {% endif %}
+                
 
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     前の画面に戻る
