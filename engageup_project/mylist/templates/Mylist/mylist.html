@@ -5,142 +5,235 @@
 
 {% block content %}
 <div class="user-exam-container pb-5">
-    <!-- 1. ヘッダーエリア -->
     <div class="mb-4 text-start">
         <h1 class="page-title text-dark m-0 fw-800">マイリスト</h1>
     </div>
 
-    <!-- 3. マイリスト一覧 -->
-    <div class="mylist-wrapper" id="mylistContainer">
-        {% for item in my_favorites %}
-            
-            {% if item.course %}
-                <!-- 研修コースのカード -->
-                <div class="mylist-card-item mb-3" data-type="course">
-                    <div class="admin-card border-0 shadow-sm bg-white p-0 overflow-hidden">
-                        <div class="d-flex align-items-stretch">
-                            <!-- 左側：解除ボタン（チェックボックス位置） -->
-                            <div class="remove-action">
-                                <button class="btn-fav-active" onclick="toggleMylist(this, 'course', '{{ item.course.id }}')">
-                                    <span class="material-icons text-neko-pink">favorite</span>
-                                </button>
-                            </div>
-                            <!-- 中央：情報 -->
-                            <a href="{% url 'courses:staff_course_list' %}?q={{ item.course.subject }}" class="flex-grow-1 p-3 text-decoration-none">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <span class="badge-category mb-2">研修コース</span>
-                                    <span class="material-icons text-muted opacity-25">chevron_right</span>
+    {% if my_favorites %}
+        <div class="accordion-container" id="mylistAccordion">
+            {% for item in my_favorites %}
+                {% if item.course %}
+                    <!-- 研修コースアイテム（研修一覧と全く同じデザイン） -->
+                    <div class="course-card-wrapper mb-3" data-title="{{ item.course.subject }}">
+                        
+                        <div class="course-main-card shadow-sm border-0">
+                            <div class="card-body p-0">
+                                <div class="d-flex align-items-stretch">
+                                    
+                                    <!-- ハートボタンエリア -->
+                                    <div class="favorite-side-action">
+                                        <button class="btn-favorite-circle active" 
+                                                data-url="{% url 'courses:mylist_toggle' item.course.id %}"
+                                                data-course-id="{{ item.course.id }}"
+                                                onclick="toggleFavorite(this, event)"
+                                                aria-label="お気に入りから削除">
+                                            <span class="material-icons">favorite</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- コース情報エリア -->
+                                    <div class="flex-grow-1 p-3" data-bs-toggle="collapse" data-bs-target="#collapseMylist{{ item.id }}" style="cursor: pointer;">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="badge-category">{{ item.course.subject }}</span>
+                                            <span class="material-icons text-muted opacity-25">expand_more</span>
+                                        </div>
+                                        <h2 class="h6 fw-800 text-dark mb-3">{{ item.course.subject }}</h2>
+                                        
+                                        <!-- 進捗バー -->
+                                        <div class="progress-container-home">
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span class="text-muted fw-bold">進捗 {{ item.course.progress_percent|default:0 }}%</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px; background-color: #eee; border-radius: 10px;">
+                                                <div class="progress-bar rounded-pill" 
+                                                     role="progressbar" 
+                                                     style="width: {{ item.course.progress_percent|default:0 }}%; background-color: var(--primary-color);">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <h2 class="h6 fw-800 text-dark mb-1">{{ item.course.subject }}</h2>
-                                <p class="extra-small text-muted mb-0">全 {{ item.course.courseCount }} 研修コンテンツ</p>
-                            </a>
+                            </div>
+
+                            <!-- アコーディオン内容（モジュール一覧） -->
+                            <div id="collapseMylist{{ item.id }}" class="collapse" data-bs-parent="#mylistAccordion">
+                                <div class="module-list border-top bg-light-subtle">
+                                    {% for module in item.course.modules.all %}
+                                        {% if module.is_active %}
+                                        <a href="{% url 'courses:training_detail' module.id %}" class="module-item text-decoration-none d-flex align-items-center p-3">
+                                            <div class="module-icon me-3">
+                                                <span class="material-icons {% if module.id in completed_module_ids %}text-success{% else %}text-muted{% endif %}">
+                                                    {% if module.id in completed_module_ids %}check_circle{% else %}play_circle_filled{% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="module-title mb-0 text-dark">{{ module.title }}</p>
+                                                <span class="text-muted extra-small">約{{ module.estimated_time }}分</span>
+                                            </div>
+                                            <span class="material-icons text-muted size-18">chevron_right</span>
+                                        </a>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="p-3 text-center text-muted extra-small">研修コンテンツ準備中</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-            {% elif item.news %}
-                <!-- お知らせのカード -->
-                <div class="mylist-card-item mb-3" data-type="news">
-                    <div class="admin-card border-0 shadow-sm bg-white p-0 overflow-hidden">
-                        <div class="d-flex align-items-stretch">
-                            <!-- 左側：解除ボタン -->
-                            <div class="remove-action bg-soft-blue">
-                                <button class="btn-fav-active" onclick="toggleMylist(this, 'news', '{{ item.news.id }}')">
-                                    <span class="material-icons text-neko-pink">favorite</span>
-                                </button>
-                            </div>
-                            <!-- 中央：情報 -->
-                            <div class="flex-grow-1 p-3" onclick="openNewsModal('{{ item.news.title|escapejs }}', '{{ item.news.created_at|date:'Y/m/d' }}', '{{ item.news.content|escapejs }}')" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <span class="badge-category-news mb-2">お知らせ</span>
-                                    <span class="material-icons text-muted opacity-25">open_in_new</span>
-                                </div>
-                                <h2 class="h6 fw-800 text-dark mb-0 text-truncate">{{ item.news.title }}</h2>
-                                <span class="extra-small text-muted">{{ item.news.created_at|date:"Y.m.d" }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-        {% empty %}
-            <!-- 空の状態のデザイン -->
-            <div class="text-center py-5">
-                <div class="empty-icon-box mb-3">
-                    <span class="material-icons opacity-25" style="font-size: 80px;">favorite_border</span>
-                </div>
-                <h6 class="fw-800 text-dark">マイリストは空です</h6>
-                <p class="text-muted small">気になる研修やお知らせを見つけたら、<br>ハートマークを押して保存しましょう。</p>
-                <a href="{% url 'courses:staff_course_list' %}" class="btn btn-primary rounded-pill px-4 fw-800 shadow-sm mt-3">研修を探しに行く</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- 空の状態 -->
+        <div class="alert alert-warning text-center p-5">
+            <div class="mb-3">
+                <span class="material-icons" style="font-size: 4rem; color: #ffc107;">bookmark_border</span>
             </div>
-        {% endfor %}
-    </div>
+            <strong>データがありません</strong><br>
+            研修一覧画面でハートを押して、ここに戻ってきてください。
+        </div>
+    {% endif %}
 </div>
 
 <style>
-    .page-title { font-size: 1.4rem; border-left: 5px solid var(--primary-color); padding-left: 15px; font-weight: 800; }
     .fw-800 { font-weight: 800 !important; }
     .extra-small { font-size: 0.72rem; }
-    .text-neko-pink { color: var(--accent-color) !important; }
-
-    /* サイドのアクションエリア */
-    .remove-action { width: 60px; display: flex; align-items: center; justify-content: center; background-color: #fcfcfc; border-right: 1px solid #f0f0f0; }
-    .bg-soft-blue { background-color: #f4f9ff; }
-    .btn-fav-active { background: none; border: none; transition: 0.3s; }
-    .btn-fav-active:hover { transform: scale(1.2); }
-
-    /* カード */
-    .mylist-card-item { transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .admin-card { border-radius: 24px !important; }
+    .page-title { font-size: 1.4rem; border-left: 5px solid var(--primary-color); padding-left: 15px; }
     
-    /* フィルターチップ */
-    .filter-chips { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
-    .chip { padding: 8px 20px; background: #fff; color: #888; border: none; border-radius: 50px; font-size: 0.85rem; font-weight: 800; white-space: nowrap; transition: 0.3s; }
-    .chip.active { background: var(--primary-color); color: #fff; box-shadow: 0 4px 10px rgba(118, 177, 157, 0.3); }
+    .favorite-side-action { 
+        width: 60px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        background-color: #fcfcfc; 
+        border-right: 1px solid #f0f0f0; 
+    }
+    
+    /* 未登録時のスタイル (グレー) */
+    .btn-favorite-circle { 
+        background: none; 
+        border: none; 
+        color: #ccc; 
+        transition: all 0.3s ease; 
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+    }
+    .btn-favorite-circle:hover:not(:disabled) { 
+        transform: scale(1.1); 
+        background-color: rgba(0,0,0,0.05);
+    }
+    .btn-favorite-circle:disabled {
+        cursor: not-allowed;
+    }
+    
+    /* 登録時のスタイル (赤色) */
+    .btn-favorite-circle.active { 
+        color: #e74c3c !important; 
+    }
+    .btn-favorite-circle.active .material-icons { 
+        color: #e74c3c; 
+    }
+    .btn-favorite-circle.active:hover:not(:disabled) {
+        background-color: rgba(231, 76, 60, 0.1);
+    }
 
-    .badge-category { font-size: 0.6rem; padding: 2px 8px; background: #eef7f4; color: var(--primary-color); border-radius: 4px; font-weight: 800; }
-    .badge-category-news { font-size: 0.6rem; padding: 2px 8px; background: #eef4f7; color: #5da9e9; border-radius: 4px; font-weight: 800; }
+    .course-main-card { 
+        background: #fff; 
+        border-radius: 24px; 
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    .course-main-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .module-item {
+        transition: background-color 0.2s;
+    }
+    .module-item:hover {
+        background-color: rgba(0,0,0,0.02);
+    }
+    
+    .badge-category {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.35em 0.65em;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
 </style>
 
 <script>
-// 1. カテゴリフィルタ
-function filterMyList(type) {
-    document.querySelectorAll('.chip').forEach(btn => btn.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+/**
+ * お気に入りトグル機能（マイリスト画面用）
+ */
+function toggleFavorite(btn, event) {
+    event.stopPropagation();
+    event.preventDefault();
 
-    const items = document.querySelectorAll('.mylist-card-item');
-    items.forEach(item => {
-        if (type === 'all' || item.dataset.type === type) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
+    // 連打防止
+    if (btn.disabled) {
+        console.log('⚠️ 処理中のため無視されました');
+        return;
+    }
 
-// 2. お気に入り解除（マイリスト画面からの即時削除）
-function toggleMylist(btn, type, id) {
-    // 演出：カードをスッと消す
-    const card = btn.closest('.mylist-card-item');
-    card.style.opacity = '0';
-    card.style.transform = 'translateX(-20px)';
-    
-    setTimeout(() => {
-        card.style.display = 'none';
-    }, 400);
+    // マイリスト画面では削除確認
+    if (!confirm('マイリストから削除しますか？')) {
+        return;
+    }
 
-    // Ajax送信（URLは実際の構成に合わせてください）
-    let url = (type === 'news') ? `/mylist/news/${id}/unfavorite/` : `/courses/mylist/toggle/${id}/`;
-    
+    // ボタンを無効化
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+
+    const url = btn.dataset.url;
+    const courseId = btn.dataset.courseId;
+
+    console.log('🗑️ マイリストから削除中:', { url, courseId });
+
     fetch(url, {
         method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        headers: { 
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => {
+        console.log('📡 レスポンス受信:', res.status);
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log('✅ データ受信:', data);
+        
+        if (data.status === 'success') {
+            console.log('✅ 削除成功。ページをリロードします');
+            // 削除成功したらページをリロード
+            location.reload();
+        } else {
+            console.error('❌ エラー:', data.message);
+            alert('エラー: ' + (data.message || '不明なエラー'));
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    })
+    .catch(error => {
+        console.error('💥 通信エラー:', error);
+        alert('通信エラーが発生しました。もう一度お試しください。');
+        btn.disabled = false;
+        btn.style.opacity = '1';
     });
 }
 
-// お知らせ詳細モーダル（もしnews_list.htmlと共通化してなければここに配置）
-function openNewsModal(title, date, content) {
-    // 既存のニュース詳細モーダル表示ロジックがあれば呼び出し
-}
+// ページ読み込み時のログ
+document.addEventListener('DOMContentLoaded', function() {
+    const count = document.querySelectorAll('.course-card-wrapper').length;
+    console.log('📋 マイリスト画面が読み込まれました');
+    console.log('📊 登録コース数:', count);
+});
 </script>
 {% endblock %}

@@ -9,7 +9,6 @@
         <h1 class="page-title text-dark m-0 fw-800">研修プログラム</h1>
     </div>
 
-    <!-- 検索 ＆ フィルター -->
     <div class="search-filter-section mb-4">
         <div class="search-bar-wrapper mb-3">
             <span class="material-icons search-icon">search</span>
@@ -19,34 +18,34 @@
 
     <div class="accordion-container" id="courseAccordion">
         {% for course in courses %}
-        <div class="course-card-wrapper mb-3" 
-             data-subject="{{ course.subject }}" 
-             data-title="{{ course.subject }}" 
-             data-favorite="{% if course.is_mylist %}true{% else %}false{% endif %}">
+        <div class="course-card-wrapper mb-3" data-title="{{ course.subject }}">
             
             <div class="course-main-card shadow-sm border-0">
                 <div class="card-body p-0">
                     <div class="d-flex align-items-stretch">
                         
-                        <!-- 左側：お気に入りボタン -->
+                        <!-- ハートボタンエリア -->
                         <div class="favorite-side-action">
                             <button class="btn-favorite-circle {% if course.is_mylist %}active{% endif %}" 
-                                    onclick="toggleFavorite(this, '{{ course.id }}', event)">
-                                <span class="material-icons" style="color: #e88d6a;">
+                                    data-url="{% url 'courses:mylist_toggle' course.id %}"
+                                    data-course-id="{{ course.id }}"
+                                    onclick="toggleFavorite(this, event)"
+                                    aria-label="お気に入りに追加">
+                                <span class="material-icons">
                                     {% if course.is_mylist %}favorite{% else %}favorite_border{% endif %}
                                 </span>
                             </button>
                         </div>
 
-                        <!-- 中央〜右：コース情報 ＆ アコーディオン -->
+                        <!-- コース情報エリア -->
                         <div class="flex-grow-1 p-3" data-bs-toggle="collapse" data-bs-target="#collapse{{ course.id }}" style="cursor: pointer;">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <span class="badge-category">{{ course.subject }}</span>
                                 <span class="material-icons text-muted opacity-25">expand_more</span>
                             </div>
-                            
                             <h2 class="h6 fw-800 text-dark mb-3">{{ course.subject }}</h2>
                             
+                            <!-- 進捗バー -->
                             <div class="progress-container-home">
                                 <div class="d-flex justify-content-between extra-small mb-1">
                                     <span class="text-muted fw-bold">進捗 {{ course.progress_percent }}%</span>
@@ -62,13 +61,14 @@
                     </div>
                 </div>
 
+                <!-- アコーディオン内容（モジュール一覧） -->
                 <div id="collapse{{ course.id }}" class="collapse" data-bs-parent="#courseAccordion">
                     <div class="module-list border-top bg-light-subtle">
                         {% for module in course.modules.all %}
                             {% if module.is_active %}
                             <a href="{% url 'courses:training_detail' module.id %}" class="module-item text-decoration-none d-flex align-items-center p-3">
-                                <div class="module-icon me-3 {% if module.id in completed_module_ids %}is-done{% endif %}">
-                                    <span class="material-icons">
+                                <div class="module-icon me-3">
+                                    <span class="material-icons {% if module.id in completed_module_ids %}text-success{% else %}text-muted{% endif %}">
                                         {% if module.id in completed_module_ids %}check_circle{% else %}play_circle_filled{% endif %}
                                     </span>
                                 </div>
@@ -80,7 +80,7 @@
                             </a>
                             {% endif %}
                         {% empty %}
-                            <div class="p-3 text-center text-muted extra-small">研修コンテンツを準備中です</div>
+                            <div class="p-3 text-center text-muted extra-small">研修コンテンツ準備中</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -93,64 +93,210 @@
 <style>
     .fw-800 { font-weight: 800 !important; }
     .extra-small { font-size: 0.72rem; }
-
-    .page-title {
-        font-size: 1.4rem;
-        border-left: 5px solid var(--primary-color);
-        padding-left: 15px;
-    }
-
-    /* 検索バーの重なり修正 */
+    .page-title { font-size: 1.4rem; border-left: 5px solid var(--primary-color); padding-left: 15px; }
     .search-bar-wrapper { position: relative; display: flex; align-items: center; }
     .search-icon { position: absolute; left: 15px; color: #aaa; z-index: 2; pointer-events: none; }
-    .search-input { width: 100%; padding: 12px 15px 12px 45px; border: none; background: #fff; border-radius: 50px; font-size: 0.95rem; outline: none; }
-
-    /* 左側のお気に入りエリア */
-    .favorite-side-action {
-        width: 60px; display: flex; align-items: center; justify-content: center;
-        background-color: #fcfcfc; border-right: 1px solid #f0f0f0;
+    .search-input { 
+        width: 100%; 
+        padding: 12px 15px 12px 45px; 
+        border: none; 
+        background: #fff; 
+        border-radius: 50px; 
+        font-size: 0.95rem; 
+        outline: none;
+        transition: box-shadow 0.3s;
     }
-    .btn-favorite-circle {
-        background: none; border: none; color: #ccc; 
-        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
     }
-    .btn-favorite-circle.active { color: var(--accent-color) !important; transform: scale(1.2); }
+    
+    .favorite-side-action { 
+        width: 60px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        background-color: #fcfcfc; 
+        border-right: 1px solid #f0f0f0; 
+    }
+    
+    /* 未登録時のスタイル (グレー) */
+    .btn-favorite-circle { 
+        background: none; 
+        border: none; 
+        color: #ccc; 
+        transition: all 0.3s ease; 
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+    }
+    .btn-favorite-circle:hover:not(:disabled) { 
+        transform: scale(1.1); 
+        background-color: rgba(0,0,0,0.05);
+    }
+    .btn-favorite-circle:disabled {
+        cursor: not-allowed;
+    }
+    
+    /* 登録時のスタイル (赤色) */
+    .btn-favorite-circle.active { 
+        color: #e74c3c !important; 
+    }
+    .btn-favorite-circle.active .material-icons { 
+        color: #e74c3c; 
+    }
+    .btn-favorite-circle.active:hover:not(:disabled) {
+        background-color: rgba(231, 76, 60, 0.1);
+    }
 
-    /* その他共通スタイル */
-    .course-main-card { background: #fff; border-radius: 24px; overflow: hidden; }
-    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
-    .chip { padding: 6px 18px; background: #fff; color: #888; border: 1px solid #f0f0f0; border-radius: 50px; font-size: 0.8rem; font-weight: 800; white-space: nowrap; }
-    .chip.active { background: var(--primary-color); color: #fff; }
+    .course-main-card { 
+        background: #fff; 
+        border-radius: 24px; 
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    .course-main-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .module-item {
+        transition: background-color 0.2s;
+    }
+    .module-item:hover {
+        background-color: rgba(0,0,0,0.02);
+    }
 </style>
 
 <script>
-// お気に入りAjaxトグル
-function toggleFavorite(btn, courseId, event) {
-    event.stopPropagation(); // アコーディオンが開かないようにする
-    const isAdding = !btn.classList.contains('active');
-    
-    btn.classList.toggle('active');
-    btn.querySelector('.material-icons').innerText = isAdding ? 'favorite' : 'favorite_border';
-    btn.closest('.course-card-wrapper').dataset.favorite = isAdding ? 'true' : 'false';
+/**
+ * お気に入りトグル機能
+ * @param {HTMLElement} btn - クリックされたボタン要素
+ * @param {Event} event - クリックイベント
+ */
+function toggleFavorite(btn, event) {
+    event.stopPropagation();
+    event.preventDefault();
 
-    fetch(`/courses/mylist/toggle/${courseId}/`, {
+    // 連打防止：既に処理中なら何もしない
+    if (btn.disabled) {
+        console.log('⚠️ 処理中のため無視されました');
+        return;
+    }
+
+    // ボタンを無効化
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+
+    const url = btn.dataset.url;
+    const courseId = btn.dataset.courseId;
+
+    console.log('🚀 お気に入りトグル開始:', { url, courseId });
+
+    fetch(url, {
         method: 'POST',
         headers: { 
             'X-CSRFToken': '{{ csrf_token }}',
             'Content-Type': 'application/json'
         }
-    }).then(res => {
-        if (!res.ok) location.reload(); // エラー時は整合性をとるためリロード
+    })
+    .then(res => {
+        console.log('📡 レスポンス受信:', res.status);
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log('✅ データ受信:', data);
+        
+        if (data.status === 'success') {
+            const icon = btn.querySelector('.material-icons');
+            
+            // サーバーの応答に応じてUIを更新
+            if (data.action === 'added') {
+                btn.classList.add('active');
+                icon.innerText = 'favorite';
+                console.log('❤️ マイリストに追加されました');
+                
+                // 成功フィードバック（オプション）
+                showToast('マイリストに追加しました', 'success');
+            } else if (data.action === 'removed') {
+                btn.classList.remove('active');
+                icon.innerText = 'favorite_border';
+                console.log('💔 マイリストから削除されました');
+                
+                // 成功フィードバック（オプション）
+                showToast('マイリストから削除しました', 'info');
+            }
+        } else {
+            console.error('❌ エラー:', data.message);
+            alert('エラー: ' + (data.message || '不明なエラー'));
+        }
+    })
+    .catch(error => {
+        console.error('💥 通信エラー:', error);
+        alert('通信エラーが発生しました。もう一度お試しください。');
+    })
+    .finally(() => {
+        // ボタンのロックを解除
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        console.log('🔓 ボタンロック解除');
     });
 }
 
-// リアルタイム検索
-document.getElementById('courseSearch').addEventListener('input', function(e) {
-    const term = e.target.value.toLowerCase();
-    document.querySelectorAll('.course-card-wrapper').forEach(card => {
-        const title = card.dataset.title.toLowerCase();
-        card.style.display = title.includes(term) ? 'block' : 'none';
+/**
+ * トースト通知を表示（オプション機能）
+ * Bootstrap Toastがある場合のみ動作
+ */
+function showToast(message, type = 'info') {
+    // この関数はオプションです。Bootstrap Toastがない場合は何もしません
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        console.log('ℹ️ Toastコンテナが見つかりません。通知をスキップします。');
+        return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'info'} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    toastContainer.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
     });
-}); 
+}
+
+// 検索フィルター機能
+document.getElementById('courseSearch').addEventListener('input', function(e) {
+    const term = e.target.value.toLowerCase().trim();
+    const cards = document.querySelectorAll('.course-card-wrapper');
+    
+    console.log(`🔍 検索中: "${term}"`);
+    
+    let visibleCount = 0;
+    cards.forEach(card => {
+        const title = card.dataset.title ? card.dataset.title.toLowerCase() : '';
+        const isVisible = title.includes(term);
+        card.style.display = isVisible ? 'block' : 'none';
+        if (isVisible) visibleCount++;
+    });
+    
+    console.log(`✅ ${visibleCount}件のコースが表示されています`);
+});
+
+// ページ読み込み時のログ
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📚 研修プログラム一覧が読み込まれました');
+    console.log('コース数:', document.querySelectorAll('.course-card-wrapper').length);
+});
 </script>
 {% endblock %}
