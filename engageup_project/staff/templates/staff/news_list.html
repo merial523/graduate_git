@@ -44,7 +44,17 @@
                     </div>
                 </div>
             </div>
+        {% empty %}
+            <!-- お知らせが0件の場合の表示 -->
+            <div class="text-center py-5 px-3 bg-white shadow-sm rounded-5 mt-3 border" style="border-style: dashed !important;">
+                <div class="mb-3">
+                    <span class="material-icons" style="font-size: 60px; color: #eee;">notifications_off</span>
+                </div>
+                <h5 class="fw-800 text-secondary">お知らせはまだありません</h5>
+                <p class="small text-muted mb-0">新しい情報が投稿されるまで、しばらくお待ちください。</p>
+            </div>
         {% endfor %}
+        
     </div>
 </div>
 
