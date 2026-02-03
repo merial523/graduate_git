@@ -15,6 +15,7 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold  # type: 
 from common.views import BaseCreateView, BaseTemplateMixin, AdminOrModeratorRequiredMixin
 from main.models import Exam, Question, Badge, Choice, UserExamStatus
 from .forms import QuestionForm, ChoiceFormSet, EditChoiceFormSet, ExamForm
+from django.db.models import Count
 
 # --- 基本表示 ---
 
@@ -378,8 +379,13 @@ class UserExamListView(BaseTemplateMixin, ListView):
     context_object_name = "exams"
 
     def get_queryset(self):
-        # 1. 基本設定：削除されていない、かつ公開中の検定
-        queryset = Exam.objects.filter(is_deleted=False, is_active=True)
+        # 1. 基本設定：削除されていない、公開中、かつ「問題数が1問以上」の検定に絞り込む
+        queryset = Exam.objects.filter(
+            is_deleted=False, 
+            is_active=True
+        ).annotate(
+            q_count=Count('questions')
+        ).filter(q_count__gt=0)
 
         # 2. 【検索機能】キーワード(q)があればタイトルで絞り込み
         q = self.request.GET.get('q')
@@ -396,7 +402,6 @@ class UserExamListView(BaseTemplateMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            # 合格済みリストを確実に「数値のリスト」として渡す
             context['passed_exam_ids'] = list(UserExamStatus.objects.filter(
                 user=self.request.user, 
                 is_passed=True
@@ -408,13 +413,29 @@ class UserExamListView(BaseTemplateMixin, ListView):
 
 class ExamTakeView(BaseTemplateMixin, ContextMixin, View):
     def get(self, request, exam_id):
-        # 受講時も公開チェック
+        # 受講時も公開・削除フラグをチェック
         exam = get_object_or_404(Exam, pk=exam_id, is_active=True, is_deleted=False)
+        
+        # ★ 追加：問題が1問も存在しない場合はエラーを表示してブロック
+        if not exam.questions.exists():
+            return render(request, 'enrollments/enrollments_error.html', 
+                self.get_context_data(
+                    error='この検定は現在準備中のため、受講することができません。', 
+                    exam_id=exam.id
+                ))
+
+        # 前提条件チェック（本試験の場合）
         if exam.exam_type == 'main' and exam.prerequisite:
             passed = UserExamStatus.objects.filter(user=request.user, exam=exam.prerequisite, is_passed=True).exists()
-            if not passed: return render(request, 'enrollments/enrollments_error.html', self.get_context_data(error=f'先に「{exam.prerequisite.title}」に合格してください。', exam_id=exam.prerequisite.id))
-        return render(request, 'enrollments/exam_take.html', self.get_context_data(exam=exam, questions=exam.questions.all().order_by('?')))
-
+            if not passed: 
+                return render(request, 'enrollments/enrollments_error.html', 
+                    self.get_context_data(
+                        error=f'先に「{exam.prerequisite.title}」に合格してください。', 
+                        exam_id=exam.prerequisite.id
+                    ))
+        
+        return render(request, 'enrollments/exam_take.html', 
+            self.get_context_data(exam=exam, questions=exam.questions.all().order_by('?')))
 class ExamGradeView(BaseTemplateMixin, ContextMixin, View):
     def post(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)

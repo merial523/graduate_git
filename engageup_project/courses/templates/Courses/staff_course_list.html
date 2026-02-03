@@ -65,7 +65,7 @@
                 <div id="collapse{{ course.id }}" class="collapse" data-bs-parent="#courseAccordion">
                     <div class="module-list border-top bg-light-subtle">
                         {% for module in course.modules.all %}
-                            {% if module.is_active %}
+                            {# View側で絞り込み済みなので、if module.is_active は不要になります #}
                             <a href="{% url 'courses:training_detail' module.id %}" class="module-item text-decoration-none d-flex align-items-center p-3">
                                 <div class="module-icon me-3">
                                     <span class="material-icons {% if module.id in completed_module_ids %}text-success{% else %}text-muted{% endif %}">
@@ -78,8 +78,8 @@
                                 </div>
                                 <span class="material-icons text-muted size-18">chevron_right</span>
                             </a>
-                            {% endif %}
                         {% empty %}
+                            {# 有効な研修が0件（または全て非表示）の場合、ここが正しく表示されます #}
                             <div class="p-3 text-center text-muted extra-small">研修コンテンツ準備中</div>
                         {% endfor %}
                     </div>

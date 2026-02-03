@@ -13,7 +13,7 @@
         <div class="accordion-container" id="mylistAccordion">
             {% for item in my_favorites %}
                 {% if item.course %}
-                    <!-- 研修コースアイテム（研修一覧と全く同じデザイン） -->
+                    <!-- 研修コースアイテム -->
                     <div class="course-card-wrapper mb-3" data-title="{{ item.course.subject }}">
                         
                         <div class="course-main-card shadow-sm border-0">
@@ -59,7 +59,7 @@
                             <div id="collapseMylist{{ item.id }}" class="collapse" data-bs-parent="#mylistAccordion">
                                 <div class="module-list border-top bg-light-subtle">
                                     {% for module in item.course.modules.all %}
-                                        {% if module.is_active %}
+                                        {# View側のPrefetchでis_active=Trueのみに絞り込まれているため、そのままループを回せます #}
                                         <a href="{% url 'courses:training_detail' module.id %}" class="module-item text-decoration-none d-flex align-items-center p-3">
                                             <div class="module-icon me-3">
                                                 <span class="material-icons {% if module.id in completed_module_ids %}text-success{% else %}text-muted{% endif %}">
@@ -72,8 +72,8 @@
                                             </div>
                                             <span class="material-icons text-muted size-18">chevron_right</span>
                                         </a>
-                                        {% endif %}
                                     {% empty %}
+                                        {# 有効な研修が0件、または管理者によってすべて非表示にされた場合に表示されます #}
                                         <div class="p-3 text-center text-muted extra-small">研修コンテンツ準備中</div>
                                     {% endfor %}
                                 </div>
@@ -90,12 +90,11 @@
                 <div class="mb-3">
                     <span class="material-icons text-muted opacity-25" style="font-size: 4rem;">bookmark_border</span>
                 </div>
-                <h6 class="fw-bold text-secondary">データがありません</h6>
+                <h6 class="fw-bold text-secondary">マイリストに登録されたデータがありません</h6>
                 <p class="text-muted small mb-0">
                     研修一覧画面で <span class="text-danger">♥</span> を押して、<br>
                     お気に入りの研修をリストに追加しましょう。
                 </p>
-                <!-- 誘導ボタンがあるとさらに親切です -->
                 <div class="mt-3">
                     <a href="{% url 'courses:staff_course_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-4 fw-bold">
                         研修を探しに行く
@@ -120,7 +119,6 @@
         border-right: 1px solid #f0f0f0; 
     }
     
-    /* 未登録時のスタイル (グレー) */
     .btn-favorite-circle { 
         background: none; 
         border: none; 
@@ -134,9 +132,6 @@
         transform: scale(1.1); 
         background-color: rgba(0,0,0,0.05);
     }
-    .btn-favorite-circle:disabled {
-        cursor: not-allowed;
-    }
     
     /* 登録時のスタイル (赤色) */
     .btn-favorite-circle.active { 
@@ -144,9 +139,6 @@
     }
     .btn-favorite-circle.active .material-icons { 
         color: #e74c3c; 
-    }
-    .btn-favorite-circle.active:hover:not(:disabled) {
-        background-color: rgba(231, 76, 60, 0.1);
     }
 
     .course-main-card { 
@@ -174,12 +166,10 @@
         font-size: 0.7rem;
         font-weight: 600;
     }
-     /* 破線ボーダーのスタイル（もし定義されていなければ追加） */
     .border-dashed {
         border: 2px dashed #dee2e6 !important;
         background-color: #f8f9fa;
     }
-    /* アイコンを少し薄くして背景になじませる */
     .opacity-25 {
         opacity: 0.25;
     }
@@ -193,25 +183,12 @@ function toggleFavorite(btn, event) {
     event.stopPropagation();
     event.preventDefault();
 
-    // 連打防止
-    if (btn.disabled) {
-        console.log('⚠️ 処理中のため無視されました');
-        return;
-    }
+    if (btn.disabled) return;
 
-    // マイリスト画面では削除確認
-    // if (!confirm('マイリストから削除しますか？')) {
-    //     return;
-    // }
-
-    // ボタンを無効化
     btn.disabled = true;
     btn.style.opacity = '0.6';
 
     const url = btn.dataset.url;
-    const courseId = btn.dataset.courseId;
-
-    console.log('🗑️ マイリストから削除中:', { url, courseId });
 
     fetch(url, {
         method: 'POST',
@@ -221,39 +198,24 @@ function toggleFavorite(btn, event) {
         }
     })
     .then(res => {
-        console.log('📡 レスポンス受信:', res.status);
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
     })
     .then(data => {
-        console.log('✅ データ受信:', data);
-        
         if (data.status === 'success') {
-            console.log('✅ 削除成功。ページをリロードします');
-            // 削除成功したらページをリロード
+            // マイリスト画面からハートを解除した場合は項目を消すためにリロード
             location.reload();
         } else {
-            console.error('❌ エラー:', data.message);
             alert('エラー: ' + (data.message || '不明なエラー'));
             btn.disabled = false;
             btn.style.opacity = '1';
         }
     })
     .catch(error => {
-        console.error('💥 通信エラー:', error);
         alert('通信エラーが発生しました。もう一度お試しください。');
         btn.disabled = false;
         btn.style.opacity = '1';
     });
 }
-
-// ページ読み込み時のログ
-document.addEventListener('DOMContentLoaded', function() {
-    const count = document.querySelectorAll('.course-card-wrapper').length;
-    console.log('📋 マイリスト画面が読み込まれました');
-    console.log('📊 登録コース数:', count);
-});
 </script>
 {% endblock %}
