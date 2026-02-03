@@ -11,14 +11,10 @@ urlpatterns = [
     path("list/", views.CourseListView.as_view(), name="courses_list"),
     path("add/", views.CourseCreateView.as_view(), name="courses_add"),
     path("<int:pk>/edit/", views.CourseUpdateView.as_view(), name="courses_edit"),
-    path(
-        "bulk-action/", views.CourseBulkActionView.as_view(), name="bulk_action_course"
-    ),
-    path(
-        "toggle_active/<int:pk>/",
-        views.CourseToggleActiveView.as_view(),
-        name="course_toggle_active",
-    ),
+    path("bulk-action/", views.CourseBulkActionView.as_view(), name="bulk_action_course"),
+    path("toggle_active/<int:pk>/",views.CourseToggleActiveView.as_view(),name="course_toggle_active",),
+    path('module/<int:pk>/toggle/', views.TrainingModuleToggleActiveView.as_view(), name='module_toggle_active'),
+    path('module/<int:module_id>/delete/', views.TrainingModuleDeleteView.as_view(), name='module_delete'),
     # 管理側：研修モジュール
     path(
         "<int:course_id>/module/add/",
@@ -34,11 +30,6 @@ urlpatterns = [
         "module/<int:module_id>/delete/",
         views.TrainingModuleDeleteView.as_view(),
         name="module_delete",
-    ),
-    path(
-        "module/<int:module_id>/restore/",
-        views.TrainingModuleRestoreView.as_view(),
-        name="module_restore",
     ),
     # 管理側：AI自動生成
     path(

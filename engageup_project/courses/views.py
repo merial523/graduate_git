@@ -176,38 +176,34 @@ class TrainingModuleCreateView(
         )
 
 
-class TrainingModuleUpdateView(
-    AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView
-):
+# --- TrainingModuleUpdateView ---
+class TrainingModuleUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
     model = TrainingModule
     form_class = TrainingModuleForm
     template_name = "courses/mo_module_form.html"
     success_url = reverse_lazy("courses:courses_list")
 
     def get_queryset(self):
-        return TrainingModule.objects.filter(is_active=True)
-
-    def form_valid(self, form):
-        existing = form.cleaned_data.get("existing_file")
-        if existing and not self.request.FILES.get("training_file"):
-            form.instance.training_file.name = f"exams_files/{existing}"
-        return super().form_valid(form)
+        # is_active=True の制限を外し、非表示の研修も編集可能にする
+        return TrainingModule.objects.all()
 
 
+
+# --- TrainingModuleDeleteView  (物理削除) ---
 class TrainingModuleDeleteView(AdminOrModeratorRequiredMixin, View):
     def post(self, request, module_id):
         module = get_object_or_404(TrainingModule, pk=module_id)
-        module.is_active = False
-        module.save()
+        module.delete()  # データベースから完全に削除
         return redirect("courses:courses_list")
 
 
-class TrainingModuleRestoreView(AdminOrModeratorRequiredMixin, View):
-    def post(self, request, module_id):
-        module = get_object_or_404(TrainingModule, pk=module_id)
-        module.is_active = True
+# --- 表示切り替え用のAjaxビュー ---
+class TrainingModuleToggleActiveView(AdminOrModeratorRequiredMixin, View):
+    def post(self, request, pk):
+        module = get_object_or_404(TrainingModule, pk=pk)
+        module.is_active = not module.is_active
         module.save()
-        return redirect(reverse_lazy("courses:courses_list") + "?show=deleted")
+        return JsonResponse({"status": "success", "is_active": module.is_active})
 
 
 # =====================================================
