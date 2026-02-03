@@ -83,6 +83,12 @@ class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreat
         return form
 
     def form_valid(self, form):
+        # --- ★追記：合格基準点の値を 0〜100 に制限する ---
+        score = form.instance.passing_score
+        if score > 100:
+            form.instance.passing_score = 100
+        elif score < 0:
+            form.instance.passing_score = 0
         # ★修正: 新規作成時はデフォルトで「公開」「削除なし」にする
         form.instance.is_active = True
         form.instance.is_deleted = False
@@ -91,6 +97,7 @@ class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreat
         new_file = self.request.FILES.get('exams_file')
         # 2. 過去のファイル選択（プルダウン）の値を確認
         past_file_name = form.cleaned_data.get('exam_file')
+        
 
         if new_file:
             # 新規があればそのまま（Djangoが自動保存）
@@ -131,6 +138,12 @@ class ExamUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateVie
         return form
 
     def form_valid(self, form):
+        # --- ★追記：合格基準点の値を 0〜100 に制限する ---
+        score = form.instance.passing_score
+        if score > 100:
+            form.instance.passing_score = 100
+        elif score < 0:
+            form.instance.passing_score = 0
         new_file = self.request.FILES.get('exams_file')
         past_file_name = form.cleaned_data.get('exam_file')
 

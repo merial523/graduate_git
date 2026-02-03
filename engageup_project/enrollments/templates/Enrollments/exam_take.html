@@ -1,13 +1,12 @@
 {% extends base_template %}
 {% load static %}
 
-{% block title %}{{ exam.title }} | 受験中{% endblock %}
+{% block title %}受験中 | {{ exam.title }}{% endblock %}
 
 {% block content %}
-
 <div class="cbt-container no-select">
     <!-- ヘッダー -->
-    <header class="cbt-header shadow">
+    <header class="cbt-header">
         <div class="d-flex align-items-center gap-2">
             <span class="material-icons" style="font-size: 20px;">edit_document</span>
             <span class="fw-bold small">{{ exam.title }}</span>
@@ -43,6 +42,7 @@
                     </div>
                     {% endfor %}
                 </div>
+                <div style="height: 60px;"></div> <!-- 下部の余白 -->
             </div>
             {% endfor %}
         </div>
@@ -57,10 +57,11 @@
                 {% for q in questions %}<div class="p-dot" id="dot-{{ forloop.counter }}"></div>{% endfor %}
             </div>
 
-            <div>
+            <div class="d-flex gap-2">
                 <button type="button" class="btn btn-primary btn-cbt shadow-sm" id="btn-next" onclick="changeQuestion(1)">
                     次へ
                 </button>
+                <!-- ★ IDを btn-finish に固定 -->
                 <button type="button" class="btn btn-success btn-cbt shadow-sm d-none" id="btn-finish" onclick="openConfirm()">
                     終了する
                 </button>
@@ -70,15 +71,14 @@
 </div>
 
 <!-- モーダル：終了確認 -->
-<div class="modal fade" id="confirmModal" tabindex="-1">
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10001;">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg rounded-5 text-center p-4">
-            <div class="mb-3 text-warning">
-                <span class="material-icons" style="font-size: 48px;">warning</span>
-            </div>
+            <div class="mb-3 text-warning"><span class="material-icons" style="font-size: 48px;">warning</span></div>
             <h6 class="fw-800 mb-2">試験を終了しますか？</h6>
             <p class="text-muted extra-small mb-4">送信後は解答の変更ができません。</p>
             <div class="d-grid gap-2">
+                <!-- ★ ここで submitExam を呼ぶ -->
                 <button type="button" class="btn btn-success rounded-pill fw-bold" onclick="submitExam()">はい、提出します</button>
                 <button type="button" class="btn btn-light rounded-pill border" data-bs-dismiss="modal">戻る</button>
             </div>
@@ -87,78 +87,59 @@
 </div>
 
 <style>
-    /* ==========================================================
-       CBT完全没入モード：ベーステンプレートの装飾をすべて抹殺
-       ========================================================== */
-    
-    /* 1. ベーステンプレートの要素を物理的に非表示にする */
+    /* ベースリセット */
     .side-nav-left, .side-nav-right, .side-qr-fixed, .side-text-decor,
     .app-header, .custom-header, .app-footer, .app-footer-sd,
     .dot-separator, .footer-dot-line, .navbar, .sidebar {
         display: none !important;
     }
 
-    /* 2. 親コンテナの制限（幅・角丸・マージン）をすべて解除 */
-    .admin-layout, .container-fluid, .row, .col-12 {
-        padding: 0 !important;
+    body, html {
         margin: 0 !important;
-        max-width: none !important;
-    }
-
-    .center, .center-box, .center-box-sd, .main-content-area {
-        all: unset !important; /* 全てのスタイルをリセット */
-        display: block !important;
-        width: 100vw !important;
+        padding: 0 !important;
         height: 100vh !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        z-index: 9999 !important; /* 最前面に配置 */
+        width: 100vw !important;
+        overflow: hidden !important;
         background: #fff !important;
     }
 
-    body {
-        overflow: hidden !important;
-        background: #fff !important; /* 背景画像も白で塗りつぶす */
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* 3. CBT専用インターフェース */
+    /* コンテナ */
     .cbt-container {
         display: flex;
         flex-direction: column;
         width: 100vw;
         height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 10000;
         background: #fff;
-        color: #333;
+    }
+
+    /* フォーム：全体をflexにする */
+    #exam-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
     }
 
     .cbt-header {
+        flex-shrink: 0;
         background: #2d3436;
         color: #fff;
         padding: 12px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-shrink: 0;
     }
 
-    .cbt-timer-box {
-        background: #e17055;
-        padding: 4px 12px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-weight: bold;
-    }
-
+    /* メインスクロールエリア */
     .cbt-main {
         flex: 1;
         overflow-y: auto;
         padding: 40px 20px;
-        -webkit-overflow-scrolling: touch;
+        background: #fff;
     }
 
     .question-card {
@@ -166,60 +147,44 @@
         margin: 0 auto;
         display: none;
     }
-    .question-card.active { display: block; animation: cbt-fadeIn 0.4s ease; }
+    .question-card.active { display: block; animation: cbt-fadeIn 0.3s ease; }
 
-    /* 選択肢ボタン（CBTスタイル） */
-    .choice-item { margin-bottom: 12px; }
+    .choice-item { margin-bottom: 15px; }
     .choice-label {
         display: block;
-        padding: 18px 25px;
+        padding: 16px 20px;
         background: #f8f9fa;
         border: 2px solid #eee;
         border-radius: 12px;
         cursor: pointer;
-        transition: 0.2s;
         font-weight: 700;
         font-size: 1rem;
+        transition: 0.2s;
     }
     .choice-input:checked + .choice-label {
         border-color: #76b19d;
         background-color: #f0f7f5;
-        color: #4a8a7a;
     }
 
+    /* フッター */
     .cbt-footer {
+        flex-shrink: 0;
         background: #f8f9fa;
         padding: 15px 20px;
         border-top: 1px solid #ddd;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-shrink: 0;
     }
 
-    .btn-cbt {
-        border-radius: 50px !important;
-        padding: 10px 25px !important;
-        font-weight: 800 !important;
-    }
-
-    /* プログレスドット */
-    .progress-bar-cbt { display: flex; gap: 6px; }
-    .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+    .btn-cbt { border-radius: 50px !important; padding: 8px 25px !important; font-weight: 800 !important; }
+    .cbt-timer-box { background: #e17055; padding: 4px 12px; border-radius: 6px; display: flex; align-items: center; gap: 5px; font-weight: bold; }
+    .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; margin: 0 3px; }
     .p-dot.active { background: #76b19d; transform: scale(1.3); }
     .p-dot.answered { background: #636e72; }
 
-    @keyframes cbt-fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    
-    .no-select { user-select: none; -webkit-user-select: none; }
-    footer {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-        background-color: #f8f9fa;
-    }
-
+    @keyframes cbt-fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .no-select { user-select: none; }
 </style>
 
 <script>
@@ -237,19 +202,25 @@
 
         document.getElementById('btn-prev').style.visibility = (currentIdx === 1) ? 'hidden' : 'visible';
         
+        const btnNext = document.getElementById('btn-next');
+        const btnFinish = document.getElementById('btn-finish');
+
         if (currentIdx === total) {
-            document.getElementById('btn-next').classList.add('d-none');
-            document.getElementById('btn-finish').classList.remove('d-none');
+            btnNext.classList.add('d-none');
+            btnFinish.classList.remove('d-none');
         } else {
-            document.getElementById('btn-next').classList.remove('d-none');
-            document.getElementById('btn-finish').classList.add('d-none');
+            btnNext.classList.remove('d-none');
+            btnFinish.classList.add('d-none');
         }
+        
+        document.querySelector('.cbt-main').scrollTop = 0;
     }
 
     function changeQuestion(step) {
-        currentIdx += step;
-        updateDisplay();
-        document.querySelector('.cbt-main').scrollTop = 0;
+        if(currentIdx + step > 0 && currentIdx + step <= total) {
+            currentIdx += step;
+            updateDisplay();
+        }
     }
 
     function markAnswered(idx) {
@@ -270,17 +241,18 @@
         }, 1000);
     }
 
-    function openConfirm() { new bootstrap.Modal(document.getElementById('confirmModal')).show(); }
-    
-    function submitExam() {
-        window.onbeforeunload = null;
-        form.submit();
+    // ★ モーダル表示の関数
+    function openConfirm() {
+        const modalElement = document.getElementById('confirmModal');
+        const myModal = new bootstrap.Modal(modalElement);
+        myModal.show();
     }
 
-    // 不正防止
-    window.onbeforeunload = () => "試験を中断してよろしいですか？";
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('copy', e => e.preventDefault());
+    // ★ 提出の関数
+    function submitExam() {
+        window.onbeforeunload = null; // 離脱警告をオフにする
+        form.submit();
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         updateDisplay();
