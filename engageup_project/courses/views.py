@@ -276,13 +276,18 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
     context_object_name = "courses"
 
     def get_queryset(self):
+        # 1. 表示対象（is_active=True）のモジュールだけを事前に取得する設定
+        active_modules_qs = TrainingModule.objects.filter(is_active=True)
+        
+        # 2. コースを取得する際に、上記の「有効なモジュールだけ」を prefetch する
         return Course.objects.filter(is_deleted=False, is_active=True).prefetch_related(
-            "modules"
+            Prefetch("modules", queryset=active_modules_qs)
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        
         context["categories"] = (
             Course.objects.filter(is_active=True, is_deleted=False)
             .values_list("subject", flat=True)
@@ -290,34 +295,41 @@ class StaffCourseListView(BaseTemplateMixin, ListView):
         )
 
         if user.is_authenticated:
-            # 完了済みモジュール
+            # 完了済みモジュールID
             context["completed_module_ids"] = list(
                 UserModuleProgress.objects.filter(
                     user=user, is_completed=True
                 ).values_list("module_id", flat=True)
             )
-            # ★重要: マイリスト登録済みのコースIDを取得
+            
+            # マイリスト登録済みのコースID
             my_fav_course_ids = set(
                 Mylist.objects.filter(user=user, course__isnull=False).values_list(
                     "course_id", flat=True
                 )
             )
 
-            # 各コースに「is_mylist」フラグを立てる
+            # 各コースのループ
             for course in context["courses"]:
                 course.is_mylist = course.id in my_fav_course_ids
 
                 # 進捗計算
-                total_modules = course.modules.filter(is_active=True).count()
+                # get_querysetで絞り込んでいるため、course.modules.all() は有効なもののみ
+                active_modules = list(course.modules.all()) 
+                total_modules = len(active_modules)
+                
                 if total_modules > 0:
+                    # このコースに属する有効な研修のうち、ユーザーが完了した数をカウント
                     done_count = UserModuleProgress.objects.filter(
-                        user=user, module__course=course, is_completed=True
+                        user=user, 
+                        module__in=active_modules, # 取得済みの有効モジュールリストで絞り込み
+                        is_completed=True
                     ).count()
                     course.progress_percent = int((done_count / total_modules) * 100)
                 else:
                     course.progress_percent = 0
+                    
         return context
-
 
 class StaffTrainingDetailView(BaseTemplateMixin, ContextMixin, View):
     def get(self, request, module_id):
