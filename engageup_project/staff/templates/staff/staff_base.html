@@ -88,11 +88,17 @@
       <div class="qr-container">
         <div class="qr-box">
           <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ request.build_absolute_uri|urlencode }}"
+            alt="QRコード"
+          />
+        </div>
+        <!-- <div class="qr-box">
+          <img
             src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://example.com"
             alt="QR"
           />
-        </div>
-        <p class="qr-text">スマホはこちらから</p>
+        </div>-->
+        <p class="qr-text">スマホはこちらから</p> 
       </div>
     </div>
 
