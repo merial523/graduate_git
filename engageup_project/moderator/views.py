@@ -5,7 +5,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.core.exceptions import PermissionDenied
@@ -202,7 +202,21 @@ class BadgeUpdateView(
     model = Badge
     fields = ["name", "icon"]
     template_name = "moderator/mo_badge_update.html"
-    success_url = reverse_lazy("moderator:moderatorBadge")
+
+    def get_success_url(self):
+        # URLパラメータから 'from' の値を取得
+        origin = self.request.GET.get('from')
+
+        if origin == 'create':
+            # 検定新規作成から来た場合：問題管理画面へ
+            return reverse('enrollments:question_list', kwargs={'exam_id': self.object.exam.id})
+        
+        elif origin == 'exam_list':
+            # 検定一覧画面から来た場合：検定一覧画面へ戻る
+            return reverse('enrollments:exam_list')
+        
+        # それ以外（バッジ一覧から来た場合など）：バッジ一覧画面へ
+        return reverse("moderator:moderatorBadge")
 
 
 

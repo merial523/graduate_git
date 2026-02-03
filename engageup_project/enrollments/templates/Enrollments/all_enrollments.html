@@ -139,7 +139,9 @@
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
                             <li><a class="dropdown-item py-2 fw-bold text-primary" href="{% url 'enrollments:question_list' exam.id %}"><span class="material-icons size-18 me-2">list</span>問題管理</a></li>
                             {% if exam.exam_type == 'main' and exam.badge %}
-                            <li><a class="dropdown-item py-2" href="{% url 'moderator:badge_edit' exam.badge.id %}"><span class="material-icons size-18 me-2">military_tech</span>バッジ管理</a></li>
+                            <li><a class="dropdown-item py-2" href="{% url 'moderator:badge_edit' exam.badge.id %}?from=exam_list">
+                            <span class="material-icons size-18 me-2">military_tech</span>バッジ管理
+                            </a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item py-2" href="{% url 'enrollments:exam_edit' exam.id %}"><span class="material-icons size-18 me-2">settings</span>基本設定</a></li>

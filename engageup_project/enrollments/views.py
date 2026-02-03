@@ -1,6 +1,7 @@
 import json
 import random
 import os
+from django.urls import reverse
 import fitz  # type: ignore
 import google.generativeai as genai  # type: ignore
 from django.conf import settings
@@ -78,7 +79,6 @@ class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreat
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # 前提試験の選択肢は削除されていない仮試験のみ
         form.fields['prerequisite'].queryset = Exam.objects.filter(exam_type='mock', is_deleted=False)
         return form
 
@@ -102,7 +102,12 @@ class ExamCreateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, BaseCreat
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse_lazy('enrollments:question_list', kwargs={'exam_id': self.object.id})
+        if self.object.exam_type == 'main':
+            badge, created = Badge.objects.get_or_create(exam=self.object)
+            # URLの末尾にパラメータを付与
+            return reverse("moderator:badge_edit", kwargs={"pk": badge.id}) + "?from=create"
+        
+        return reverse('enrollments:question_list', kwargs={'exam_id': self.object.id})
 
 
 class ExamUpdateView(AdminOrModeratorRequiredMixin, BaseTemplateMixin, UpdateView):
