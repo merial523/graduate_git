@@ -85,12 +85,23 @@
         </div>
     {% else %}
         <!-- 空の状態 -->
-        <div class="alert alert-warning text-center p-5">
-            <div class="mb-3">
-                <span class="material-icons" style="font-size: 4rem; color: #ffc107;">bookmark_border</span>
+        <div class="col-12 text-center py-5">
+            <div class="admin-card bg-light border-dashed p-5 rounded-5">
+                <div class="mb-3">
+                    <span class="material-icons text-muted opacity-25" style="font-size: 4rem;">bookmark_border</span>
+                </div>
+                <h6 class="fw-bold text-secondary">データがありません</h6>
+                <p class="text-muted small mb-0">
+                    研修一覧画面で <span class="text-danger">♥</span> を押して、<br>
+                    お気に入りの研修をリストに追加しましょう。
+                </p>
+                <!-- 誘導ボタンがあるとさらに親切です -->
+                <div class="mt-3">
+                    <a href="{% url 'courses:staff_course_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-4 fw-bold">
+                        研修を探しに行く
+                    </a>
+                </div>
             </div>
-            <strong>データがありません</strong><br>
-            研修一覧画面でハートを押して、ここに戻ってきてください。
         </div>
     {% endif %}
 </div>
@@ -163,6 +174,15 @@
         font-size: 0.7rem;
         font-weight: 600;
     }
+     /* 破線ボーダーのスタイル（もし定義されていなければ追加） */
+    .border-dashed {
+        border: 2px dashed #dee2e6 !important;
+        background-color: #f8f9fa;
+    }
+    /* アイコンを少し薄くして背景になじませる */
+    .opacity-25 {
+        opacity: 0.25;
+    }
 </style>
 
 <script>
@@ -180,9 +200,9 @@ function toggleFavorite(btn, event) {
     }
 
     // マイリスト画面では削除確認
-    if (!confirm('マイリストから削除しますか？')) {
-        return;
-    }
+    // if (!confirm('マイリストから削除しますか？')) {
+    //     return;
+    // }
 
     // ボタンを無効化
     btn.disabled = true;
