@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.shortcuts import redirect, render
 from django.views.generic import ListView,TemplateView
 from common.views import AdminOrModeratorOrStaffRequiredMixin, BaseTemplateMixin
@@ -10,9 +11,7 @@ from common.views import BaseTemplateMixin
 from moderator.views import BadgeRankingMixin 
 
 
-class StaffIndexView(BaseTemplateMixin, 
-                        BadgeRankingMixin, 
-                        TemplateView):
+class StaffIndexView(BaseTemplateMixin, BadgeRankingMixin, TemplateView):
     template_name = "staff/staff_index.html"
 
     def get_context_data(self, **kwargs):
@@ -20,40 +19,35 @@ class StaffIndexView(BaseTemplateMixin,
         user = self.request.user
 
         if user.is_authenticated:
-            # 1. 🏆 ランキングデータを取得
+            # 1. 🏆 ランキング
             context['badge_ranking'] = self.get_badge_ranking_data()
 
-            # 獲得したバッジの総数
+            # 2. 📊 スタッツ（バッジ数・完了コース）
             context['badges_count'] = UserExamStatus.objects.filter(
                 user=user, is_passed=True, exam__exam_type='main', exam__is_active=True
             ).count()
 
-            # --- ★ 新規：完了した「コース」のカウントロジック ---
-            # 有効な全コースを取得
             all_courses = Course.objects.filter(is_active=True).prefetch_related('modules')
             completed_course_count = 0
-
             for course in all_courses:
-                # A. そのコース内にある「有効な研修（動画）」の総数
-                total_modules_count = course.modules.filter(is_active=True).count()
-                
-                # 研修が1つも登録されていないコースはスキップ
-                if total_modules_count == 0:
-                    continue
-
-                # B. そのコース内の研修で、ユーザーが「完了(is_completed=True)」させた数
-                user_completed_modules_count = UserModuleProgress.objects.filter(
-                    user=user,
-                    module__course=course,
-                    is_completed=True
-                ).count()
-
-                # C. 「全研修数」と「完了数」が一致したら、そのコースは完了！
-                if total_modules_count == user_completed_modules_count:
-                    completed_course_count += 1
-
-            # HTMLで {{ completed_course_count }} として使えるように送る
+                total = course.modules.filter(is_active=True).count()
+                if total == 0: continue
+                done = UserModuleProgress.objects.filter(user=user, module__course=course, is_completed=True).count()
+                if total == done: completed_course_count += 1
+            
             context['completed_course_count'] = completed_course_count
+
+            # 3. 📢 お知らせ（最新3件） ★追加
+            context['latest_news'] = News.objects.filter(is_active=True).order_by('-created_at')[:3]
+
+            # 4. 📅 挨拶用データ ★追加
+            hour = datetime.datetime.now().hour
+            if 5 <= hour < 11:
+                context['greeting'] = "おはようございます"
+            elif 11 <= hour < 18:
+                context['greeting'] = "こんにちは"
+            else:
+                context['greeting'] = "お疲れ様です"
 
         return context
     
