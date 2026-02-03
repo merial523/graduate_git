@@ -13,8 +13,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h2 class="fw-800 text-dark m-0">
-                    <span class="material-icons text-primary align-middle size-32 me-2">play_circle_filled</span>
-                    {% if object %}研修の編集{% else %}新規研修の追加{% endif %}
+                    {% if object %}研修編集{% else %}新規研修追加{% endif %}
                 </h2>
             </div>
             <a href="{% url 'courses:courses_list' %}" class="btn btn-outline-secondary btn-rounded-cute px-3 bg-white shadow-sm">
@@ -27,7 +26,8 @@
     <form method="post" enctype="multipart/form-data" id="mainTrainingForm" novalidate>
         {% csrf_token %}
         
-        <div class="row g-4 d-flex align-items-stretch"> <!-- align-items-stretchで高さを合わせる -->
+        <!-- 上段：2カラムエリア（①基本情報 ＆ ②設定・AI） -->
+        <div class="row g-4 d-flex align-items-stretch mb-4">
             <!-- 左カラム：研修の基本構成 (①) -->
             <div class="col-lg-7">
                 <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5 h-100 position-relative">
@@ -54,7 +54,7 @@
                         <div class="textarea-container">
                             {{ form.content_text }}
                         </div>
-                        <div class="form-text-ultra-light mt-2">AIで生成した内容がここに入ります。手動修正も可能です。</div>
+                        <div class="form-text-ultra-light mt-2">AIで生成した内容がここに入ります。</div>
                     </div>
                     <div class="mb-0">
                         <label class="form-label fw-bold text-dark">研修動画ファイル</label>
@@ -66,9 +66,7 @@
             </div>
 
             <!-- 右カラム：教材設定 ＆ AIアシスタント (②) -->
-            <div class="col-lg-5 d-flex flex-column gap-4"> <!-- 右列全体を縦のFlexに -->
-                
-                <!-- 2. 教材資料の設定 -->
+            <div class="col-lg-5 d-flex flex-column gap-4">
                 <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5">
                     <div class="d-flex align-items-center mb-4">
                         <span class="step-badge me-2">2</span>
@@ -95,7 +93,6 @@
                     </div>
                 </div>
 
-                <!-- ★ AIアシスタント（flex-grow-1で底を合わせる） -->
                 <div class="ai-feature-card shadow-lg rounded-5 p-4 p-md-5 position-relative overflow-hidden flex-grow-1">
                     <span class="material-icons position-absolute ai-bg-icon">auto_awesome</span>
                     <div class="d-flex align-items-center mb-3 position-relative" style="z-index: 2;">
@@ -103,11 +100,10 @@
                             <span class="material-icons text-white size-28">psychology</span>
                         </div>
                         <div>
-                            <h5 class="fw-800 m-0 text-white">AIにおまかせ作成アシスト</h5>
+                            <h5 class="fw-800 m-0 text-white">AIおまかせ作成アシスト</h5>
                             <p class="text-white opacity-75 small mb-0">教材を解析して自動生成します</p>
                         </div>
                     </div>
-
                     <div class="position-relative d-flex flex-column h-100" style="z-index: 2;">
                         {% if object %}
                         <div class="bg-white bg-opacity-10 rounded-4 p-3 mt-3 border border-white border-opacity-10">
@@ -118,16 +114,11 @@
                             <button type="button" id="ai-generate-btn-trigger" class="btn btn-white-magic w-100 py-3 fw-800 shadow" {% if not object.training_file %}disabled{% endif %}>
                                 <span class="material-icons align-middle me-2">flare</span> AIにおまかせで作成する
                             </button>
-                            {% if not object.training_file %}
-                            <div class="text-warning extra-small mt-3 text-center fw-bold">先に「STEP 2」で教材を保存してください。</div>
-                            {% endif %}
                         </div>
                         {% else %}
                         <div class="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
-                            <p class="text-white small mb-4 opacity-90">教材を一度保存すると、AI機能が使えます</p>
-                            <button type="submit" name="after_save" value="ai" class="btn btn-white-magic px-5 py-3 fw-800 shadow mx-auto">
-                                保存してAIを起動
-                            </button>
+                            <p class="text-white small mb-4 opacity-90">保存後にAI機能が使えます</p>
+                            <button type="submit" name="after_save" value="ai" class="btn btn-white-magic px-5 py-3 fw-800 shadow mx-auto">保存してAIを起動</button>
                         </div>
                         {% endif %}
                     </div>
@@ -135,8 +126,66 @@
             </div>
         </div>
 
+        <!-- 下段：横幅いっぱいエリア (③ 例題プレビュー) -->
+        <div class="row">
+            <div class="col-12">
+                <div class="admin-card border-0 shadow-sm rounded-5 bg-white p-4 p-md-5 mb-4 position-relative">
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="step-badge me-2">3</span>
+                        <h5 class="fw-800 m-0">例題プレビュー</h5>
+                    </div>
+
+                    {% if object and object.examples.all %}
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center mb-3">
+                            <span class="material-icons text-primary me-2">quiz</span>
+                            AI作成済みの例題（復習用）
+                        </label>
+                        
+                        <div class="row g-4">
+                            {% for example in object.examples.all %}
+                            <div class="col-md-6"> <!-- 2つの例題が横に並ぶ -->
+                                <div class="p-4 rounded-4 border bg-light-soft h-100 shadow-sm">
+                                    <div class="d-flex align-items-start gap-2 mb-3">
+                                        <span class="badge bg-primary rounded-pill extra-small px-2">例題 {{ forloop.counter }}</span>
+                                        <div class="fw-bold text-dark line-height-base">{{ example.text }}</div>
+                                    </div>
+                                    
+                                    <div class="row g-2 ms-1 mb-3">
+                                        {% for choice in example.choices.all %}
+                                        <div class="col-sm-6">
+                                            <div class="extra-small p-2 rounded-3 border d-flex align-items-center gap-2 {% if choice.is_correct %}bg-success-light border-success text-success fw-bold{% else %}bg-white text-muted border-light{% endif %}">
+                                                <span class="material-icons size-16">
+                                                    {% if choice.is_correct %}check_circle{% else %}radio_button_unchecked{% endif %}
+                                                </span>
+                                                {{ choice.text }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if example.explanation %}
+                                    <div class="p-3 rounded-3 bg-white border-start border-4 border-primary">
+                                        <div class="extra-small text-muted"><span class="fw-bold text-primary">解説：</span>{{ example.explanation }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted opacity-50">
+                        <span class="material-icons size-48">pending_actions</span>
+                        <p class="mt-2">AIアシストを実行すると、ここに例題のプレビューが表示されます</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
         <!-- 最下部：保存ボタン -->
-        <div class="row mt-5">
+        <div class="row mt-4">
             <div class="col-12 text-center">
                 <button type="submit" class="btn btn-primary btn-rounded-cute px-5 py-3 fw-800 shadow-lg mb-3" style="min-width: 320px;">
                     研修の内容をすべて保存する <span class="material-icons align-middle ms-1">check_circle</span>
@@ -167,65 +216,31 @@
 <style>
     .fw-800 { font-weight: 800; }
     .extra-small { font-size: 0.72rem; }
+    .size-16 { font-size: 16px; }
     .size-32 { font-size: 32px; }
-
-    /* カード・横並び高さ同期 */
     .admin-card { border-left: 10px solid #76b19d !important; border-radius: 2.5rem !important; overflow: visible !important; }
-    
-    /* 動画エリア修正 */
     .video-input-card { font-size: 0.82rem; color: #666; word-break: break-all; }
     .video-input-card a { color: #76b19d; text-decoration: none; font-weight: bold; display: block; margin-bottom: 8px; }
-    .video-input-card input[type="file"] { margin-top: 10px; width: 100%; border: 1px solid #ddd; padding: 5px; border-radius: 8px; font-size: 0.75rem; }
-
-    /* AIセクションの背景色とFlex伸長 */
-    .ai-feature-card { 
-        background: linear-gradient(135deg, #76b19d 0%, #4a8d75 100%) !important; 
-        color: white !important; border: none !important; 
-        display: flex; flex-direction: column;
-    }
+    .ai-feature-card { background: linear-gradient(135deg, #76b19d 0%, #4a8d75 100%) !important; color: white !important; border: none !important; display: flex; flex-direction: column; }
     .ai-icon-circle { width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; }
     .ai-bg-icon { font-size: 240px; color: rgba(255,255,255,0.08); right: -40px; bottom: -60px; transform: rotate(-15deg); pointer-events: none; }
-    
     .form-control-ai { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.3) !important; border-radius: 12px; background: rgba(255,255,255,0.1) !important; color: white !important; }
-    .form-control-ai::placeholder { color: rgba(255,255,255,0.5); }
-    
     .btn-white-magic { background-color: white !important; color: #4a8d75 !important; border: none !important; border-radius: 15px; transition: 0.3s; }
-    .btn-white-magic:hover { background-color: #f8f9fa !important; transform: translateY(-2px); }
-
-    /* ステップバッジ */
+    .bg-success-light { background-color: #e8f5e9; }
+    .bg-light-soft { background-color: #f8faf9; }
     .step-badge { width: 32px; height: 32px; background-color: #76b19d; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; }
     .badge-required { background-color: #ff7675; color: white; font-size: 0.62rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
-
-    /* フォームパーツ */
     input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 14px 18px; border: 2px solid #f2f2f2; border-radius: 16px; background-color: #fdfdfd; transition: 0.3s; font-size: 0.95rem; }
     textarea { height: 180px; }
     .form-text-ultra-light { color: #d1d1d1 !important; font-size: 0.75rem; }
-
-    /* 教材セクション（上下） */
     .resource-card { background-color: #fcfdfe; border: 2px solid #edf2f7; }
     .or-divider-horizontal { position: relative; text-align: center; height: 1px; background: #edf2f7; margin: 15px 0; }
     .or-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 2px 12px; border: 1px solid #edf2f7; border-radius: 20px; font-size: 0.65rem; font-weight: 900; color: #a0aec0; }
-    
     .btn-rounded-cute { border-radius: 50px; }
     .btn-primary { background-color: #76b19d; border: none; }
     .option-disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-
-    /* ローディング画面 */
-    .custom-loader { 
-        width: 50px; 
-        height: 50px; 
-        border: 5px solid #f3f3f3; 
-        border-top: 5px solid #76b19d; /* または var(--primary-color) */
-        border-radius: 50%; 
-        display: block;       /* inline-block から block に変更 */
-        margin: 0 auto;       /* 左右を auto にして中央寄せ */
-        animation: spin 1s linear infinite; 
-    }
-
-    @keyframes spin { 
-        0% { transform: rotate(0deg); } 
-        100% { transform: rotate(360deg); } 
-    }
+    .custom-loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #76b19d; border-radius: 50%; display: block; margin: 0 auto; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 
 <script>
@@ -240,7 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const instructionInput = document.getElementById('ai-instruction-input');
             const hiddenInput = document.getElementById('hidden-instruction');
             hiddenInput.value = instructionInput.value;
-            
             document.getElementById('loading-text').innerText = "AIが研修を作成しています...";
             statusModal.show();
             setTimeout(() => aiFormActual.submit(), 300);
