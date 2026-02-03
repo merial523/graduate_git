@@ -1,273 +1,187 @@
-{% extends base_template %} 
-
-{% block title %}ホーム | EngageUp{% endblock %}
+{% extends base_template %}
+{% load static %}
 
 {% block content %}
-<div class="user-management-container pb-5">
-    <!-- 2. 学習ステータス（クイック統計） -->
-    <div class="row g-3 mb-4">
-        <div class="col-6">
-            <div class="stat-card-premium">
-                <div class="stat-icon bg-soft-green text-green">
-                    <span class="material-icons">auto_stories</span>
-                </div>
-                <div class="stat-content">
-                    <p class="stat-label">完了コース</p>
-                    <p class="stat-value">{{ completed_course_count|default:"0" }}<small>件</small></p>
-                </div>
+<div class="dashboard-wrapper">
+    
+    <div class="hero-header text-white p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                    <h4 class="fw-bold m-0">ログイン中のアカウント：{{ user.username }}</h4>
+            </div>
+            <div class="today-date bg-white text-success rounded-3 px-3 py-1 fw-bold shadow-sm text-center">
+                <span class="small d-block text-muted" style="font-size: 10px;">TODAY</span>
+                <span id="current-date">--/--</span>
             </div>
         </div>
-        <div class="col-6">
-            <div class="stat-card-premium">
-                <div class="stat-icon bg-soft-orange text-orange">
-                    <span class="material-icons">military_tech</span>
-                </div>
-                <div class="stat-content">
-                    <p class="stat-label">獲得バッジ</p>
-                    <p class="stat-value">{{ badges_count|default:"0" }}<small>個</small></p>
-                </div>
+        
+        <div class="goal-widget bg-white text-dark bg-opacity-20 rounded-3 p-3 mt-3 backdrop-blur border border-white border-opacity-25">
+            <div class="d-flex align-items-center mb-1">
+                <span class="material-icons size-18 me-1">flag</span>
+                <span class="small fw-bold">今月の目標</span>
             </div>
+            <p class="m-0 small text-dark">「接遇スキル」を強化して、バッジを1つ獲得しよう！</p>
         </div>
     </div>
 
-    <!-- 3. バッジ取得ランキング（表彰台スタイル） -->
-    <div class="admin-card border-0 shadow-sm mb-4 bg-white rounded-5">
-        <div class="d-flex justify-content-between align-items-center p-4 pb-0">
-            <h2 class="page-title m-0">称号獲得ランキング</h2>
+    <div class="content-body px-3 pb-5" style="margin-top: -30px;">
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-sm-6">
+                <div class="stat-card bg-white p-4 rounded-4 shadow-sm h-100 text-center position-relative overflow-hidden">
+                    <div class="stat-icon-bg bg-success opacity-10"></div>
+                    <span class="material-icons text-success mb-2" style="font-size: 40px;">school</span>
+                    <div class="small text-muted fw-bold mb-1">完了コース</div>
+                    <div class="h3 fw-900 text-dark m-0">{{ completed_course_count }}<span class="fs-6 fw-normal text-muted ms-1">件</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-sm-6">
+                <div class="stat-card bg-white p-4 rounded-4 shadow-sm h-100 text-center position-relative overflow-hidden">
+                    <div class="stat-icon-bg bg-warning opacity-10"></div>
+                    <span class="material-icons text-warning mb-2" style="font-size: 40px;">military_tech</span>
+                    <div class="small text-muted fw-bold mb-1">獲得バッジ</div>
+                    <div class="h3 fw-900 text-dark m-0">{{ badges_count }}<span class="fs-6 fw-normal text-muted ms-1">個</span></div>
+                </div>
+            </div>
         </div>
 
-        <div class="ranking-podium-container p-4">
-                {% if badge_ranking %}
-                    <div class="ranking-podium">
-                        {% for ranked_user in badge_ranking %}
-                            {% if forloop.counter <= 3 %}
-                                <div class="podium-item podium-{{ forloop.counter }}">
-                                    <div class="podium-user-avatar">
-                                        {% if ranked_user.avatar %}
-                                            {# ★末尾に ?v={{ ... }} を追加してキャッシュを強制的に回避 #}
-                                            <img src="{{ ranked_user.avatar.url }}?v={{ ranked_user.updated_at|date:'U' }}" 
-                                                class="avatar-img" 
-                                                alt="{{ ranked_user.username }}">
-                                        {% else %}
-                                            <div class="avatar-placeholder">
-                                                <span class="material-icons">account_circle</span>
-                                            </div>
-                                        {% endif %}
-                                        
-                                        <div class="podium-rank-circle">
-                                            {% if forloop.counter == 1 %}1{% elif forloop.counter == 2 %}2{% else %}3{% endif %}
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="podium-info text-center mt-2">
-                                        <p class="podium-name fw-bold text-dark mb-0">{{ ranked_user.username }}</p>
-                                        <p class="podium-score fw-800 text-primary mb-0">{{ ranked_user.badge_count }}個</p>
-                                    </div>
-                                    
-                                    <div class="podium-base-line"></div>
+        <div class="row g-4">
+            <div class="col-12 col-md-6">
+                <div class="section-header d-flex justify-content-between align-items-center mb-2 px-1">
+                    <h6 class="fw-bold m-0 text-dark"><span class="text-success me-2">●</span>お知らせ</h6>
+                    <a href="{% url 'staff:news_list' %}" class="text-decoration-none extra-small text-muted">もっと見る</a>
+                </div>
+                <div class="bg-white rounded-4 shadow-sm p-4 h-100">
+                    {% for news in latest_news %}
+                    <div class="news-item border-bottom pb-3 mb-3 last-no-border">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle extra-small">News</span>
+                            <span class="extra-small text-muted">{{ news.created_at|date:"m/d" }}</span>
+                        </div>
+                        <a href="#" class="text-dark text-decoration-none fw-bold small line-clamp-1 hover-text-success">
+                            {{ news.title }}
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted small">現在お知らせはありません 🐱</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <div class="section-header d-flex justify-content-between align-items-center mb-2 px-1">
+                    <h6 class="fw-bold m-0 text-dark"><span class="text-warning me-2">●</span>称号獲得ランキング</h6>
+                </div>
+                <div class="bg-white rounded-4 shadow-sm p-4 text-center ranking-container h-100">
+                    <div class="d-flex justify-content-center align-items-end gap-3 py-3">
+                        {% for rank_user in badge_ranking %}
+                            <div class="ranking-user {% if forloop.counter == 1 %}order-2 rank-1{% elif forloop.counter == 2 %}order-1 rank-2{% else %}order-3 rank-3{% endif %}">
+                                <div class="position-relative d-inline-block">
+                                    <div class="avatar-circle shadow-sm overflow-hidden">
+                                {% if forloop.counter == 1 %}
+                                    <span class="crown">👑</span>
+                                {% endif %}
+
+                                {% if rank_user.profile_image %}
+                                    <img src="{{ rank_user.profile_image.url }}" alt="{{ rank_user.username }}" class="w-100 h-100 object-fit-cover">
+                                {% else %}
+                                    <span class="initials">{{ rank_user.username|slice:":1" }}</span>
+                                {% endif %}
+                            </div>
+                                    <span class="rank-badge badge rounded-pill border shadow-sm">
+                                        {{ forloop.counter }}
+                                    </span>
                                 </div>
-                            {% endif %}
+                                <div class="mt-2">
+                                    <div class="fw-bold small text-truncate" style="max-width: 80px;">{{ rank_user.username }}</div>
+                                    <div class="text-primary fw-900 small">{{ rank_user.badge_count }} <span class="extra-small text-muted">個</span></div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted small">ランキングデータ集計中...</p>
                         {% endfor %}
                     </div>
-                {% endif %}
+                </div>
             </div>
+        </div>
+
     </div>
 </div>
 
 <style>
-/* --- マイリスト・水平スクロールデザイン --- */
-.mylist-horizontal-scroll {
-    display: flex;
-    gap: 15px;
-    overflow-x: auto;
-    padding: 10px 5px 20px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-}
-/* スクロールバーを非表示にする */
-.mylist-horizontal-scroll::-webkit-scrollbar { display: none; }
+    /* ヒーローヘッダー: 角丸とグラデーション */
+    .hero-header {
+        background: linear-gradient(135deg, #76b19d 0%, #5a9e88 100%);
+        border-radius: 20px; /* base.htmlの内側で浮くように少し丸める */
+        padding-bottom: 60px !important;
+        margin-bottom: 20px;
+    }
 
-.mylist-mini-card {
-    flex: 0 0 200px; /* カードの幅 */
-    height: 140px;
-    background: white;
-    border-radius: 24px;
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    scroll-snap-align: start;
-    transition: transform 0.3s ease;
-    border: 1px solid rgba(0,0,0,0.03);
-}
-.mylist-mini-card:hover { transform: translateY(-5px); }
+    .backdrop-blur { backdrop-filter: blur(5px); }
 
-.card-tag {
-    font-size: 0.6rem;
-    font-weight: 900;
-    padding: 3px 8px;
-    border-radius: 6px;
-    display: inline-block;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-}
-.tag-course { background: #eef7f4; color: #76b19d; }
-.tag-news { background: #eef4f7; color: #5da9e9; }
+    /* スタッツカード: ゆとりを持たせる */
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important; }
+    .stat-icon-bg {
+        position: absolute;
+        top: -10px; right: -10px;
+        width: 80px; height: 80px;
+        border-radius: 50%;
+    }
+    .fw-900 { font-weight: 900; }
 
-.card-title {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #333;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-bottom: auto;
-}
+    /* お知らせ */
+    .last-no-border:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .hover-text-success:hover { color: #76b19d !important; }
 
-.card-footer-info {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.7rem;
-    color: #bbb;
-    font-weight: 700;
-}
-.card-footer-info .material-icons { font-size: 14px; }
+    /* ランキング */
+    .ranking-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background-color: #fcfdfe !important;
+    }
+    .avatar-circle {
+        width: 60px; height: 60px;
+        background: #fff; border: 3px solid #fff;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; color: #555; font-size: 1.2rem;
+        background-color: #f0f0f0;
+    }
+    .rank-1 .avatar-circle { width: 85px; height: 85px; border-color: #ffd700; background-color: #fff9db; color: #d6a600;}
+    .rank-1 .rank-badge { background: #ffd700; color: #fff; border-color: #ffd700; }
+    .rank-2 .rank-badge { background: #c0c0c0; color: #fff; border-color: #c0c0c0; }
+    .rank-3 .rank-badge { background: #cd7f32; color: #fff; border-color: #cd7f32; }
+    
+    .rank-badge {
+        position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+        font-size: 0.75rem; padding: 3px 10px;
+    }
+    .crown {
+        position: absolute; top: -22px; left: 50%; transform: translateX(-50%) rotate(-10deg);
+        font-size: 1.8rem;
+        z-index: 10;
+    }
 
-.more-card {
-    background: var(--bg-color);
-    border: 2px dashed #ddd;
-    color: #aaa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 5px;
-    font-weight: 800;
-    font-size: 0.8rem;
-}
-
-.mylist-empty-card {
-    background: rgba(255,255,255,0.5);
-    border: 2px dashed #ddd;
-    border-radius: 24px;
-}
-
-/* --- 既存スタイル（統計カードなど） --- */
-.stat-card-premium {
-    background: white; border-radius: 24px;
-    padding: 20px; display: flex; align-items: center; gap: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.03);
-}
-.stat-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-.stat-label { font-size: 0.7rem; color: #999; font-weight: bold; margin: 0; }
-.stat-value { font-size: 1.4rem; font-weight: 900; margin: 0; }
-
-.fw-800 { font-weight: 800 !important; }
-.extra-small { font-size: 0.75rem; }
-.page-title { font-size: 1.4rem; border-left: 5px solid var(--primary-color); padding-left: 15px; font-weight: 800; }
-
-/* --- ランキング表彰台の修正スタイル --- */
-
-.ranking-podium {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end; /* 下揃えにして高低差を出す */
-    gap: 10px;
-    padding-top: 20px;
-}
-
-.podium-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-}
-
-/* 順位ごとのサイズ・重なり順設定 */
-.podium-1 { order: 2; z-index: 2; transform: translateY(-10px); } /* 1位を中央・最前面 */
-.podium-2 { order: 1; z-index: 1; } /* 2位を左 */
-.podium-3 { order: 3; z-index: 1; } /* 3位を右 */
-
-/* アバターコンテナ */
-.podium-user-avatar {
-    position: relative;
-    background: white;
-    border-radius: 50%;
-    padding: 4px; /* 白枠 */
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-}
-
-/* 画像自体のサイズ指定（ここが重要） */
-.avatar-img, .avatar-placeholder {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover; /* 画像を正円の中に綺麗に収める */
-    display: block;
-}
-
-/* 1位のアバターだけ大きくする */
-.podium-1 .avatar-img, .podium-1 .avatar-placeholder {
-    width: 90px;
-    height: 90px;
-    border: 3px solid #FFD700; /* 金枠 */
-}
-
-/* 画像がない時のプレビュー用 */
-.avatar-placeholder {
-    background-color: #f0f0f0;
-    color: #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.avatar-placeholder .material-icons {
-    font-size: 40px;
-}
-.podium-1 .avatar-placeholder .material-icons {
-    font-size: 60px;
-}
-
-/* 順位バッジ */
-.podium-rank-circle {
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 24px;
-    height: 24px;
-    background-color: #ddd;
-    color: white;
-    border-radius: 50%;
-    font-size: 0.75rem;
-    font-weight: 900;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid white;
-}
-.podium-1 .podium-rank-circle { background-color: #FFC107; }
-.podium-2 .podium-rank-circle { background-color: #adb5bd; }
-.podium-3 .podium-rank-circle { background-color: #cd7f32; }
-
-/* 土台の線 */
-.podium-base-line {
-    width: 80%;
-    height: 6px;
-    background: rgba(0,0,0,0.05);
-    border-radius: 10px;
-    margin-top: 10px;
-}
-.podium-1 .podium-base-line {
-    background: #FFD700;
-    opacity: 0.3;
-}
-
-/* テキストの調整 */
-.podium-name { font-size: 0.85rem; margin-top: 5px; }
-.podium-score { font-size: 1rem; }
+    .extra-small { font-size: 0.75rem; }
+    .size-18 { font-size: 18px; vertical-align: middle; }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const date = now.getDate();
+        const day = ['日', '月', '火', '水', '木', '金', '土'][now.getDay()];
+        const target = document.getElementById('current-date');
+        if (target) {
+            target.innerText = `${month}/${date}(${day})`;
+        }
+    });
+</script>
 {% endblock %}

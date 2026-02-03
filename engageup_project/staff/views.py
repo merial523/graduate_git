@@ -51,6 +51,28 @@ class StaffIndexView(BaseTemplateMixin, BadgeRankingMixin, TemplateView):
 
         return context
     
+def dashboard_view(request):
+    # 本日を基準に月〜日のリストを作成する例
+    today = datetime.date.today()
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+    
+    week_days = []
+    labels = ['月', '火', '水', '木', '金', '土', '日']
+    
+    # ユーザーのログイン履歴（モデル等）から今週分を取得
+    # ここでは例として今日だけにチェックを入れる
+    for i in range(7):
+        target_date = start_of_week + datetime.timedelta(days=i)
+        week_days.append({
+            'label': labels[i],
+            'logged_in': target_date == today # 本来はDBで判定
+        })
+
+    return render(request, 'index.html', {
+        'week_days': week_days,
+        # ...他の変数
+    })
+    
 class UserListView(
     AdminOrModeratorOrStaffRequiredMixin,
     BaseTemplateMixin,
