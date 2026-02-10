@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="cbt-container no-select">
+    
     <header class="cbt-header">
         <div class="d-flex align-items-center gap-2">
             <span class="material-icons" style="font-size: 20px;">edit_document</span>
@@ -16,53 +17,57 @@
         </div>
     </header>
 
-    <form id="exam-form" method="post" action="{% url 'enrollments:exam_grade' exam.id %}">
-        {% csrf_token %}
-        <div class="cbt-main">
-            {% for q in questions %}
-            <div class="question-card" id="q-box-{{ forloop.counter }}">
-                <div class="mb-4">
-                    <p class="text-muted small fw-bold mb-1">第 {{ forloop.counter }} 問 / {{ questions|length }} 問</p>
-                    <h4 class="fw-800 text-dark" style="line-height: 1.5;">{{ q.text }}</h4>
-                </div>
-
-                <div class="choices-list">
-                    {% for choice in q.choices.all %}
-                    <div class="choice-item">
-                        <input type="radio" class="choice-input d-none" 
-                               name="question_{{ q.id }}" 
-                               id="c-{{ choice.id }}" 
-                               value="{{ choice.id }}"
-                               onchange="markAnswered({{ forloop.parentloop.counter }})">
-                        <label class="choice-label shadow-sm" for="c-{{ choice.id }}">
-                            {{ choice.text }}
-                        </label>
+    <div class="cbt-main-wrapper">
+        <form id="exam-form" method="post" action="{% url 'enrollments:exam_grade' exam.id %}">
+            {% csrf_token %}
+            
+            <div class="cbt-main">
+                {% for q in questions %}
+                <div class="question-card" id="q-box-{{ forloop.counter }}">
+                    <div class="mb-4">
+                        <p class="text-muted small fw-bold mb-1">第 {{ forloop.counter }} 問 / {{ questions|length }} 問</p>
+                        <h4 class="fw-800 text-dark" style="line-height: 1.5;">{{ q.text }}</h4>
                     </div>
-                    {% endfor %}
+
+                    <div class="choices-list">
+                        {% for choice in q.choices.all %}
+                        <div class="choice-item">
+                            <input type="radio" class="choice-input d-none" 
+                                   name="question_{{ q.id }}" 
+                                   id="c-{{ choice.id }}" 
+                                   value="{{ choice.id }}"
+                                   onchange="markAnswered({{ forloop.parentloop.counter }})">
+                            <label class="choice-label shadow-sm" for="c-{{ choice.id }}">
+                                {{ choice.text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="spacer-bottom"></div> 
                 </div>
-                <div style="height: 60px;"></div> </div>
-            {% endfor %}
-        </div>
-
-        <footer class="cbt-footer">
-            <button type="button" class="btn btn-light btn-cbt border" id="btn-prev" onclick="changeQuestion(-1)">
-                戻る
-            </button>
-
-            <div class="progress-bar-cbt d-none d-md-flex">
-                {% for q in questions %}<div class="p-dot" id="dot-{{ forloop.counter }}"></div>{% endfor %}
+                {% endfor %}
             </div>
 
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary btn-cbt shadow-sm" id="btn-next" onclick="changeQuestion(1)">
-                    次へ
+            <footer class="cbt-footer">
+                <button type="button" class="btn btn-light btn-cbt border" id="btn-prev" onclick="changeQuestion(-1)">
+                    戻る
                 </button>
-                <button type="button" class="btn btn-success btn-cbt shadow-sm d-none" id="btn-finish" onclick="openConfirm()">
-                    終了する
-                </button>
-            </div>
-        </footer>
-    </form>
+
+                <div class="progress-bar-cbt d-none d-md-flex">
+                    {% for q in questions %}<div class="p-dot" id="dot-{{ forloop.counter }}"></div>{% endfor %}
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-primary btn-cbt shadow-sm" id="btn-next" onclick="changeQuestion(1)">
+                        次へ
+                    </button>
+                    <button type="button" class="btn btn-success btn-cbt shadow-sm d-none" id="btn-finish" onclick="openConfirm()">
+                        終了する
+                    </button>
+                </div>
+            </footer>
+        </form>
+    </div>
 </div>
 
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10001;">
@@ -80,7 +85,7 @@
 </div>
 
 <style>
-    /* ベースリセット */
+    /* 不要な要素を非表示（元コード維持） */
     .side-nav-left, .side-nav-right, .side-qr-fixed, .side-text-decor,
     .app-header, .custom-header, .app-footer, .app-footer-sd,
     .dot-separator, .footer-dot-line, .navbar, .sidebar {
@@ -90,18 +95,19 @@
     body, html {
         margin: 0 !important;
         padding: 0 !important;
-        height: 100vh !important;
-        width: 100vw !important;
+        height: 100% !important; /* vhではなく%で指定 */
+        width: 100% !important;
         overflow: hidden !important;
         background: #fff !important;
     }
 
-    /* コンテナ */
+    /* 全体レイアウト */
     .cbt-container {
         display: flex;
         flex-direction: column;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;       /* フォールバック */
+        height: 100dvh;     /* スマホのアドレスバー対策 */
         position: fixed;
         top: 0;
         left: 0;
@@ -109,30 +115,39 @@
         background: #fff;
     }
 
-    /* フォーム：全体をflexにする */
-    #exam-form {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        overflow: hidden;
-    }
-
     .cbt-header {
-        flex-shrink: 0;
+        flex-shrink: 0; /* 縮ませない */
         background: #2d3436;
         color: #fff;
         padding: 12px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        z-index: 10;
     }
 
-    /* メインスクロールエリア */
+    /* メインとフッターを包むラッパー */
+    .cbt-main-wrapper {
+        flex: 1; /* 残りの高さを全部使う */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* これがないとスクロールしない */
+        position: relative;
+    }
+
+    #exam-form {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    /* 問題表示エリア（スクロール） */
     .cbt-main {
-        flex: 1;
-        overflow-y: auto;
-        padding: 40px 20px;
-        background: #fff;
+        flex: 1; /* 余ったスペースを全部使う */
+        overflow-y: auto; /* ここだけスクロールさせる */
+        -webkit-overflow-scrolling: touch; /* iOS慣性スクロール */
+        padding: 20px;
+        padding-bottom: 80px; /* フッターに隠れないように余裕を持つ */
     }
 
     .question-card {
@@ -159,59 +174,62 @@
         background-color: #f0f7f5;
     }
 
-    /* フッター */
+    /* フッター固定 */
     .cbt-footer {
-        flex-shrink: 0;
+        flex-shrink: 0; /* 高さを確保 */
         background: #f8f9fa;
         padding: 15px 20px;
         border-top: 1px solid #ddd;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
+        width: 100%;
+        z-index: 20;
     }
 
+    /* スマホ対応 */
+    @media (max-width: 768px) {
+        .cbt-footer {
+            flex-direction: column; /* 縦並び */
+            gap: 12px;
+            padding: 15px;
+            padding-bottom: max(15px, env(safe-area-inset-bottom)); /* iPhone X等の下部バー対策 */
+        }
+
+        /* 戻るボタン */
+        #btn-prev {
+            width: 100%;
+            order: 2; /* 下に配置 */
+        }
+
+        /* 次へ・終了ボタンのラッパー */
+        .action-buttons {
+            width: 100%;
+            order: 1; /* 上に配置 */
+        }
+
+        .action-buttons button {
+            width: 100%;
+        }
+
+        .progress-bar-cbt { display: none !important; }
+        
+        .btn-cbt {
+            padding: 12px 0 !important; /* タップしやすい大きさ */
+            font-size: 1rem !important;
+        }
+    }
+
+    /* 共通ボタン・UIパーツ */
     .btn-cbt { border-radius: 50px !important; padding: 8px 25px !important; font-weight: 800 !important; }
     .cbt-timer-box { background: #e17055; padding: 4px 12px; border-radius: 6px; display: flex; align-items: center; gap: 5px; font-weight: bold; }
     .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; margin: 0 3px; }
     .p-dot.active { background: #76b19d; transform: scale(1.3); }
     .p-dot.answered { background: #636e72; }
+    .spacer-bottom { height: 50px; } /* 念のための余白要素 */
 
     @keyframes cbt-fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .no-select { user-select: none; }
-
-    /* ★ レスポンシブ対応（修正版） */
-    @media (max-width: 768px) {
-        .cbt-footer {
-            flex-direction: column;
-            gap: 10px;
-            padding: 12px 15px;
-        }
-
-        .cbt-footer > * {
-            width: 100%;
-        }
-
-        .cbt-footer > div {
-            display: flex;
-            gap: 8px;
-        }
-
-        .cbt-footer > div > button {
-            flex: 1;
-        }
-
-        .btn-cbt {
-            padding: 10px 20px !important;
-            font-size: 0.95rem;
-            width: 100%;
-        }
-
-        .progress-bar-cbt {
-            display: none !important;
-        }
-    }
 </style>
 
 <script>
@@ -221,29 +239,27 @@
     let timeLeft = {{ exam.time_limit|default:30 }} * 60;
 
     function updateDisplay() {
+        // カード切り替え
         document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
-        document.getElementById(`q-box-${currentIdx}`).classList.add('active');
+        const activeCard = document.getElementById(`q-box-${currentIdx}`);
+        if(activeCard) activeCard.classList.add('active');
         
+        // ドット更新
         document.querySelectorAll('.p-dot').forEach(d => d.classList.remove('active'));
         const dot = document.getElementById(`dot-${currentIdx}`);
         if(dot) dot.classList.add('active');
 
-        // 戻るボタンの表示制御
+        // ボタン制御
         const btnPrev = document.getElementById('btn-prev');
-        if (currentIdx === 1) {
-            // 1問目は非表示にするが、レイアウト崩れを防ぐために visibility:hidden にするか、
-            // スマホレイアウト(縦並び)の場合は display:none の方が自然かもしれない。
-            // ひとまず元の visibility 制御を維持します。
-            btnPrev.style.visibility = 'hidden';
-            // もしスマホで「空の領域」が邪魔な場合は以下のように display 制御に変えてください
-            // btnPrev.style.display = 'none'; 
-        } else {
-            btnPrev.style.visibility = 'visible';
-            // btnPrev.style.display = 'block';
-        }
-        
         const btnNext = document.getElementById('btn-next');
         const btnFinish = document.getElementById('btn-finish');
+
+        // 1問目のときは「戻る」を非表示（レイアウト維持のため visibility: hidden推奨だが、スマホ縦並びなら display: none でもOK）
+        if (currentIdx === 1) {
+            btnPrev.style.display = 'none'; 
+        } else {
+            btnPrev.style.display = 'block';
+        }
 
         if (currentIdx === total) {
             btnNext.classList.add('d-none');
@@ -253,6 +269,7 @@
             btnFinish.classList.add('d-none');
         }
         
+        // スクロール位置をリセット
         document.querySelector('.cbt-main').scrollTop = 0;
     }
 
