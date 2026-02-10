@@ -159,7 +159,7 @@
         background-color: #f0f7f5;
     }
 
-    /* フッター（修正箇所反映） */
+    /* フッター */
     .cbt-footer {
         flex-shrink: 0;
         background: #f8f9fa;
@@ -168,8 +168,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;        /* 追加 */
-        flex-wrap: wrap;  /* 追加 */
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .btn-cbt { border-radius: 50px !important; padding: 8px 25px !important; font-weight: 800 !important; }
@@ -181,16 +181,31 @@
     @keyframes cbt-fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .no-select { user-select: none; }
 
-    /* ★ ここから追加（レスポンシブ対応） */
+    /* ★ レスポンシブ対応（修正版） */
     @media (max-width: 768px) {
         .cbt-footer {
-            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 15px;
+        }
+
+        .cbt-footer > * {
+            width: 100%;
+        }
+
+        .cbt-footer > div {
+            display: flex;
             gap: 8px;
         }
 
+        .cbt-footer > div > button {
+            flex: 1;
+        }
+
         .btn-cbt {
-            padding: 8px 20px !important;
-            font-size: 0.9rem;
+            padding: 10px 20px !important;
+            font-size: 0.95rem;
+            width: 100%;
         }
 
         .progress-bar-cbt {
@@ -213,7 +228,19 @@
         const dot = document.getElementById(`dot-${currentIdx}`);
         if(dot) dot.classList.add('active');
 
-        document.getElementById('btn-prev').style.visibility = (currentIdx === 1) ? 'hidden' : 'visible';
+        // 戻るボタンの表示制御
+        const btnPrev = document.getElementById('btn-prev');
+        if (currentIdx === 1) {
+            // 1問目は非表示にするが、レイアウト崩れを防ぐために visibility:hidden にするか、
+            // スマホレイアウト(縦並び)の場合は display:none の方が自然かもしれない。
+            // ひとまず元の visibility 制御を維持します。
+            btnPrev.style.visibility = 'hidden';
+            // もしスマホで「空の領域」が邪魔な場合は以下のように display 制御に変えてください
+            // btnPrev.style.display = 'none'; 
+        } else {
+            btnPrev.style.visibility = 'visible';
+            // btnPrev.style.display = 'block';
+        }
         
         const btnNext = document.getElementById('btn-next');
         const btnFinish = document.getElementById('btn-finish');
