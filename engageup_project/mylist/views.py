@@ -41,7 +41,7 @@ class MylistIndexView(LoginRequiredCustomMixin, BaseTemplateMixin, ListView):
             if item.course:
                 active_modules = list(item.course.modules.all()) # すでに絞り込み済み
                 total_modules = len(active_modules)
-                
+
                 if total_modules > 0:
                     done_count = UserModuleProgress.objects.filter(
                         user=user, 
